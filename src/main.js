@@ -14,7 +14,7 @@ function lastTwoDirs(dir, sep) {
 }
 
 function addFileToZip(zip, {filepath, mtime, contentBuffer, isExecutable}) {
-  console.log(`Adding file ${filepath}`);
+  //console.log(`Adding file ${filepath}`);
   zip.file(
     filepath,
     contentBuffer,

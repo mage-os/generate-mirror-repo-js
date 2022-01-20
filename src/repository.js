@@ -161,8 +161,9 @@ module.exports = {
     //console.log(`Listing files in ${path}`);
     const files = await git.walk({fs, dir, trees, cache, map: listFilesIn(url, path)});
     for (const file of files) {
-      const commit = await latestCommitForFile(url, file.filepath, ref);
-      file.mtime = commit.timestamp;
+      file.mtime = Math.floor(Date.now() / 1000);
+      // const commit = await latestCommitForFile(url, file.filepath, ref);
+      // file.mtime = commit.timestamp;
     }
     return files;
   },
@@ -177,15 +178,5 @@ module.exports = {
   },
   testing: {
     dirForRepoUrl,
-    async gitLogRefIsUsedAsStart(url, ref) {
-      const dir = await initRepo(url, ref);
-      const refConfig = ref ? {ref} : {};
-      const commits = await git.log({fs, dir, cache, ...refConfig})
-      const lastKnownOid = commits[commits.length -1].oid;
-
-      const newCommitsSinceLastKnown = await git.log({fs, dir, cache, ref: lastKnownOid});
-      
-      return newCommitsSinceLastKnown.length;
-    }
   }
 }
