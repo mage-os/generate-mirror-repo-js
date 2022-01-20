@@ -1,0 +1,23 @@
+{
+  "name": "repository-splitter-js",
+  "version": "0.0.1",
+  "description": "Generate the Mage-OS package archives from a monorepo",
+  "main": "src/main.js",
+  "scripts": {
+    "test": "jest"
+  },
+  "keywords": [
+    "mage-os",
+    "magento"
+  ],
+  "author": "Vinai Kopp",
+  "license": "BSD-3-Clause",
+  "dependencies": {
+    "isomorphic-git": "^1.10.4",
+    "jszip": "^3.7.1",
+    "progress": "^2.0.3"
+  },
+  "devDependencies": {
+    "jest": "^27.4.7"
+  }
+}
