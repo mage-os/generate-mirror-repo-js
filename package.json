@@ -13,9 +13,9 @@
   "author": "Vinai Kopp",
   "license": "BSD-3-Clause",
   "dependencies": {
+    "cli-progress": "^3.10.0",
     "isomorphic-git": "^1.10.4",
-    "jszip": "^3.7.1",
-    "progress": "^2.0.3"
+    "jszip": "^3.7.1"
   },
   "devDependencies": {
     "jest": "^27.4.7"

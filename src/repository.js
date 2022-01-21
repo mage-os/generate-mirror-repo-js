@@ -2,9 +2,9 @@ const path = require('path');
 const fs = require('fs');
 const git = require('isomorphic-git');
 const http = require('isomorphic-git/http/node');
-const ProgressBar = require('progress');
 
 let cache = {};
+let report = console.log;
 
 const repoBaseDir = path.join(process.cwd(), 'repositories');
 
@@ -24,14 +24,12 @@ function dirForRepoUrl(url) {
 function collapseCommit(commit) {
   return commit && {
     oid: commit.oid,
-    message: commit.commit.message,
-    timestamp: commit.commit.author.timestamp,
-    timezoneOffset: commit.commit.author.timezoneOffset
+    timestamp: commit.commit.author.timestamp
   } || {}
 }
 
 async function cloneRepo(url, dir, ref) {
-  console.log(`Creating shallow clone of ${ref} in "${dir.split('/').slice(-2).join('/')}" (without working copy)...`);
+  report(`Creating shallow clone of ${ref} in "${dir.split('/').slice(-2).join('/')}" (without working copy)...`);
   const refConf = ref ? {ref} : {};
   await git.clone({fs, http, cache, url, dir, noCheckout: true, depth: 15, singleBranch: true, onProgress: progress(), ...refConf});
 }
@@ -51,24 +49,20 @@ async function initRepo(url, ref) {
 }
 
 function progress() {
-  const bar = new ProgressBar(':bar (:phase)', { total: 100, clear: true });
-  const fn = event => {
-    if (event.total) {
-      bar.update(event.loaded / event.total, {phase: event.phase})
-    } else {
-      bar.tick(bar.curr, {phase: event.phase});
-    }
-  }
-  fn.bar = bar;
-  
-  return fn;
+  // const bar = new ProgressBar(':bar (:label)', { total: 50, clear: true });
+  // bar.update(0, {label: 'Initializing'})
+  // return event => {
+  //   if (event.total) {
+  //     bar.update(event.loaded / event.total, {label: event.phase})
+  //   } else {
+  //     bar.tick(bar.curr, {phase: event.phase});
+  //   }
+  // };
 }
 
 async function expandHistory(url, depth) {
   const dir = fullRepoPath(url);
-  const progressBar = progress()
-  progressBar.bar.update(0, {phase: 'Initializing'})
-  return git.fetch({fs, http, cache, dir, depth, relative: true, onProgress: progressBar});
+  return git.fetch({fs, http, cache, dir, depth, relative: true, onProgress: progress()});
 }
 
 function isFoldersIn(dir) {
@@ -87,13 +81,13 @@ function isFoldersIn(dir) {
 let isFirstWalk = true;
 function listFilesIn(url, dir) {
   const targetDir = dir
-    ? (dir.substr(-1) === '/' ? dir.substr(0, dir.length - 1) : dir)
-    : '.';
+    ? (dir.substr(-1) !== '/' ? dir + '/' : dir)
+    : './';
   
   return async (filepath, [entry]) => {
     if (isFirstWalk) {
       isFirstWalk = false;
-      console.log(`Loading git repository ${url} into memory...`);
+      report(`Loading git repository ${url} into memory...`);
     }
     const type = await entry.type();
     if (type === 'blob' && path.dirname(filepath).startsWith(targetDir)) {
@@ -117,7 +111,7 @@ async function lastCommitHash(url, ref) {
 // we need the latest commit to determine the mtime to set for a given file 
 async function latestCommitForFile(url, filepath, ref) {
 
-  console.log(`Finding latest commit for ${filepath}...`);
+  report(`Finding latest commit for ${filepath}...`);
   const dir = await initRepo(url, ref);
   const commits = await git.log({fs, dir, cache})
   
@@ -139,7 +133,7 @@ async function latestCommitForFile(url, filepath, ref) {
   }
   
   const lastKnown = commits[commits.length -1].oid;
-  console.log(`Expanding clone history by 100, starting from ${lastKnown}`);
+  report(`Expanding clone history by 100, starting from ${lastKnown}`);
   await expandHistory(url, 100);
   const commitsBeforeLastKnown = await git.log({fs, dir, cache, ref: lastKnown});
    
@@ -152,20 +146,14 @@ module.exports = {
   async listFolders(url, path, ref) {
     const dir = await initRepo(url, ref);
     const trees = [git.TREE({ref})];
-    //console.log(`Reading folders in "${path || '.'}"`);
+    //report(`Reading folders in "${path || '.'}"`);
     return git.walk({fs, dir, trees, cache, map: isFoldersIn(path)});
   },
   async listFiles(url, path, ref) {
     const dir = await initRepo(url, ref);
     const trees = [git.TREE({ref})];
-    //console.log(`Listing files in ${path}`);
-    const files = await git.walk({fs, dir, trees, cache, map: listFilesIn(url, path)});
-    for (const file of files) {
-      file.mtime = Math.floor(Date.now() / 1000);
-      // const commit = await latestCommitForFile(url, file.filepath, ref);
-      // file.mtime = commit.timestamp;
-    }
-    return files;
+    //report(`Listing files in ${path}`);
+    return await git.walk({fs, dir, trees, cache, map: listFilesIn(url, path)});
   },
   async readFile(url, filepath, ref) {
     const dir = await initRepo(url, ref);
@@ -175,6 +163,9 @@ module.exports = {
 
     const result = await git.readBlob({fs, dir, filepath, cache, oid});
     return result.blob;
+  },
+  setReportFn(fn) {
+    report = fn;
   },
   testing: {
     dirForRepoUrl,
