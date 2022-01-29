@@ -9,7 +9,7 @@ let report = console.log;
 const repoBaseDir = path.join(process.cwd(), 'repositories');
 
 function dirForRepoUrl(url) {
-  // todo: add vendor namespace to path
+  // todo: add vendor namespace directory inside of repoBaseDir to path?
   if (url.substr(-4).toLowerCase() === '.git') {
     url = url.substr(0, url.length - 4);
   }
@@ -89,13 +89,12 @@ function listFilesIn(url, dir) {
       isFirstWalk = false;
       report(`Loading git repository ${url} into memory...`);
     }
-    const type = await entry.type();
-    if (type === 'blob' && path.dirname(filepath).startsWith(targetDir)) {
-      const mode = await entry.mode();
+    const dirname = path.dirname(filepath);
+    if ('blob' === (await entry.type()) && (dirname.startsWith(targetDir) || dirname + '/' === targetDir)) {
       return {
         filepath,
         contentBuffer: await entry.content(),
-        isExecutable: 0o100755 === mode
+        isExecutable: 0o100755 === (await entry.mode())
       };
     }
   }
@@ -108,7 +107,7 @@ async function lastCommitHash(url, ref) {
   return result && result.length && result[0]['oid'];
 }
 
-// we need the latest commit to determine the mtime to set for a given file 
+// we can use the latest commit to determine the mtime for a given file
 async function latestCommitForFile(url, filepath, ref) {
 
   report(`Finding latest commit for ${filepath}...`);
@@ -163,6 +162,10 @@ module.exports = {
 
     const result = await git.readBlob({fs, dir, filepath, cache, oid});
     return result.blob;
+  },
+  async lastCommitTimeForFile(url, filepath, ref) {
+    const commit = await latestCommitForFile(url, filepath, ref);
+    return commit.timestamp && new Date(commit.timestamp * 1000); // convert seconds to JS timestamp ms
   },
   setReportFn(fn) {
     report = fn;
