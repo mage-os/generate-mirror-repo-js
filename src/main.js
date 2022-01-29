@@ -15,71 +15,84 @@ const multibar = new cliProgress.MultiBar({
 
 const gitRepoUrl = 'https://github.com/mage-os/mirror-magento2.git';
 const tag = '2.4.3';
+const archiveBaseDir = 'archives';
 
+/**
+ * Given 'app/code/Magento/Catalog', return 'Magento/Catalog'
+ */
 function lastTwoDirs(dir, sep) {
   return dir.split('/').slice(-2).join(sep || '/');
 }
 
-function addFileToZip(zip, mtime, {filepath, contentBuffer, isExecutable}) {
-  const folders = filepath.split('/').slice(0, -1).reduce((acc, part) => {
+/**
+ * Given 'a/b/c/foo.txt', return ['a', 'a/b', 'a/b/c']
+ */
+function allParentDirs(filepath) {
+  return filepath.split('/').slice(0, -1).reduce((acc, part) => {
     const parent = acc.length ? acc[acc.length -1] + '/' : '';
     return acc.concat([parent + part]);
   }, []);
-  // create folders explicitly to be able to set the folder mtime
-  for (const folder of folders) {
+}
+
+function addFileToZip(zip, {filepath, mtime, contentBuffer, isExecutable}) {
+  // create folders explicitly to be able to set the folder mtime and permissions
+  for (const folder of allParentDirs(filepath)) {
     zip.file(folder, '', {dir: true, date: mtime, unixPermissions: '775'});
   }
   zip.file(filepath, contentBuffer, {date: mtime, unixPermissions: isExecutable ? '755' : '644'}
   )
 }
 
-function zipFileWith(files, mtime) {
+function zipFileWith(files) {
   const zip = new JSZip();
-  files.map(file => addFileToZip(zip, mtime, file));
+  files.map(file => addFileToZip(zip, file));
   return zip;
 }
 
 async function readComposerJson(url, dir, ref) {
-  try {
-    return repo.readFile(url, `${dir}/composer.json`, ref)
-      .then(b => Buffer.from(b).toString('utf8'))
-      .then(JSON.parse)
-  } catch (exception) {
-    console.error(`Unable to read ${lastTwoDirs(dir)}/composer.json`, exception);
-    return {};
-  }
+  return repo.readFile(url, `${dir}/composer.json`, ref)
+    .then(b => Buffer.from(b).toString('utf8'))
+    .then(JSON.parse);
+}
+
+function ensureArchiveDirectoryExists(archivePath) {
+  const packageDir = path.dirname(archivePath);
+  if (!fs.existsSync(packageDir)) fs.mkdirSync(packageDir, {recursive: true});
 }
 
 async function createPackageForModule(url, moduleDir, ref) {
 
-  try {
-    const mtime = await repo.lastCommitTimeForFile(url, `${moduleDir}/composer.json`, ref);
-    const {version, name} = await readComposerJson(url, moduleDir, ref);
-    if (!version || !name) {
-      console.error(`Unable determine module ${lastTwoDirs(moduleDir)} package name and/or version.`);
-      return;
-    }
-
-    const packageFilepath = path.join(process.cwd(), 'packages', name + '-' + version + '.zip');
-    const packageDir = path.dirname(packageFilepath);
-    if (!fs.existsSync(packageDir)) fs.mkdirSync(packageDir, {recursive: true});
-    
-    const files = (await repo.listFiles(url, moduleDir, ref))
-      .sort()
-      .map(file => {
-        file.filepath = file.filepath.substr(moduleDir.length + 1);
-        return file;
-      });
-
-    fs.existsSync(packageFilepath) && fs.unlinkSync(packageFilepath);
-    
-    const zip = zipFileWith(files, mtime);
-    const content = await zip.generateAsync({type: 'nodebuffer', streamFiles: false, platform: 'UNIX'});
-    fs.writeFileSync(packageFilepath, content);
-    
-  } catch (exception) {
-    console.error(`Skipping module ${lastTwoDirs(moduleDir, '_')}`, exception);
+  const magentoName = lastTwoDirs(moduleDir);
+  
+  // use mtime of composer.json for all files and directories in package
+  const mtime = await repo.lastCommitTimeForFile(url, `${moduleDir}/composer.json`, ref);
+  if (! mtime) {
+    console.error(`Unable to find last commit affecting ${moduleDir}/composer.json, skipping ${magentoName}`);
+    return;
   }
+  
+  const {version, name} = await readComposerJson(url, moduleDir, ref);
+  if (!version || !name) {
+    console.error(`Unable find package name and/or version in compose.json, skipping ${magentoName}`);
+    return;
+  }
+  const packageFilepath = path.join((path.isAbsolute(archiveBaseDir) ? '' : process.cwd()), archiveBaseDir, name + '-' + version + '.zip');
+  if (fs.existsSync(packageFilepath)) {
+    return;
+  }
+  
+  const files = (await repo.listFiles(url, moduleDir, ref))
+    .sort()
+    .map(file => {
+      file.mtime = mtime;
+      file.filepath = file.filepath.substr(moduleDir.length + 1);
+      return file;
+    });
+
+  ensureArchiveDirectoryExists(packageFilepath);
+  const zip = zipFileWith(files);
+  const stream = await zip.generateNodeStream({streamFiles: false, platform: 'UNIX'});
+  stream.pipe(fs.createWriteStream(packageFilepath));
 }
 
 (async (url, ref) => {
