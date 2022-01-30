@@ -2,6 +2,7 @@ const path = require('path');
 const fs = require('fs');
 const git = require('isomorphic-git');
 const http = require('isomorphic-git/http/node');
+const {compare} = require("compare-versions");
 
 let cache = {};
 let report = console.log;
@@ -29,9 +30,9 @@ function collapseCommit(commit) {
 }
 
 async function cloneRepo(url, dir, ref) {
-  report(`Creating shallow clone of ${ref} in "${dir.split('/').slice(-2).join('/')}" (without working copy)...`);
-  const refConf = ref ? {ref} : {};
-  await git.clone({fs, http, cache, url, dir, noCheckout: true, depth: 15, singleBranch: true, onProgress: progress(), ...refConf});
+  report(`Creating shallow clone of ${ref || 'all branches'} in "${dir.split('/').slice(-2).join('/')}" w/o working copy...`);
+  const refConf = ref ? {ref, singleBranch: true} : {};
+  await git.clone({fs, http, cache, url, dir, noCheckout: true, depth: 15, onProgress: progress(), ...refConf});
 }
 
 function fullRepoPath(url) {
@@ -49,15 +50,7 @@ async function initRepo(url, ref) {
 }
 
 function progress() {
-  // const bar = new ProgressBar(':bar (:label)', { total: 50, clear: true });
-  // bar.update(0, {label: 'Initializing'})
-  // return event => {
-  //   if (event.total) {
-  //     bar.update(event.loaded / event.total, {label: event.phase})
-  //   } else {
-  //     bar.tick(bar.curr, {phase: event.phase});
-  //   }
-  // };
+  
 }
 
 async function expandHistory(url, depth) {
@@ -166,6 +159,10 @@ module.exports = {
   async lastCommitTimeForFile(url, filepath, ref) {
     const commit = await latestCommitForFile(url, filepath, ref);
     return commit.timestamp && new Date(commit.timestamp * 1000); // convert seconds to JS timestamp ms
+  },
+  async listTags(url) {
+    const dir = await initRepo(url);
+    return git.listTags({fs, dir});
   },
   setReportFn(fn) {
     report = fn;
