@@ -41,8 +41,16 @@ function zipFileWith(files) {
   return zip;
 }
 
+function ltrim(str, c) {
+  while (c && str && c.includes(str.substr(0, 1))) {
+    str = str.substr(1);
+  }
+  return str;
+}
+
 async function readComposerJson(url, dir, ref) {
-  return repo.readFile(url, `${dir}/composer.json`, ref)
+  const file = ltrim(`${dir}/composer.json`, '/');
+  return repo.readFile(url, file, ref)
     .then(b => Buffer.from(b).toString('utf8'))
     .then(JSON.parse);
 }
@@ -57,32 +65,39 @@ function archiveFilePath(name, version) {
   return path.join(prefix, archiveBaseDir, name + '-' + version + '.zip')
 }
 
-async function createPackageForModule(url, moduleDir, ref) {
+async function createPackageForTag(url, moduleDir, excludes, ref) {
 
-  const magentoName = lastTwoDirs(moduleDir);
-
-  // use mtime of composer.json for all files and directories in package
-  const mtime = await repo.lastCommitTimeForFile(url, `${moduleDir}/composer.json`, ref);
-  if (!mtime) {
-    console.error(`Unable to find last commit affecting ${moduleDir}/composer.json, skipping ${magentoName}`);
-    return;
-  }
-
+  let magentoName = lastTwoDirs(moduleDir) || '';
+  
   const {version, name} = await readComposerJson(url, moduleDir, ref);
   if (!version || !name) {
     console.error(`Unable find package name and/or version in compose.json, skipping ${magentoName}`);
     return;
   }
+
+  // use mtime of composer.json for all files and directories in package
+  const mtime = await repo.lastCommitTimeForFile(url, ltrim(`${moduleDir}/composer.json`, '/'), ref);
+  if (!mtime) {
+    console.error(`Unable to find last commit affecting ${moduleDir}/composer.json, skipping ${magentoName||name}`);
+    return;
+  }
+  
   const packageFilepath = archiveFilePath(name, version);
   if (fs.existsSync(packageFilepath)) {
     return;
   }
 
   const files = (await repo.listFiles(url, moduleDir, ref))
+    .filter(file => {
+      const isExcluded = (excludes || []).find(exclude => {
+        return file.filepath === exclude || file.filepath.startsWith(exclude)
+      })
+      return ! isExcluded;
+    })
     .sort()
     .map(file => {
       file.mtime = mtime;
-      file.filepath = file.filepath.substr(moduleDir.length + 1);
+      file.filepath = file.filepath.substr(moduleDir ? moduleDir.length + 1 : '');
       return file;
     });
 
@@ -97,11 +112,19 @@ module.exports = {
   setArchiveBaseDir(newArchiveBaseDir) {
     archiveBaseDir = newArchiveBaseDir;
   },
-  async createPackagesForTag(url, modulesPath, ref) {
+  createPackageForTag,
+  async createPackagesForTag(url, modulesPath, excludes, ref) {
     const packagesProgressBar = multibar.create(100, 0, {label: `Listing Modules for ${ref}`});
     repo.setReportFn((s) => setTimeout(() => packagesProgressBar.update(null, {label: s}), 100));
 
-    const modules = (await repo.listFolders(url, modulesPath, ref)).filter(dir => dir !== '.');
+    const modules = (await repo.listFolders(url, modulesPath, ref))
+      .filter(dir => dir !== '.')
+      .filter(file => {
+        const isExcluded = (excludes || []).find(exclude => {
+          return file.filepath === exclude || file.filepath.startsWith(exclude)
+        })
+        return ! isExcluded;
+      });
 
     packagesProgressBar.setTotal(modules.length);
     packagesProgressBar.update(null, {label: `${modules.length} modules`});
@@ -109,12 +132,12 @@ module.exports = {
     let n = 0;
     for (const moduleDir of modules) {
       packagesProgressBar.increment(0, {label: `${++n}/${modules.length} Preparing ${(lastTwoDirs(moduleDir, '_'))}`});
-      await createPackageForModule(url, moduleDir, ref);
+      await createPackageForTag(url, moduleDir, excludes, ref);
       packagesProgressBar.increment(1, {label: `${n}/${modules.length} Finished ${(lastTwoDirs(moduleDir, '_'))}`});
     }
     setTimeout(() => {
       multibar.remove(packagesProgressBar);
       multibar.stop();
     }, 100);
-  }
+  },
 }

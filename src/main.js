@@ -1,5 +1,5 @@
 const repo = require('./repository');
-const {setArchiveBaseDir, createPackagesForTag} = require('./package-modules');
+const {setArchiveBaseDir, createPackagesForTag, createPackageForTag} = require('./package-modules');
 const {compareTags} = require('./utils');
 
 /**
@@ -27,12 +27,46 @@ async function listTagsFrom(url, from) {
   return (await repo.listTags(url)).filter(tag => compareTags(tag, from) >= 0);
 }
 
-async function createPackagesFromTag(url, from, modulesPath) {
+async function createPackagesSinceTag(url, from, modulesPath, excludes) {
   const tags = await listTagsFrom(url, from); 
   for (const tag of tags) {
-    await createPackagesForTag(url, modulesPath, tag);
+    await createPackagesForTag(url, modulesPath, excludes, tag);
   }
   return tags;
 }
 
-createPackagesFromTag('https://github.com/mage-os/mirror-magento2.git', '2.4.3', 'app/code/Magento').then(console.log)
+async function createPackageSinceTag(url, from, modulesPath, excludes) {
+  const tags = await listTagsFrom(url, from);
+  for (const tag of tags) {
+    await createPackageForTag(url, modulesPath, excludes, tag);
+  }
+  return tags;
+}
+
+(async function () {
+  let tags;
+  
+  tags = await createPackagesSinceTag('https://github.com/mage-os/mirror-magento2.git', '2.4.3', 'app/code/Magento')
+  console.log('app/code/Magento modules', tags)
+
+  tags = await createPackageSinceTag('https://github.com/mage-os/mirror-magento2.git', '2.4.3', '', [".github/", "app/code/", "app/design/frontend/", "app/design/adminhtml/", "app/i18n/", "lib/internal/Magento/Framework/", "composer.lock",])
+  console.log('magento/magento2ce', tags);
+  
+  tags = await createPackageSinceTag('https://github.com/mage-os/mirror-magento2.git', '2.4.3', 'lib/internal/Magento/Framework', ['lib/internal/Magento/Framework/Amqp', 'lib/internal/Magento/Framework/Bulk', 'lib/internal/Magento/Framework/MessageQueue'])
+  console.log('magento/framework', tags)
+
+  tags = await createPackageSinceTag('https://github.com/mage-os/mirror-magento2.git', '2.4.3', 'lib/internal/Magento/Framework/Amqp', [])
+  console.log('magento/framework-amqp', tags)
+
+  tags = await createPackageSinceTag('https://github.com/mage-os/mirror-magento2.git', '2.4.3', 'lib/internal/Magento/Framework/Bulk', [])
+  console.log('magento/framework-bulk', tags);
+
+  tags = await createPackageSinceTag('https://github.com/mage-os/mirror-magento2.git', '2.4.3', 'lib/internal/Magento/Framework/MessageQueue', [])
+  console.log('magento/framework-message-queue', tags)
+
+  tags = await createPackagesSinceTag('https://github.com/mage-os/mirror-security-package.git', '1.0.0', '', ['.github/', '_metapackage'])
+  console.log('security packages', tags)
+
+  tags = await createPackagesSinceTag('https://github.com/mage-os/mirror-inventory.git', '1.0.3', '', ['.github/'])
+  console.log('inventory packages', tags)
+})()

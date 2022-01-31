@@ -75,7 +75,7 @@ let isFirstWalk = true;
 function listFilesIn(url, dir) {
   const targetDir = dir
     ? (dir.substr(-1) !== '/' ? dir + '/' : dir)
-    : './';
+    : '';
   
   return async (filepath, [entry]) => {
     if (isFirstWalk) {
@@ -83,7 +83,8 @@ function listFilesIn(url, dir) {
       report(`Loading git repository ${url} into memory...`);
     }
     const dirname = path.dirname(filepath);
-    if ('blob' === (await entry.type()) && (dirname.startsWith(targetDir) || dirname + '/' === targetDir)) {
+    const isFile = 'blob' === (await entry.type());
+    if (isFile && (targetDir === '' || dirname.startsWith(targetDir) || dirname + '/' === targetDir)) {
       return {
         filepath,
         contentBuffer: await entry.content(),
