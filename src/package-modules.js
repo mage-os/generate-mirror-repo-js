@@ -48,6 +48,13 @@ function ltrim(str, c) {
   return str;
 }
 
+function rtrim(str, c) {
+  while (c && str && c.includes(str.substr(-1))) {
+    str = str.substr(0, str.length -1);
+  }
+  return str;
+}
+
 async function readComposerJson(url, dir, ref) {
   const file = ltrim(`${dir}/composer.json`, '/');
   return repo.readFile(url, file, ref)
@@ -71,14 +78,14 @@ async function createPackageForTag(url, moduleDir, excludes, ref) {
   
   const {version, name} = await readComposerJson(url, moduleDir, ref);
   if (!version || !name) {
-    console.error(`Unable find package name and/or version in compose.json, skipping ${magentoName}`);
+    console.error(`Unable find package name and/or version in composer.json, skipping ${magentoName}`);
     return;
   }
 
   // use mtime of composer.json for all files and directories in package
   const mtime = await repo.lastCommitTimeForFile(url, ltrim(`${moduleDir}/composer.json`, '/'), ref);
   if (!mtime) {
-    console.error(`Unable to find last commit affecting ${moduleDir}/composer.json, skipping ${magentoName||name}`);
+    console.error(`Unable to find last commit affecting ${moduleDir}/composer.json in ${ref}, skipping ${magentoName||name}`);
     return;
   }
   
@@ -119,9 +126,9 @@ module.exports = {
 
     const modules = (await repo.listFolders(url, modulesPath, ref))
       .filter(dir => dir !== '.')
-      .filter(file => {
+      .filter(dir => {
         const isExcluded = (excludes || []).find(exclude => {
-          return file.filepath === exclude || file.filepath.startsWith(exclude)
+          return dir === rtrim(exclude, '/') || dir.startsWith(exclude)
         })
         return ! isExcluded;
       });
