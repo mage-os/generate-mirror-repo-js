@@ -78,7 +78,7 @@ async function createPackageForTag(url, moduleDir, excludes, ref) {
   
   const {version, name} = await readComposerJson(url, moduleDir, ref);
   if (!version || !name) {
-    console.error(`Unable find package name and/or version in composer.json, skipping ${magentoName}`);
+    console.error(`Unable find package name and/or version in composer.json for ${ref}, skipping ${magentoName}`);
     return;
   }
 
