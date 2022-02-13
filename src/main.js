@@ -1,6 +1,6 @@
 const repo = require('./repository');
 const {setArchiveBaseDir, createPackagesForTag, createPackageForTag} = require('./package-modules');
-const {compareTags} = require('./utils');
+const {compareTags, httpSlurp} = require('./utils');
 
 /**
  * package(s)                 | from   | modules-folder     | repo url
@@ -17,6 +17,7 @@ const {compareTags} = require('./utils');
  * ------------------------------------------------------------------------------------------------------------------
  * magento/zendframework1     | 1.13.0 | ''                 | https://github.com/mage-os/mirror-zf1.git
  *                            |        |                    | single package, but requires exclude config
+ *                            |        |                    | version not in release composer.json files
  * ------------------------------------------------------------------------------------------------------------------
  */
 
@@ -37,38 +38,47 @@ async function createPackagesSinceTag(url, from, modulesPath, excludes) {
   return tags;
 }
 
-async function createPackageSinceTag(url, from, modulesPath, excludes) {
+async function createPackageSinceTag(url, from, modulesPath, excludes, composerJsonUrl) {
   const tags = await listTagsFrom(url, from);
   for (const tag of tags) {
-    await createPackageForTag(url, modulesPath, excludes, tag);
+    await createPackageForTag(url, modulesPath, excludes, tag, composerJsonUrl.replace('{{version}}', tag));
   }
   return tags;
 }
 
 (async function () {
-  let tags;
-  
-  tags = await createPackagesSinceTag('https://github.com/mage-os/mirror-magento2.git', '2.4.0', 'app/code/Magento')
+  let tags, exclude, composerJsonUrl;
+
+  exclude = [];
+  tags = await createPackagesSinceTag('https://github.com/mage-os/mirror-magento2.git', '2.4.0', 'app/code/Magento', exclude)
   console.log('app/code/Magento modules', tags)
 
-  tags = await createPackageSinceTag('https://github.com/mage-os/mirror-magento2.git', '2.4.0', '', [".github/", "app/code/", "app/design/frontend/", "app/design/adminhtml/", "app/i18n/", "lib/internal/Magento/Framework/", "composer.lock",])
-  console.log('magento/magento2ce', tags);
+  exclude = [".github/", "app/code/", "app/design/frontend/", "app/design/adminhtml/", "app/i18n/", "lib/internal/Magento/Framework/", "composer.lock"];
+  composerJsonUrl = 'https://raw.githubusercontent.com/mage-os/magento2-base-composer-json/main/{{version}}/magento2-base/composer.json';
+  tags = await createPackageSinceTag('https://github.com/mage-os/mirror-magento2.git', '2.4.0', '', exclude, composerJsonUrl)
+  console.log('magento/magento2-base', tags)
 
-  tags = await createPackageSinceTag('https://github.com/mage-os/mirror-magento2.git', '2.4.0', 'lib/internal/Magento/Framework', ['lib/internal/Magento/Framework/Amqp/', 'lib/internal/Magento/Framework/Bulk/', 'lib/internal/Magento/Framework/MessageQueue/'])
+  exclude = ['lib/internal/Magento/Framework/Amqp/', 'lib/internal/Magento/Framework/Bulk/', 'lib/internal/Magento/Framework/MessageQueue/'];
+  tags = await createPackageSinceTag('https://github.com/mage-os/mirror-magento2.git', '2.4.0', 'lib/internal/Magento/Framework', exclude)
   console.log('magento/framework', tags)
 
-  tags = await createPackageSinceTag('https://github.com/mage-os/mirror-magento2.git', '2.4.0', 'lib/internal/Magento/Framework/Amqp', [])
+  exclude = [];
+  tags = await createPackageSinceTag('https://github.com/mage-os/mirror-magento2.git', '2.4.0', 'lib/internal/Magento/Framework/Amqp', exclude)
   console.log('magento/framework-amqp', tags)
 
-  tags = await createPackageSinceTag('https://github.com/mage-os/mirror-magento2.git', '2.4.0', 'lib/internal/Magento/Framework/Bulk', [])
+  exclude = [];
+  tags = await createPackageSinceTag('https://github.com/mage-os/mirror-magento2.git', '2.4.0', 'lib/internal/Magento/Framework/Bulk', exclude)
   console.log('magento/framework-bulk', tags);
 
-  tags = await createPackageSinceTag('https://github.com/mage-os/mirror-magento2.git', '2.4.0', 'lib/internal/Magento/Framework/MessageQueue', [])
+  exclude = [];
+  tags = await createPackageSinceTag('https://github.com/mage-os/mirror-magento2.git', '2.4.0', 'lib/internal/Magento/Framework/MessageQueue', exclude)
   console.log('magento/framework-message-queue', tags)
 
-  tags = await createPackagesSinceTag('https://github.com/mage-os/mirror-security-package.git', '1.0.0', '', ['.github/', '_metapackage/'])
+  exclude = ['.github/', '_metapackage/'];
+  tags = await createPackagesSinceTag('https://github.com/mage-os/mirror-security-package.git', '1.0.0', '', exclude)
   console.log('security packages', tags)
 
-  tags = await createPackagesSinceTag('https://github.com/mage-os/mirror-inventory.git', '1.1.5', '', ['.github/', '_metapackage/', 'dev/'])
+  exclude = ['.github/', '_metapackage/', 'dev/'];
+  tags = await createPackagesSinceTag('https://github.com/mage-os/mirror-inventory.git', '1.1.5', '', exclude)
   console.log('inventory packages', tags)
 })()

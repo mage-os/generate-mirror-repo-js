@@ -1,4 +1,6 @@
 const compareVersions = require("compare-versions");
+const http = require('https');
+const {URL} = require('url');
 
 module.exports = {
   /**
@@ -33,5 +35,16 @@ module.exports = {
       return -1; // only b has a patch version, so b is larger
     }
     return 0; // same base and patch versions
+  },
+  async httpSlurp(url) {
+    return new Promise((resolve, reject) => {
+      const request = http.request(new URL(url), function (res) {
+        let data = '';
+        res.on('data', chunk => data += chunk);
+        res.on('end', () => resolve(data));
+      });
+      request.on('error', err => reject(e.message));
+      request.end();
+    });
   }
 }

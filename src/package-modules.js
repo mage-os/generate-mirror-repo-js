@@ -2,7 +2,7 @@ const fs = require('fs');
 const path = require('path');
 const JSZip = require('jszip');
 const repo = require("./repository");
-const {lastTwoDirs} = require('./utils');
+const {lastTwoDirs, httpSlurp} = require('./utils');
 
 const cliProgress = require('cli-progress');
 const multibar = new cliProgress.MultiBar({
@@ -58,8 +58,11 @@ function rtrim(str, c) {
 async function readComposerJson(url, dir, ref) {
   const file = ltrim(`${dir}/composer.json`, '/');
   return repo.readFile(url, file, ref)
-    .then(b => Buffer.from(b).toString('utf8'))
-    .then(JSON.parse);
+    .then(b => Buffer.from(b).toString('utf8'));
+}
+
+async function readComposerJsonUrl(url) {
+  
 }
 
 function ensureArchiveDirectoryExists(archivePath) {
@@ -72,22 +75,23 @@ function archiveFilePath(name, version) {
   return path.join(prefix, archiveBaseDir, name + '-' + version + '.zip')
 }
 
-async function createPackageForTag(url, moduleDir, excludes, ref) {
+async function createPackageForTag(url, moduleDir, excludes, ref, composerJsonUrl) {
 
+  excludes = excludes || [];
+  excludes.push('composer.json');
   let magentoName = lastTwoDirs(moduleDir) || '';
   
-  const {version, name} = await readComposerJson(url, moduleDir, ref);
+  const json = composerJsonUrl
+    ? await httpSlurp(composerJsonUrl)
+    : await readComposerJson(url, moduleDir, ref);
+  const {version, name} = JSON.parse(json);
   if (!version || !name) {
     console.error(`Unable find package name and/or version in composer.json for ${ref}, skipping ${magentoName}`);
     return;
   }
 
-  // use mtime of composer.json for all files and directories in package
-  const mtime = await repo.lastCommitTimeForFile(url, ltrim(`${moduleDir}/composer.json`, '/'), ref);
-  if (!mtime) {
-    console.error(`Unable to find last commit affecting ${moduleDir}/composer.json in ${ref}, skipping ${magentoName||name}`);
-    return;
-  }
+  // use fixed date for stable package checksum generation
+  const mtime = new Date('2022-02-22 22:22:22');
   
   const packageFilepath = archiveFilePath(name, version);
   if (fs.existsSync(packageFilepath)) {
@@ -101,12 +105,13 @@ async function createPackageForTag(url, moduleDir, excludes, ref) {
       })
       return ! isExcluded;
     })
-    .sort()
     .map(file => {
       file.mtime = mtime;
       file.filepath = file.filepath.substr(moduleDir ? moduleDir.length + 1 : '');
       return file;
     });
+  files.push({filepath: 'composer.json', contentBuffer: Buffer.from(json, 'utf8'), mtime, isExecutable: false});
+  files.sort((a, b) => ('' + a.filepath).localeCompare('' + b.filepath));
 
   ensureArchiveDirectoryExists(packageFilepath);
   const zip = zipFileWith(files);
