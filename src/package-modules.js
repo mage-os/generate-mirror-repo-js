@@ -2,7 +2,7 @@ const fs = require('fs');
 const path = require('path');
 const JSZip = require('jszip');
 const repo = require("./repository");
-const {lastTwoDirs, httpSlurp} = require('./utils');
+const {lastTwoDirs, httpSlurp, compareTags} = require('./utils');
 
 const cliProgress = require('cli-progress');
 const multibar = new cliProgress.MultiBar({
@@ -15,6 +15,8 @@ const multibar = new cliProgress.MultiBar({
 }, cliProgress.Presets.shades_classic);
 
 let archiveBaseDir = 'archives';
+
+const stableMtime = '2022-02-22 22:22:22';
 
 /**
  * Given 'a/b/c/foo.txt', return ['a', 'a/b', 'a/b/c']
@@ -61,10 +63,6 @@ async function readComposerJson(url, dir, ref) {
     .then(b => Buffer.from(b).toString('utf8'));
 }
 
-async function readComposerJsonUrl(url) {
-  
-}
-
 function ensureArchiveDirectoryExists(archivePath) {
   const packageDir = path.dirname(archivePath);
   if (!fs.existsSync(packageDir)) fs.mkdirSync(packageDir, {recursive: true});
@@ -91,7 +89,7 @@ async function createPackageForTag(url, moduleDir, excludes, ref, composerJsonUr
   }
 
   // use fixed date for stable package checksum generation
-  const mtime = new Date('2022-02-22 22:22:22');
+  const mtime = new Date(stableMtime);
   
   const packageFilepath = archiveFilePath(name, version);
   if (fs.existsSync(packageFilepath)) {
@@ -112,6 +110,29 @@ async function createPackageForTag(url, moduleDir, excludes, ref, composerJsonUr
     });
   files.push({filepath: 'composer.json', contentBuffer: Buffer.from(json, 'utf8'), mtime, isExecutable: false});
   files.sort((a, b) => ('' + a.filepath).localeCompare('' + b.filepath));
+
+  ensureArchiveDirectoryExists(packageFilepath);
+  const zip = zipFileWith(files);
+  const stream = await zip.generateNodeStream({streamFiles: false, platform: 'UNIX'});
+  stream.pipe(fs.createWriteStream(packageFilepath));
+}
+
+async function createComposerJsonOnlyPackage(url, ref, name, transform) {
+  const taggedComposerConfig = JSON.parse(await readComposerJson(url, '', ref));
+
+  const composerConfig = transform(taggedComposerConfig);
+
+  const files = [{
+    filepath: 'composer.json',
+    mtime: new Date(stableMtime),
+    contentBuffer: Buffer.from(JSON.stringify(composerConfig), 'utf8'),
+    isExecutable: false,
+  }];
+
+  const packageFilepath = archiveFilePath(name, ref);
+  if (fs.existsSync(packageFilepath)) {
+    return;
+  }
 
   ensureArchiveDirectoryExists(packageFilepath);
   const zip = zipFileWith(files);
@@ -152,4 +173,44 @@ module.exports = {
       multibar.stop();
     }, 100);
   },
+  async createMagentoCommunityEditionMetapackage(url, ref) {
+    const name = 'magento/product-community-edition';
+    await createComposerJsonOnlyPackage(url, ref, name, taggedComposerConfig => {
+      const composerConfig = Object.assign(taggedComposerConfig, {
+        name: name,
+        description: 'eCommerce Platform for Growth (Community Edition)',
+        type: 'metapackage',
+        require: Object.assign({'magento/magento2-base': ref}, taggedComposerConfig.require, taggedComposerConfig.replace)
+      });
+
+      for (const k of ['autoload', 'autoload-dev', 'config', 'conflict', 'extra', 'minimum-stability', 'replace', 'require-dev', 'suggest']) {
+        delete composerConfig[k];
+      }
+      return composerConfig;
+    });
+  },
+  async createMagentoCommunityEditionProject(url, ref) {
+    const name = 'magento/project-community-edition';
+    await createComposerJsonOnlyPackage(url, ref, name, taggedComposerConfig => {
+      const composerConfig = Object.assign(taggedComposerConfig, {
+        name: name,
+        description: 'eCommerce Platform for Growth (Community Edition)',
+        extra: {'magento-force': 'override'},
+        repositories: [{type: 'composer', url: 'https://repo.mage-os.org/'}],
+        'minimum-stability': 'stable',
+        require: Object.assign(
+          {
+            'magento/product-community-edition': ref,
+            'magento/composer-root-update-plugin': '~1.1',
+          },
+          compareTags('2.4.3', ref) === -1 ? {} : {'magento/composer-dependency-version-audit-plugin': '~0.1'}
+        )
+      });
+
+      for (const k of ['replace', 'suggest']) {
+        delete composerConfig[k];
+      }
+      return composerConfig;
+    });
+  }
 }
