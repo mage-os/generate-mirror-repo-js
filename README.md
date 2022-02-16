@@ -1,19 +1,38 @@
-# Mage-OS Monorepo Package Splitter - JS Edition
+# Mage-OS Mirror Repository Generator - JS Edition
 
 Experimental JavaScript implementation for comparison purposes.
 This is not intended to go into production, but rather it is for learning purposes.
 
 ## Usage
 
-Edit `src/main.js` and set the repo git URL and tag 
-Usage: `node src/main.js`
+To generate the repository in a directory ./html, run the command.
 
-## Todo
+Mounting the packages directory is optional but will speed up the build a lot if the packages already where generated previously.
 
-* Performance needs optimizing
-  * Most importantly finding the last commit for a given file
-  * Experiment with parallelism but expanding the repo history would require locking
-* The resulting archive collection needs to be checked against satis
-* The base package needs to be built
-* Configuration and command line argument processing
-* Throw it all away and write again using TDD
+```bash
+docker run --rm --init -it --user $(id -u):$(id -g) \
+  --volume $(pwd)/packages:/packages \
+  --volume $(pwd)/html:/build \
+  --volume "${COMPOSER_HOME:-$HOME/.composer}:/composer" \
+  magece/mirror-repo-js
+```
+
+## Building
+
+```bash
+docker build -t magece/mirror-repo-js .
+```
+
+## TODO
+
+* Avoid satis recreating the already generated archives
+  Maybe this requires writing the composer repository JSON data directly without JSON, or maybe it requires
+  running a patched version of satis that doesn't try to download, install and dump an archive if it already exists.
+  Maybe a smaller satis patch would be to allow the specifying a prefix-url without a `archive` section in the satis.json,
+  because it seems like if that is absent, it simply scans the archives it finds in `repositories`.
+
+
+## Copyright 2022 Vinai Kopp
+
+Distributed under the terms of the 3-Clause BSD Licence.
+See the [LICENSE](LICENSE) file for more details.

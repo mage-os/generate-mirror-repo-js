@@ -2,7 +2,6 @@ const path = require('path');
 const fs = require('fs');
 const git = require('isomorphic-git');
 const http = require('isomorphic-git/http/node');
-const {compare} = require("compare-versions");
 
 let cache = {};
 let report = console.log;
@@ -30,7 +29,12 @@ function collapseCommit(commit) {
 }
 
 async function cloneRepo(url, dir, ref) {
-  report(`Creating shallow clone of ${ref || 'all branches'} in "${dir.split('/').slice(-2).join('/')}" w/o working copy...`);
+  report(`Creating shallow clone of ${ref || 'all branches'} w/o working copy in "${dir.split('/').slice(-2).join('/')}"...`);
+  
+  if (! fs.existsSync(path.dirname(dir))) {
+    fs.mkdirSync(path.dirname(dir), {recursive: true})
+  }
+  
   const refConf = ref ? {ref, singleBranch: true} : {};
   await git.clone({fs, http, cache, url, dir, noCheckout: true, depth: 15, onProgress: progress(), ...refConf});
 }

@@ -4,7 +4,7 @@ const JSZip = require('jszip');
 const repo = require("./repository");
 const {lastTwoDirs, httpSlurp, compareTags} = require('./utils');
 
-let archiveBaseDir = 'build/archives';
+let archiveBaseDir = 'packages';
 
 const stableMtime = '2022-02-22 22:22:22';
 
@@ -157,10 +157,10 @@ module.exports = {
 
     let n = 0;
     for (const moduleDir of modules) {
-      report(`${++n}/${modules.length} Packaging ${(lastTwoDirs(moduleDir, '_'))}`);
+      report(`${++n}/${modules.length} Packaging ${(lastTwoDirs(moduleDir, '_'))} ${ref}`);
       try {
         await createPackageForTag(url, moduleDir, excludes, ref);
-        report(`${n}/${modules.length} Finished ${(lastTwoDirs(moduleDir, '_'))}`);
+        report(`${n}/${modules.length} Finished ${(lastTwoDirs(moduleDir, '_'))} ${ref}`);
         built.push(moduleDir);
       } catch (exception) {
         report(exception.message);

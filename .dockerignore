@@ -1,0 +1,11 @@
+# ignore everything
+**
+
+# unignored directories
+!/src/
+!/bin/
+!/node_modules/
+
+# unignored files
+!/satis.json
+!/LICENSE

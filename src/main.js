@@ -8,9 +8,7 @@ const {
   createMagentoCommunityEditionProject
 } = require('./package-modules');
 
-const archiveBaseDir = 'build/archives';
-
-setArchiveBaseDir(archiveBaseDir);
+setArchiveBaseDir(process.argv[2] || 'packages');
 
 async function listTagsFrom(url, from) {
   return (await repo.listTags(url)).filter(tag => compareTags(tag, from) >= 0);

@@ -1,4 +1,6 @@
 repositories
 archives
+packages
+output
 node_modules
 .idea
