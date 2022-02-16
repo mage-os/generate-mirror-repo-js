@@ -5,16 +5,29 @@ This is not intended to go into production, but rather it is for learning purpos
 
 ## Usage
 
-To generate the repository in a directory ./html, run the command.
+Mount the directory to contain the generated files into `/build`.
+Mounting a `packages` directory is optional. If present it will speed up the build a lot if the packages already where generated previously.
 
-Mounting the packages directory is optional but will speed up the build a lot if the packages already where generated previously.
+### docker
 
 ```bash
 docker run --rm --init -it --user $(id -u):$(id -g) \
   --volume $(pwd)/packages:/packages \
   --volume $(pwd)/html:/build \
   --volume "${COMPOSER_HOME:-$HOME/.composer}:/composer" \
-  magece/mirror-repo-js
+  magece/mirror-repo-js:latest
+```
+
+Mount a local directory to `/repo-generator/repositories` in order to persist the clooned github repos.
+Be aware that in existing git repositories currently will not be updated on subsequent runs.
+
+### podman
+
+```bash
+podman run --rm --init -it --volume $(pwd)/packages:/packages:z \
+  --volume /var/www/html:/build:z  \
+  --volume "${COMPOSER_HOME:-$HOME/.composer}:/composer:z" \
+  magece/mirror-repo-js:latest
 ```
 
 ## Building
