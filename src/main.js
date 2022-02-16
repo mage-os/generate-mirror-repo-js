@@ -8,7 +8,7 @@ const {
   createMagentoCommunityEditionProject
 } = require('./package-modules');
 
-const archiveBaseDir = 'archives';
+const archiveBaseDir = 'build/archives';
 
 setArchiveBaseDir(archiveBaseDir);
 
@@ -19,6 +19,7 @@ async function listTagsFrom(url, from) {
 async function createMetaPackagesSinceTag(url, from) {
   const tags = await listTagsFrom(url, from);
   for (const tag of tags) {
+    console.log(`Processing ${tag}`);
     await createMagentoCommunityEditionMetapackage(url, tag);
   }
   return tags;
@@ -27,6 +28,7 @@ async function createMetaPackagesSinceTag(url, from) {
 async function createProjectPackagesSinceTag(url, from) {
   const tags = await listTagsFrom(url, from);
   for (const tag of tags) {
+    console.log(`Processing ${tag}`);
     await createMagentoCommunityEditionProject(url, tag);
   }
   return tags;
@@ -34,70 +36,94 @@ async function createProjectPackagesSinceTag(url, from) {
 
 async function createPackagesSinceTag(url, from, modulesPath, excludes) {
   const tags = await listTagsFrom(url, from);
+  const built = [];
   for (const tag of tags) {
-    await createPackagesForTag(url, modulesPath, excludes, tag);
+    console.log(`Processing ${tag}`);
+    try {
+      await createPackagesForTag(url, modulesPath, excludes, tag);
+      built.push(tag)
+    } catch (exception) {
+      console.log(exception.message);
+    }
   }
-  return tags;
+  return built;
 }
 
 async function createPackageSinceTag(url, from, modulesPath, excludes, composerJsonUrl) {
   const tags = await listTagsFrom(url, from);
+  const built = [];
   for (const tag of tags) {
-    await createPackageForTag(url, modulesPath, excludes, tag, (composerJsonUrl || '').replace('{{version}}', tag));
+    console.log(`Processing ${tag}`);
+    try {
+      await createPackageForTag(url, modulesPath, excludes, tag, (composerJsonUrl || '').replace('{{version}}', tag));
+      built.push(tag);
+    } catch (exception) {
+      console.log(exception.message);
+    }
   }
-  return tags;
+  return built;
 }
 
 (async function () {
   let tags, exclude, composerJsonUrl;
 
+  console.log('Packaging Magento Core Modules');
   exclude = [];
   tags = await createPackagesSinceTag('https://github.com/mage-os/mirror-magento2.git', '2.4.0', 'app/code/Magento', exclude)
-  console.log('app/code/Magento modules', tags)
+  console.log('core module packages built', tags)
 
+  console.log('Packaging Magento Base Package');
   exclude = [".github/", "app/code/", "app/design/frontend/", "app/design/adminhtml/", "app/i18n/", "lib/internal/Magento/Framework/", "composer.lock"];
   composerJsonUrl = 'https://raw.githubusercontent.com/mage-os/magento2-base-composer-json/main/{{version}}/magento2-base/composer.json';
   tags = await createPackageSinceTag('https://github.com/mage-os/mirror-magento2.git', '2.4.0', '', exclude, composerJsonUrl)
-  console.log('magento/magento2-base', tags)
+  console.log('magento2-base packages built', tags)
 
+  console.log('Packaging Magento Framework');
   exclude = ['lib/internal/Magento/Framework/Amqp/', 'lib/internal/Magento/Framework/Bulk/', 'lib/internal/Magento/Framework/MessageQueue/'];
   tags = await createPackageSinceTag('https://github.com/mage-os/mirror-magento2.git', '2.4.0', 'lib/internal/Magento/Framework', exclude)
-  console.log('magento/framework', tags)
+  console.log('magento2 framework packages built', tags)
 
+  console.log('Packaging Magento Framework_Amqp');
   exclude = [];
   tags = await createPackageSinceTag('https://github.com/mage-os/mirror-magento2.git', '2.4.0', 'lib/internal/Magento/Framework/Amqp', exclude)
-  console.log('magento/framework-amqp', tags)
+  console.log('magento/framework-amqp packages built', tags)
 
+  console.log('Packaging Magento Framework_Bulk');
   exclude = [];
   tags = await createPackageSinceTag('https://github.com/mage-os/mirror-magento2.git', '2.4.0', 'lib/internal/Magento/Framework/Bulk', exclude)
-  console.log('magento/framework-bulk', tags);
+  console.log('magento/framework-bulk packages built', tags);
 
+  console.log('Packaging Magento Framework_MessageQueue');
   exclude = [];
   tags = await createPackageSinceTag('https://github.com/mage-os/mirror-magento2.git', '2.4.0', 'lib/internal/Magento/Framework/MessageQueue', exclude)
-  console.log('magento/framework-message-queue', tags)
+  console.log('magento/framework-message-queue packages built', tags)
 
+  console.log('Packaging Security Packages');
   exclude = ['.github/', '_metapackage/'];
   tags = await createPackagesSinceTag('https://github.com/mage-os/mirror-security-package.git', '1.0.0', '', exclude)
-  console.log('security packages', tags)
+  console.log('security packages packages built', tags)
 
+  console.log('Packaging Inventory Packages');
   exclude = ['.github/', '_metapackage/', 'dev/'];
   tags = await createPackagesSinceTag('https://github.com/mage-os/mirror-inventory.git', '1.1.5', '', exclude)
-  console.log('inventory packages', tags)
+  console.log('inventory packages packages built', tags)
 
+  console.log('Packaging Magento Composer Root Update Plugin');
   exclude = [];
   tags = await createPackageSinceTag('https://github.com/mage-os/mirror-composer-root-update-plugin.git', '1.0.0', 'src/Magento/ComposerRootUpdatePlugin', exclude)
-  console.log('mirror-composer-root-update-plugin', tags)
+  console.log('composer-root-update-plugin packages built', tags)
 
+  console.log('Packaging Magento Composer Dependency Version Audit Plugin');
   exclude = [];
   tags = await createPackageSinceTag('https://github.com/mage-os/composer-dependency-version-audit-plugin.git', '0.1.0', '', exclude)
-  console.log('composer-dependency-version-audit-plugin', tags)
+  console.log('composer-dependency-version-audit-plugin packages built', tags)
 
-  // create metapackage
+  console.log('Packaging Magento Community Edition Metapackage');
   tags = await createMetaPackagesSinceTag('https://github.com/mage-os/mirror-magento2.git', '2.4.0');
-  console.log('product-community-edition metapackage', tags);
+  console.log('product-community-edition metapackage packages built', tags);
 
-  // create project package
+  console.log('Packaging Magento Community Edition Project');
   tags = await createProjectPackagesSinceTag('https://github.com/mage-os/mirror-magento2.git', '2.4.0');
-  console.log('project-community-edition', tags);
+  console.log('project-community-edition packages built', tags);
 
 })()

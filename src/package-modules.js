@@ -4,19 +4,13 @@ const JSZip = require('jszip');
 const repo = require("./repository");
 const {lastTwoDirs, httpSlurp, compareTags} = require('./utils');
 
-const cliProgress = require('cli-progress');
-const multibar = new cliProgress.MultiBar({
-  clearOnComplete: false,
-  hideCursor: true,
-  emptyOnZero: true,
-  fps: 10,
-  format: '[{bar}] {label}',
-  forceRedraw: true,
-}, cliProgress.Presets.shades_classic);
-
-let archiveBaseDir = 'archives';
+let archiveBaseDir = 'build/archives';
 
 const stableMtime = '2022-02-22 22:22:22';
+
+function report() {
+  console.log(...arguments);
+}
 
 /**
  * Given 'a/b/c/foo.txt', return ['a', 'a/b', 'a/b/c']
@@ -84,8 +78,7 @@ async function createPackageForTag(url, moduleDir, excludes, ref, composerJsonUr
     : await readComposerJson(url, moduleDir, ref);
   const {version, name} = JSON.parse(json);
   if (!version || !name) {
-    console.error(`Unable find package name and/or version in composer.json for ${ref}, skipping ${magentoName}`);
-    return;
+    throw {message: `Unable find package name and/or version in composer.json for ${ref}, skipping ${magentoName}`}
   }
 
   // use fixed date for stable package checksum generation
@@ -147,9 +140,9 @@ module.exports = {
   },
   createPackageForTag,
   async createPackagesForTag(url, modulesPath, excludes, ref) {
-    const packagesProgressBar = multibar.create(100, 0, {label: `Listing Modules for ${ref}`});
-    repo.setReportFn((s) => setTimeout(() => packagesProgressBar.update(null, {label: s}), 100));
-
+    
+    const built = [];
+    
     const modules = (await repo.listFolders(url, modulesPath, ref))
       .filter(dir => dir !== '.')
       .filter(dir => {
@@ -159,19 +152,23 @@ module.exports = {
         return ! isExcluded;
       });
 
-    packagesProgressBar.setTotal(modules.length);
-    packagesProgressBar.update(null, {label: `${modules.length} modules`});
+    
+    report(`Found ${modules.length} modules`);
 
     let n = 0;
     for (const moduleDir of modules) {
-      packagesProgressBar.increment(0, {label: `${++n}/${modules.length} Preparing ${(lastTwoDirs(moduleDir, '_'))}`});
-      await createPackageForTag(url, moduleDir, excludes, ref);
-      packagesProgressBar.increment(1, {label: `${n}/${modules.length} Finished ${(lastTwoDirs(moduleDir, '_'))}`});
+      report(`${++n}/${modules.length} Packaging ${(lastTwoDirs(moduleDir, '_'))}`);
+      try {
+        await createPackageForTag(url, moduleDir, excludes, ref);
+        report(`${n}/${modules.length} Finished ${(lastTwoDirs(moduleDir, '_'))}`);
+        built.push(moduleDir);
+      } catch (exception) {
+        report(exception.message);
+      }
     }
-    setTimeout(() => {
-      multibar.remove(packagesProgressBar);
-      multibar.stop();
-    }, 100);
+    if (built.length === 0) {
+      throw {message: `No packages built for ${ref}`};
+    }
   },
   async createMagentoCommunityEditionMetapackage(url, ref) {
     const name = 'magento/product-community-edition';

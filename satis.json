@@ -1,0 +1,11 @@
+{
+  "name": "mage-os/magento-os-repository",
+  "homepage": "https://repo.mage-os.org",
+  "repositories": [
+    {
+      "type": "artifact",
+      "url": "build/archives"
+    }
+  ],
+  "require-all": true
+}
