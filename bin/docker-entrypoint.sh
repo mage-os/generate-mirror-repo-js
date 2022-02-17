@@ -3,7 +3,9 @@
 set -e
 
 # Build Packages in /build/archives
-node src/main.js /packages
+node src/main.js /packages /repositories
+
+echo Running satis...
 
 # Prep satis config
 [[ "${1:0:18}" == "--mirror-base-url=" ]] && {

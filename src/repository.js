@@ -6,7 +6,7 @@ const http = require('isomorphic-git/http/node');
 let cache = {};
 let report = console.log;
 
-const repoBaseDir = path.join(process.cwd(), 'repositories');
+let repoBaseDir = path.join(process.cwd(), 'repositories');
 
 function dirForRepoUrl(url) {
   // todo: add vendor namespace directory inside of repoBaseDir to path?
@@ -171,6 +171,12 @@ module.exports = {
   },
   setReportFn(fn) {
     report = fn;
+  },
+  clearCache() {
+    cache = {};
+  },
+  setStorageDir(dir) {
+    repoBaseDir = dir;
   },
   testing: {
     dirForRepoUrl,

@@ -2,9 +2,6 @@
   "name": "mage-os/magento-os-repository",
   "homepage": "https://repo.mage-os.org",
   "output-dir": "/build",
-  "archive": {
-    "directory": "archives"
-  },
   "repositories": [
     {
       "type": "artifact",
