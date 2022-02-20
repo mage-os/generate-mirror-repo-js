@@ -6,6 +6,7 @@ const {
   createPackageForTag,
   createMagentoCommunityEditionMetapackage,
   createMagentoCommunityEditionProject,
+  createMetaPackageFromRepoDir
 } = require('./package-modules');
 
 setArchiveBaseDir(process.argv[2] || 'packages');
@@ -31,6 +32,15 @@ async function createProjectPackagesSinceTag(url, from) {
   for (const tag of tags) {
     console.log(`Processing ${tag}`);
     await createMagentoCommunityEditionProject(url, tag);
+  }
+  return tags;
+}
+
+async function createMetaPackagesFromRepoDir(url, from, path) {
+  const tags = await listTagsFrom(url, from);
+  for (const tag of tags) {
+    console.log(`Processing ${tag}`);
+    await createMetaPackageFromRepoDir(url, path, tag);
   }
   return tags;
 }
@@ -108,6 +118,11 @@ async function createPackageSinceTag(url, from, modulesPath, excludes, composerJ
   console.log('Packaging Magento Community Edition Project');
   tags = await createProjectPackagesSinceTag(repoUrl, '2.4.0');
   console.log('project-community-edition packages built', tags);
+
+  console.log('Packaging Magento Language packages');
+  exclude = [];
+  tags = await createPackagesSinceTag(repoUrl, '2.4.0', 'app/i18n/Magento', exclude)
+  console.log('language packages built', tags)
   
   repo.clearCache();
 
@@ -116,8 +131,9 @@ async function createPackageSinceTag(url, from, modulesPath, excludes, composerJ
   tags = await createPackagesSinceTag('https://github.com/mage-os/mirror-security-package.git', '1.0.0', '', exclude)
   console.log('security packages packages built', tags)
 
-  // todo: create magento/security-metapackage
-  // https://github.com/mage-os/mirror-security-package/tree/develop/_metapackage
+  console.log('Packaging Security Metapackage');
+  tags = await createMetaPackagesFromRepoDir('https://github.com/mage-os/mirror-security-package.git', '1.0.0', '_metapackage')
+  console.log('security metapackages packages built', tags)
 
   repo.clearCache();
 
@@ -126,8 +142,9 @@ async function createPackageSinceTag(url, from, modulesPath, excludes, composerJ
   tags = await createPackagesSinceTag('https://github.com/mage-os/mirror-inventory.git', '1.1.5', '', exclude)
   console.log('inventory packages packages built', tags)
   
-  // todo: create magento/inventory-composer-metapackage
-  // https://github.com/mage-os/mirror-inventory/blob/1.1.7/_metapackage/composer.json
+  console.log('Packaging Inventory Metapackage');
+  tags = await createMetaPackagesFromRepoDir('https://github.com/mage-os/mirror-inventory.git', '1.1.5', '_metapackage')
+  console.log('inventory metapackages packages built', tags)
 
   repo.clearCache();
 

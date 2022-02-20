@@ -67,6 +67,17 @@ function archiveFilePath(name, version) {
   return path.join(prefix, archiveBaseDir, name + '-' + version + '.zip')
 }
 
+async function writePackage(packageFilepath, files) {
+  if (fs.existsSync(packageFilepath)) {
+    return;
+  }
+
+  ensureArchiveDirectoryExists(packageFilepath);
+  const zip = zipFileWith(files);
+  const stream = await zip.generateNodeStream({streamFiles: false, platform: 'UNIX'});
+  stream.pipe(fs.createWriteStream(packageFilepath));
+}
+
 async function createPackageForTag(url, moduleDir, excludes, ref, composerJsonUrl) {
 
   excludes = excludes || [];
@@ -104,10 +115,7 @@ async function createPackageForTag(url, moduleDir, excludes, ref, composerJsonUr
   files.push({filepath: 'composer.json', contentBuffer: Buffer.from(json, 'utf8'), mtime, isExecutable: false});
   files.sort((a, b) => ('' + a.filepath).localeCompare('' + b.filepath));
 
-  ensureArchiveDirectoryExists(packageFilepath);
-  const zip = zipFileWith(files);
-  const stream = await zip.generateNodeStream({streamFiles: false, platform: 'UNIX'});
-  stream.pipe(fs.createWriteStream(packageFilepath));
+  await writePackage(packageFilepath, files)
 }
 
 async function createComposerJsonOnlyPackage(url, ref, name, transform) {
@@ -118,21 +126,13 @@ async function createComposerJsonOnlyPackage(url, ref, name, transform) {
   const files = [{
     filepath: 'composer.json',
     mtime: new Date(stableMtime),
-    contentBuffer: Buffer.from(JSON.stringify(composerConfig), 'utf8'),
+    contentBuffer: Buffer.from(JSON.stringify(composerConfig, null, 2), 'utf8'),
     isExecutable: false,
   }];
 
   const packageFilepath = archiveFilePath(name, ref);
-  if (fs.existsSync(packageFilepath)) {
-    return;
-  }
-
-  ensureArchiveDirectoryExists(packageFilepath);
-  const zip = zipFileWith(files);
-  const stream = await zip.generateNodeStream({streamFiles: false, platform: 'UNIX'});
-  stream.pipe(fs.createWriteStream(packageFilepath));
+  await writePackage(packageFilepath, files)
 }
-
 
 module.exports = {
   setArchiveBaseDir(newArchiveBaseDir) {
@@ -208,5 +208,22 @@ module.exports = {
       }
       return composerConfig;
     });
+  },
+  async createMetaPackageFromRepoDir(url, dir, ref) {
+    const composerConfig = JSON.parse(await readComposerJson(url, dir, ref));
+    const {version, name} = composerConfig;
+    if (!version || !name) {
+      throw {message: `Unable find package name and/or version in composer.json for metapackage ${ref} in ${dir}`}
+    }
+    
+    const files = [{
+      filepath: 'composer.json',
+      mtime: new Date(stableMtime),
+      contentBuffer: Buffer.from(JSON.stringify(composerConfig, null, 2), 'utf8'),
+      isExecutable: false,
+    }];
+
+    const packageFilepath = archiveFilePath(name, ref);
+    await writePackage(packageFilepath, files)
   }
 }

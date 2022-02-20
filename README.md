@@ -37,10 +37,8 @@ docker build -t magece/mirror-repo-js .
 ```
 
 ## TODO
-* Generate magento/security-metapackage
-* Generate magento/inventory-composer-metapackage
 * Make command line parsing of --mirror-base-url more robust
-* improve performance of package generation, maybe by switching to https://www.nodegit.org/api/libgit_2/
+* Improve performance of package generation, maybe by switching to https://www.nodegit.org/api/libgit_2/
 
 
 ## Copyright 2022 Vinai Kopp
