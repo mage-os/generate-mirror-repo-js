@@ -12,7 +12,7 @@ if (satisOutputDir.substr(-1) !== '/') {
   satisOutputDir += '/';
 }
 
-let mirrorUrl = process.argv[3] || 'https://repo.mage-os.org/';
+let mirrorUrl = process.argv[3] || 'https://mirror.mage-os.org/';
 
 if (mirrorUrl.trim() === '') {
   console.log('No mirror base url specified');

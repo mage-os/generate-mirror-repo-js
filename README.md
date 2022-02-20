@@ -26,25 +26,25 @@ Example: `--volume "${$HOME}/repo-cache:/generate-repo/repositories"`
 
 ### docker
 
-For example, to generate the repository in `~/html`, run the following command, replacing `https://repo.mage-os.org` with the URL of your mirror:
+For example, to generate the repository in `~/html`, run the following command, replacing `https://mirror.mage-os.org` with the URL of your mirror:
 
 ```bash
 docker run --rm --init -it --user $(id -u):$(id -g) \
   --volume "$(pwd)/html:/build" \
   --volume "${COMPOSER_HOME:-$HOME/.composer}:/composer" \
-  magece/mirror-repo-js:latest --mirror-base-url=https://repo.mage-os.org
+  magece/mirror-repo-js:latest --mirror-base-url=https://mirror.mage-os.org
 ```
 
 ### podman
 
 If you prefer to execute the container with `podman`, you should not specify the `--user` argument, as the in-container root user will automatically map to the current system.
-To generate the repository in `~/html` using podman, run the following command, replacing `https://repo.mage-os.org` with the URL of your mirror:
+To generate the repository in `~/html` using podman, run the following command, replacing `https://mirror.mage-os.org` with the URL of your mirror:
 
 ```bash
 podman run --rm --init -it \
   --volume "$(pwd)/html:/build:z"  \
   --volume "${COMPOSER_HOME:-$HOME/.composer}:/composer:z" \
-  magece/mirror-repo-js:latest --mirror-base-url=https://repo.mage-os.org
+  magece/mirror-repo-js:latest --mirror-base-url=https://mirror.mage-os.org
 ```
 
 ## Building

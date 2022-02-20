@@ -196,7 +196,7 @@ module.exports = {
         name: name,
         description: 'eCommerce Platform for Growth (Community Edition)',
         extra: {'magento-force': 'override'},
-        repositories: [{type: 'composer', url: 'https://repo.mage-os.org/'}],
+        repositories: [{type: 'composer', url: 'https://mirror.mage-os.org/'}],
         'minimum-stability': 'stable',
         require: Object.assign(
           {
