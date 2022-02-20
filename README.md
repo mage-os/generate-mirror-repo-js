@@ -16,10 +16,13 @@ The composer package repository is generated using a docker image.
 Mount the directory to contain the generated files into `/build` while executing the container image.  
 This should be the DOCUMENT_ROOT of the host serving the mirror, for example `--volume /var/www/html:/build`.  
 
-Optional: a `~/.composer` directory can be mounted, too, which will allow satis to benefit from existing caches. This doesn't make a big difference though.
+Optional: a `~/.composer` directory can be mounted, too, which will allow satis to benefit from existing caches. This doesn't make a big difference though.  
+Example: `--volume "${COMPOSER_HOME:-$HOME/.composer}:/composer"`
 
-A local cache directory can be mounted at `/repo-generator/repositories` in order to persist the cloned github repos.  
-Be aware that in existing git repositories currently will not be updated on subsequent runs. This is mainly useful during development when executing the container image multiple times consecutively.
+A local cache directory can be mounted at `/repo-generator/repositories` in order to persist the cloned GitHub repos.  
+Be aware that in existing git repositories currently will not be updated on subsequent runs. This is mainly useful during development when executing the container image multiple times consecutively.  
+If you want to experiment with creating a mirror repo, I suggest you use this, since the current JS git implementation is quite slow cloning a repo as large as magento2 (even as a shallow clone).  
+Example: `--volume "${$HOME}/repo-cache:/repo-generator/repositories"`
 
 ### docker
 
@@ -27,10 +30,9 @@ For example, to generate the repository in `~/html`, run the following command, 
 
 ```bash
 docker run --rm --init -it --user $(id -u):$(id -g) \
-  --volume $(pwd)/html:/build \
+  --volume "$(pwd)/html:/build" \
   --volume "${COMPOSER_HOME:-$HOME/.composer}:/composer" \
-  magece/mirror-repo-js:latest \
-  --mirror-base-url=https://repo.mage-os.org
+  magece/mirror-repo-js:latest --mirror-base-url=https://repo.mage-os.org
 ```
 
 ### podman
@@ -40,10 +42,9 @@ To generate the repository in `~/html` using podman, run the following command, 
 
 ```bash
 podman run --rm --init -it \
-  --volume $(pwd)/html:/build:z  \
+  --volume "$(pwd)/html:/build:z"  \
   --volume "${COMPOSER_HOME:-$HOME/.composer}:/composer:z" \
-  magece/mirror-repo-js:latest \
-  --mirror-base-url=https://repo.mage-os.org
+  magece/mirror-repo-js:latest --mirror-base-url=https://repo.mage-os.org
 ```
 
 ## Building

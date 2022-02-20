@@ -3,7 +3,7 @@
 set -e
 
 # Build Packages in /build/packages
-node src/main.js /build/packages /repositories
+node src/main.js /build/packages /repo-generator/repositories
 
 echo Running satis...
 
