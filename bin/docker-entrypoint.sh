@@ -2,8 +2,8 @@
 
 set -e
 
-# Build Packages in /build/archives
-node src/main.js /packages /repositories
+# Build Packages in /build/packages
+node src/main.js /build/packages /repositories
 
 echo Running satis...
 
@@ -12,15 +12,13 @@ echo Running satis...
    MIRROR_BASE_URL="${1#*=}"
  }
 
-[[ -z "$MIRROR_BASE_URL" ]] && {
-  cp satis.json /tmp/build-satis.json  
-}
-
-[[ -n "$MIRROR_BASE_URL" ]] && {
-  node bin/set-satis-url-prefix.js satis.json "$MIRROR_BASE_URL" > /tmp/build-satis.json  
-}
-
 cd /satis
 
 # Build satis into /build
-/satis/bin/satis build /tmp/build-satis.json /build
+/satis/bin/satis build /repo-generator/satis.json /build
+
+echo Setting url prefix in generated output to $MIRROR_BASE_URL...
+
+[[ -n "$MIRROR_BASE_URL" ]] && {
+  node /repo-generator/bin/set-satis-url-prefix.js /build "$MIRROR_BASE_URL"  
+}

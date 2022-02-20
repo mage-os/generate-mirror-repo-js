@@ -160,7 +160,6 @@ module.exports = {
       report(`${++n}/${modules.length} Packaging ${(lastTwoDirs(moduleDir, '_'))} ${ref}`);
       try {
         await createPackageForTag(url, moduleDir, excludes, ref);
-        report(`${n}/${modules.length} Finished ${(lastTwoDirs(moduleDir, '_'))} ${ref}`);
         built.push(moduleDir);
       } catch (exception) {
         report(exception.message);

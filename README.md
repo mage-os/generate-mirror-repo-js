@@ -1,25 +1,24 @@
 # Mage-OS Mirror Repository Generator - JS Edition
 
-Experimental JavaScript implementation for comparison purposes.
+Experimental JavaScript implementation.  
 This is not intended to go into production, but rather it is for learning purposes.
 
 ## Usage
 
-Mount the directory to contain the generated files into `/build`.
-Mounting a `packages` directory is optional. If present it will speed up the build a lot if the packages already where generated previously.
+Mount the directory to contain the generated files into `/build` while executing the container image.
+
+A local cache directory can be mounted at `/repo-generator/repositories` in order to persist the cloned github repos.  
+Be aware that in existing git repositories currently will not be updated on subsequent runs. This is mainly useful during development when executing the container image multipe times conseqtively.
 
 ### docker
 
 ```bash
 docker run --rm --init -it --user $(id -u):$(id -g) \
-  --volume $(pwd)/packages:/packages \
   --volume $(pwd)/html:/build \
   --volume "${COMPOSER_HOME:-$HOME/.composer}:/composer" \
-  magece/mirror-repo-js:latest
+  magece/mirror-repo-js:latest \
+  --mirror-base-url=https://repo.mage-os.org
 ```
-
-Mount a local directory to `/repo-generator/repositories` in order to persist the clooned github repos.
-Be aware that in existing git repositories currently will not be updated on subsequent runs.
 
 ### podman
 
@@ -27,7 +26,8 @@ Be aware that in existing git repositories currently will not be updated on subs
 podman run --rm --init -it --volume $(pwd)/packages:/packages:z \
   --volume /var/www/html:/build:z  \
   --volume "${COMPOSER_HOME:-$HOME/.composer}:/composer:z" \
-  magece/mirror-repo-js:latest
+  magece/mirror-repo-js:latest \
+  --mirror-base-url=https://repo.mage-os.org
 ```
 
 ## Building
@@ -37,12 +37,10 @@ docker build -t magece/mirror-repo-js .
 ```
 
 ## TODO
-
-* Avoid satis recreating the already generated archives
-  Maybe this requires writing the composer repository JSON data directly without JSON, or maybe it requires
-  running a patched version of satis that doesn't try to download, install and dump an archive if it already exists.
-  Maybe a smaller satis patch would be to allow the specifying a prefix-url without a `archive` section in the satis.json,
-  because it seems like if that is absent, it simply scans the archives it finds in `repositories`.
+* Generate magento/security-metapackage
+* Generate magento/inventory-composer-metapackage
+* Make command line parsing of --mirror-base-url more robust
+* improve performance of package generation, maybe by switching to https://www.nodegit.org/api/libgit_2/
 
 
 ## Copyright 2022 Vinai Kopp

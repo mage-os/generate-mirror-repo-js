@@ -5,7 +5,7 @@
   "repositories": [
     {
       "type": "artifact",
-      "url": "/packages"
+      "url": "/build/packages"
     }
   ],
   "require-all": true
