@@ -60,13 +60,13 @@ async function createPackagesSinceTag(url, from, modulesPath, excludes) {
   return built;
 }
 
-async function createPackageSinceTag(url, from, modulesPath, excludes, composerJsonUrl) {
+async function createPackageSinceTag(url, from, modulesPath, excludes, composerJsonUrl, mergeConfig) {
   const tags = await listTagsFrom(url, from);
   const built = [];
   for (const tag of tags) {
     console.log(`Processing ${tag}`);
     try {
-      await createPackageForTag(url, modulesPath, excludes, tag, (composerJsonUrl || '').replace('{{version}}', tag));
+      await createPackageForTag(url, modulesPath, excludes, tag, (composerJsonUrl || '').replace('{{version}}', tag), mergeConfig);
       built.push(tag);
     } catch (exception) {
       console.log(exception.message);
@@ -76,10 +76,10 @@ async function createPackageSinceTag(url, from, modulesPath, excludes, composerJ
 }
 
 (async function () {
-  let tags, exclude, composerJsonUrl;
+  let tags, exclude, composerJsonUrl, mergeJsonConfig;
 
   let repoUrl = 'https://github.com/mage-os/mirror-magento2.git';
-  
+
   console.log('Packaging Magento Core Modules');
   exclude = [];
   tags = await createPackagesSinceTag(repoUrl, '2.4.0', 'app/code/Magento', exclude)
@@ -88,7 +88,8 @@ async function createPackageSinceTag(url, from, modulesPath, excludes, composerJ
   console.log('Packaging Magento Base Package');
   exclude = [".github/", "app/code/", "app/design/frontend/", "app/design/adminhtml/", "app/i18n/", "lib/internal/Magento/Framework/", "composer.lock"];
   composerJsonUrl = 'https://raw.githubusercontent.com/mage-os/magento2-base-composer-json/main/{{version}}/magento2-base/composer.json';
-  tags = await createPackageSinceTag(repoUrl, '2.4.0', '', exclude, composerJsonUrl)
+  mergeJsonConfig = {extra: {map: [['app/etc/vendor_path.php', 'app/etc/vendor_path.php']]}}
+  tags = await createPackageSinceTag(repoUrl, '2.4.0', '', exclude, composerJsonUrl, mergeJsonConfig)
   console.log('magento2-base packages', tags)
 
   console.log('Packaging Magento Framework');
@@ -138,7 +139,7 @@ async function createPackageSinceTag(url, from, modulesPath, excludes, composerJ
   exclude = [];
   tags = await createPackagesSinceTag(repoUrl, '2.4.0', 'app/i18n/Magento', exclude)
   console.log('language packages', tags)
-  
+
   repo.clearCache();
 
   console.log('Packaging Security Packages');
@@ -156,7 +157,7 @@ async function createPackageSinceTag(url, from, modulesPath, excludes, composerJ
   exclude = ['.github/', '_metapackage/', 'dev/'];
   tags = await createPackagesSinceTag('https://github.com/mage-os/mirror-inventory.git', '1.1.5', '', exclude)
   console.log('inventory packages packages', tags)
-  
+
   console.log('Packaging Inventory Metapackage');
   tags = await createMetaPackagesFromRepoDir('https://github.com/mage-os/mirror-inventory.git', '1.1.5', '_metapackage')
   console.log('inventory metapackages packages', tags)
@@ -176,10 +177,10 @@ async function createPackageSinceTag(url, from, modulesPath, excludes, composerJ
   console.log('composer-dependency-version-audit-plugin packages', tags);
 
   repo.clearCache();
-  
+
   console.log('Packaging Community Edition Sample Data');
   exclude = [];
   tags = await createPackagesSinceTag('https://github.com/mage-os/mirror-magento2-sample-data.git', '2.4.0', 'app/code/Magento', exclude)
   console.log('magento2-sample-data packages', tags)
-  
+
 })()

@@ -2,7 +2,7 @@ const fs = require('fs');
 const path = require('path');
 const JSZip = require('jszip');
 const repo = require("./repository");
-const {lastTwoDirs, httpSlurp, compareTags} = require('./utils');
+const {lastTwoDirs, httpSlurp, compareTags, deepMerge} = require('./utils');
 
 let archiveBaseDir = 'packages';
 
@@ -78,19 +78,23 @@ async function writePackage(packageFilepath, files) {
   stream.pipe(fs.createWriteStream(packageFilepath));
 }
 
-async function createPackageForTag(url, moduleDir, excludes, ref, composerJsonUrl) {
+async function createPackageForTag(url, moduleDir, excludes, ref, composerJsonUrl, mergeConfig) {
 
   excludes = excludes || [];
   excludes.push('composer.json');
   let magentoName = lastTwoDirs(moduleDir) || '';
   
-  const json = composerJsonUrl
+  const composerJson = composerJsonUrl
     ? await httpSlurp(composerJsonUrl)
     : await readComposerJson(url, moduleDir, ref);
-  const {version, name} = JSON.parse(json);
+  const {version, name} = JSON.parse(composerJson);
   if (!version || !name) {
     throw {message: `Unable find package name and/or version in composer.json for ${ref}, skipping ${magentoName}`}
   }
+  
+  const json = mergeConfig
+    ? JSON.stringify(deepMerge(JSON.parse(composerJson), mergeConfig), null, 2)
+    : composerJson;
 
   // use fixed date for stable package checksum generation
   const mtime = new Date(stableMtime);
