@@ -10,10 +10,10 @@ COPY --from=node /usr/local/bin /usr/local/bin
 
 ENV NODE_ENV=production
 
-WORKDIR /repo-generator
+WORKDIR /generate-repo
 
-COPY . /repo-generator
+COPY . /generate-repo
 
-RUN mkdir /repo-generator/repositories && chmod 0777 /repo-generator/repositories && chmod -R 0777 /satis/vendor/composer
+RUN mkdir /generate-repo/repositories && chmod 0777 /generate-repo/repositories && chmod -R 0777 /satis/vendor/composer
 
-ENTRYPOINT ["/repo-generator/bin/docker-entrypoint.sh"]
+ENTRYPOINT ["/generate-repo/bin/docker-entrypoint.sh"]

@@ -19,10 +19,10 @@ This should be the DOCUMENT_ROOT of the host serving the mirror, for example `--
 Optional: a `~/.composer` directory can be mounted, too, which will allow satis to benefit from existing caches. This doesn't make a big difference though.  
 Example: `--volume "${COMPOSER_HOME:-$HOME/.composer}:/composer"`
 
-A local cache directory can be mounted at `/repo-generator/repositories` in order to persist the cloned GitHub repos.  
+A local cache directory can be mounted at `/generate-repo/repositories` in order to persist the cloned GitHub repos.  
 Be aware that in existing git repositories currently will not be updated on subsequent runs. This is mainly useful during development when executing the container image multiple times consecutively.  
 If you want to experiment with creating a mirror repo, I suggest you use this, since the current JS git implementation is quite slow cloning a repo as large as magento2 (even as a shallow clone).  
-Example: `--volume "${$HOME}/repo-cache:/repo-generator/repositories"`
+Example: `--volume "${$HOME}/repo-cache:/generate-repo/repositories"`
 
 ### docker
 
