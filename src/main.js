@@ -111,6 +111,21 @@ async function createPackageSinceTag(url, from, modulesPath, excludes, composerJ
   tags = await createPackageSinceTag(repoUrl, '2.4.0', 'lib/internal/Magento/Framework/MessageQueue', exclude)
   console.log('magento/framework-message-queue packages built', tags)
 
+  console.log('Packaging Magento Admin Theme');
+  exclude = [];
+  tags = await createPackageSinceTag(repoUrl, '2.4.0', 'app/design/adminhtml/Magento/backend', exclude)
+  console.log('magento/theme-adminhtml-backend packages built', tags)
+
+  console.log('Packaging Magento Blank Theme');
+  exclude = [];
+  tags = await createPackageSinceTag(repoUrl, '2.4.0', 'app/design/frontend/Magento/blank', exclude)
+  console.log('magento/theme-frontend-blank packages built', tags)
+
+  console.log('Packaging Magento Luma Theme');
+  exclude = [];
+  tags = await createPackageSinceTag(repoUrl, '2.4.0', 'app/design/frontend/Magento/luma', exclude)
+  console.log('magento/theme-frontend-luma packages built', tags)
+
   console.log('Packaging Magento Community Edition Metapackage');
   tags = await createMetaPackagesSinceTag(repoUrl, '2.4.0');
   console.log('product-community-edition metapackage packages built', tags);
