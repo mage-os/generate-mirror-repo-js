@@ -6,7 +6,7 @@ const {lastTwoDirs, httpSlurp, compareTags} = require('./utils');
 
 let archiveBaseDir = 'packages';
 
-const stableMtime = '2022-02-22 22:22:22';
+const stableMtime = '2022-02-22 22:02:22';
 
 function report() {
   console.log(...arguments);
