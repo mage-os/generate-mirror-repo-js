@@ -86,7 +86,7 @@ async function createPackageSinceTag(url, from, modulesPath, excludes, composerJ
   console.log('core module packages', tags)
 
   console.log('Packaging Magento Base Package');
-  exclude = [".github/", "app/code/", "app/design/frontend/", "app/design/adminhtml/", "app/i18n/", "lib/internal/Magento/Framework/", "composer.lock"];
+  exclude = [".github/", "app/code/", "app/design/frontend/", "app/design/adminhtml/", "app/i18n/", "lib/internal/Magento/Framework/", "composer.lock", "app/etc/vendor_path.php"];
   composerJsonUrl = 'https://raw.githubusercontent.com/mage-os/magento2-base-composer-json/main/{{version}}/magento2-base/composer.json';
   //mergeJsonConfig = {extra: {map: [['app/etc/vendor_path.php', 'app/etc/vendor_path.php']]}}
   tags = await createPackageSinceTag(repoUrl, '2.4.0', '', exclude, composerJsonUrl, mergeJsonConfig)
