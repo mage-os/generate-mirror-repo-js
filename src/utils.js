@@ -2,34 +2,6 @@ const compareVersions = require("compare-versions");
 const http = require('https');
 const {URL} = require('url');
 
-function isObject(item) {
-  return (item && typeof item === 'object' && !Array.isArray(item));
-}
-
-function deepMerge(target, ...sources) {
-  if (!sources.length) return target;
-  const source = sources.shift();
-
-  if (isObject(target) && isObject(source)) {
-    for (const key in source) {
-      if (isObject(source[key])) {
-        if (!target[key]) Object.assign(target, { [key]: {} });
-        deepMerge(target[key], source[key]);
-      } else if (Array.isArray(source[key]) && target[key] && Array.isArray(target[key])) {
-        for (const item of source[key]) {
-          if (! target[key].includes(item)) {
-            target[key].push(item);
-          }
-        }
-      } else {
-        Object.assign(target, { [key]: source[key] });
-      }
-    }
-  }
-
-  return deepMerge(target, ...sources);
-}
-
 module.exports = {
   /**
    * Given 'app/code/Magento/Catalog', return 'Magento/Catalog'
@@ -74,6 +46,5 @@ module.exports = {
       request.on('error', err => reject(e.message));
       request.end();
     });
-  },
-  deepMerge
+  }
 }

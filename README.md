@@ -24,6 +24,8 @@ Be aware that in existing git repositories currently will not be updated on subs
 If you want to experiment with creating a mirror repo, I suggest you use this, since the current JS git implementation is quite slow cloning a repo as large as magento2 (even as a shallow clone).  
 Example: `--volume "${$HOME}/repo-cache:/generate-repo/repositories"`
 
+If a package for a given version already exist, it won't be overwritten. Regenerating specific packages means deleting the packages in question and then re-executing the container. 
+
 ### docker
 
 For example, to generate the repository in `~/html`, run the following command, replacing `https://mirror.mage-os.org` with the URL of your mirror:

@@ -2,7 +2,7 @@ const fs = require('fs');
 const path = require('path');
 const JSZip = require('jszip');
 const repo = require("./repository");
-const {lastTwoDirs, httpSlurp, compareTags, deepMerge} = require('./utils');
+const {lastTwoDirs, httpSlurp, compareTags} = require('./utils');
 
 let archiveBaseDir = 'packages';
 
@@ -27,8 +27,9 @@ function addFileToZip(zip, {filepath, mtime, contentBuffer, isExecutable}) {
   for (const folder of allParentDirs(filepath)) {
     zip.file(folder, '', {dir: true, date: mtime, unixPermissions: '775'});
   }
-  zip.file(filepath, contentBuffer, {date: mtime, unixPermissions: isExecutable ? '755' : '644'}
-  )
+  contentBuffer
+    ? zip.file(filepath, contentBuffer, {date: mtime, unixPermissions: isExecutable ? '755' : '644'})
+    : zip.file(filepath, '', {dir: true, date: mtime, unixPermissions: '755'}); // contentBuffer is false -> add as dir 
 }
 
 function zipFileWith(files) {
@@ -78,7 +79,7 @@ async function writePackage(packageFilepath, files) {
   stream.pipe(fs.createWriteStream(packageFilepath));
 }
 
-async function createPackageForTag(url, moduleDir, excludes, ref, composerJsonUrl, mergeConfig) {
+async function createPackageForTag(url, moduleDir, excludes, ref, composerJsonUrl, emptyDirsToAdd) {
 
   excludes = excludes || [];
   excludes.push('composer.json');
@@ -92,10 +93,7 @@ async function createPackageForTag(url, moduleDir, excludes, ref, composerJsonUr
     throw {message: `Unable find package name and/or version in composer.json for ${ref}, skipping ${magentoName}`}
   }
   
-  const json = mergeConfig
-    ? JSON.stringify(deepMerge(JSON.parse(composerJson), mergeConfig), null, 2)
-    : composerJson;
-
+  
   // use fixed date for stable package checksum generation
   const mtime = new Date(stableMtime);
   
@@ -116,7 +114,10 @@ async function createPackageForTag(url, moduleDir, excludes, ref, composerJsonUr
       file.filepath = file.filepath.substr(moduleDir ? moduleDir.length + 1 : '');
       return file;
     });
-  files.push({filepath: 'composer.json', contentBuffer: Buffer.from(json, 'utf8'), mtime, isExecutable: false});
+  files.push({filepath: 'composer.json', contentBuffer: Buffer.from(composerJson, 'utf8'), mtime, isExecutable: false});
+  for (const d of (emptyDirsToAdd || [])) {
+    files.push({filepath: d, contentBuffer: false, mtime, isExecutable: false});
+  }
   files.sort((a, b) => ('' + a.filepath).localeCompare('' + b.filepath));
 
   await writePackage(packageFilepath, files)

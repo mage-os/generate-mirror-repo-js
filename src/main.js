@@ -60,13 +60,13 @@ async function createPackagesSinceTag(url, from, modulesPath, excludes) {
   return built;
 }
 
-async function createPackageSinceTag(url, from, modulesPath, excludes, composerJsonUrl, mergeConfig) {
+async function createPackageSinceTag(url, from, modulesPath, excludes, composerJsonUrl, emptyDirsToAdd) {
   const tags = await listTagsFrom(url, from);
   const built = [];
   for (const tag of tags) {
     console.log(`Processing ${tag}`);
     try {
-      await createPackageForTag(url, modulesPath, excludes, tag, (composerJsonUrl || '').replace('{{version}}', tag), mergeConfig);
+      await createPackageForTag(url, modulesPath, excludes, tag, (composerJsonUrl || '').replace('{{version}}', tag), emptyDirsToAdd);
       built.push(tag);
     } catch (exception) {
       console.log(exception.message);
@@ -76,7 +76,7 @@ async function createPackageSinceTag(url, from, modulesPath, excludes, composerJ
 }
 
 (async function () {
-  let tags, exclude, composerJsonUrl, mergeJsonConfig;
+  let tags, exclude, composerJsonUrl, emptyDirsToAdd;
 
   let repoUrl = 'https://github.com/mage-os/mirror-magento2.git';
 
@@ -88,8 +88,9 @@ async function createPackageSinceTag(url, from, modulesPath, excludes, composerJ
   console.log('Packaging Magento Base Package');
   exclude = [".github/", "app/code/", "app/design/frontend/", "app/design/adminhtml/", "app/i18n/", "lib/internal/Magento/Framework/", "composer.lock", "app/etc/vendor_path.php"];
   composerJsonUrl = 'https://raw.githubusercontent.com/mage-os/magento2-base-composer-json/main/{{version}}/magento2-base/composer.json';
-  //mergeJsonConfig = {extra: {map: [['app/etc/vendor_path.php', 'app/etc/vendor_path.php']]}}
-  tags = await createPackageSinceTag(repoUrl, '2.4.0', '', exclude, composerJsonUrl, mergeJsonConfig)
+  // The directories are required for the magento-composer-installer to properly function, otherwise it doesn't complete processing and app/etc is missing.
+  emptyDirsToAdd = ['app/design/frontend/Magento', 'app/design/adminhtml/Magento', 'app/code/Magento', 'app/i18n/Magento', 'lib/internal/Magento'];
+  tags = await createPackageSinceTag(repoUrl, '2.4.0', '', exclude, composerJsonUrl, emptyDirsToAdd)
   console.log('magento2-base packages', tags)
 
   console.log('Packaging Magento Framework');
