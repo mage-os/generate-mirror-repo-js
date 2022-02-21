@@ -179,9 +179,15 @@ async function createPackageSinceTag(url, from, modulesPath, excludes, composerJ
 
   repo.clearCache();
 
+  // magento/sample-data-media
   console.log('Packaging Community Edition Sample Data');
   exclude = [];
   tags = await createPackagesSinceTag('https://github.com/mage-os/mirror-magento2-sample-data.git', '2.4.0', 'app/code/Magento', exclude)
-  console.log('magento2-sample-data packages', tags)
+  console.log('magento/sample-data module packages', tags)
+
+  console.log('Packaging Community Edition Sample Data Media');
+  exclude = [];
+  tags = await createPackageSinceTag('https://github.com/mage-os/mirror-magento2-sample-data.git', '2.4.0', 'pub/media', exclude)
+  console.log('magento/sample-data-media packages', tags)
 
 })()
