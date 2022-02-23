@@ -56,8 +56,8 @@ docker build -t magece/mirror-repo-js .
 ```
 
 ## TODO
-* Make command line parsing of --mirror-base-url more robust
 * Improve performance of package generation, maybe by switching to https://www.nodegit.org/api/libgit_2/
+* Make command line parsing of --mirror-base-url more robust
 
 
 ## Copyright 2022 Vinai Kopp
