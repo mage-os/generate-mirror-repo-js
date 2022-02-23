@@ -186,7 +186,8 @@ module.exports = {
         name: name,
         description: 'eCommerce Platform for Growth (Community Edition)',
         type: 'metapackage',
-        require: Object.assign({'magento/magento2-base': ref}, taggedComposerConfig.require, taggedComposerConfig.replace)
+        require: Object.assign({'magento/magento2-base': ref}, taggedComposerConfig.require, taggedComposerConfig.replace),
+        version: ref
       });
 
       for (const k of ['autoload', 'autoload-dev', 'config', 'conflict', 'extra', 'minimum-stability', 'replace', 'require-dev', 'suggest']) {
@@ -202,6 +203,7 @@ module.exports = {
         name: name,
         description: 'eCommerce Platform for Growth (Community Edition)',
         extra: {'magento-force': 'override'},
+        version: ref,
         repositories: [{type: 'composer', url: 'https://mirror.mage-os.org/'}],
         'minimum-stability': 'stable',
         require: Object.assign(
