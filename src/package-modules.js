@@ -88,6 +88,11 @@ async function createPackageForTag(url, moduleDir, excludes, ref, composerJsonUr
   const composerJson = composerJsonUrl
     ? await httpSlurp(composerJsonUrl)
     : await readComposerJson(url, moduleDir, ref);
+
+  if (composerJson.trim() === '404: Not Found') {
+    throw {message: `Unable to find composer.json for ${ref}, skipping ${magentoName}`}
+  }
+
   const {version, name} = JSON.parse(composerJson);
   if (!version || !name) {
     throw {message: `Unable find package name and/or version in composer.json for ${ref}, skipping ${magentoName}`}
