@@ -170,6 +170,17 @@ async function createPackageSinceTag(url, from, modulesPath, excludes, composerJ
 
   repo.clearCache();
 
+  console.log('Packaging PageBuilder Packages');
+  exclude = ['metapackage/'];
+  tags = await createPackagesSinceTag('https://github.com/mage-os/mirror-magento2-page-builder.git', '1.7.0', 'app/code/Magento', exclude)
+  console.log('page-builder packages', tags)
+
+  console.log('Packaging PageBuilder Metapackage');
+  tags = await createMetaPackagesFromRepoDir('https://github.com/mage-os/mirror-magento2-page-builder.git', '1.7.0', 'app/code/Magento/_metapackage')
+  console.log('page-builder metapackage packages', tags)
+
+  repo.clearCache();
+
   console.log('Packaging Magento Composer Root Update Plugin');
   exclude = [];
   tags = await createPackageSinceTag('https://github.com/mage-os/mirror-composer-root-update-plugin.git', '1.0.0', 'src/Magento/ComposerRootUpdatePlugin', exclude)
