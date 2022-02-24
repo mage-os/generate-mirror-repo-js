@@ -81,6 +81,7 @@ async function createPackageSinceTag(url, from, modulesPath, excludes, composerJ
 }
 
 (async function () {
+  
   let tags, exclude, composerJsonUrl, emptyDirsToAdd;
 
   let repoUrl = 'https://github.com/mage-os/mirror-magento2.git';

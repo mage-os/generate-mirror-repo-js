@@ -146,6 +146,30 @@ async function createComposerJsonOnlyPackage(url, ref, name, transform) {
   await writePackage(packageFilepath, files)
 }
 
+async function getLatestTag(url) {
+  // filter out tags beginning with v because magento/composer-dependency-version-audit-plugin has a wrong v1.0 tag
+  const tags = (await repo.listTags(url)).filter(tag => tag.substr(0, 1) !== 'v').sort(compareTags);
+  return tags[tags.length -1];
+}
+
+async function getLatestDependencies(dir) {
+  if (! fs.existsSync(`${dir}/dependencies-template.json`)) {
+    return {};
+  }
+  const template = JSON.parse(fs.readFileSync(`${dir}/dependencies-template.json`));
+  return Object.entries(template.dependencies).reduce(async (deps, [dependency, url]) => {
+    const tag = url.substr(0, 4) === 'http' ? await getLatestTag(url) : url;
+    return Object.assign(await deps, {[dependency]: tag});
+  }, Promise.resolve({}));
+}
+
+async function getAdditionalDependencies(packageName, ref) {
+  const dir = `${__dirname}/history/${packageName}`;
+  return fs.existsSync(`${dir}/${ref}.json`)
+    ? JSON.parse(fs.readFileSync(`${dir}/${ref}.json`))
+    : await getLatestDependencies(dir);
+}
+
 module.exports = {
   setArchiveBaseDir(newArchiveBaseDir) {
     archiveBaseDir = newArchiveBaseDir;
@@ -187,11 +211,14 @@ module.exports = {
   async createMagentoCommunityEditionMetapackage(url, ref) {
     const name = 'magento/product-community-edition';
     await createComposerJsonOnlyPackage(url, ref, name, taggedComposerConfig => {
+      
+      const additionalDependencies = getAdditionalDependencies(name, ref);
+      
       const composerConfig = Object.assign(taggedComposerConfig, {
         name: name,
         description: 'eCommerce Platform for Growth (Community Edition)',
         type: 'metapackage',
-        require: Object.assign({'magento/magento2-base': ref}, taggedComposerConfig.require, taggedComposerConfig.replace),
+        require: Object.assign({'magento/magento2-base': ref}, taggedComposerConfig.require, taggedComposerConfig.replace, additionalDependencies),
         version: ref
       });
 
@@ -204,6 +231,9 @@ module.exports = {
   async createMagentoCommunityEditionProject(url, ref) {
     const name = 'magento/project-community-edition';
     await createComposerJsonOnlyPackage(url, ref, name, taggedComposerConfig => {
+
+      const additionalDependencies = getAdditionalDependencies(name, ref);
+      
       const composerConfig = Object.assign(taggedComposerConfig, {
         name: name,
         description: 'eCommerce Platform for Growth (Community Edition)',
@@ -211,13 +241,7 @@ module.exports = {
         version: ref,
         repositories: [{type: 'composer', url: mageosPackageRepoUrl}],
         'minimum-stability': 'stable',
-        require: Object.assign(
-          {
-            'magento/product-community-edition': ref,
-            'magento/composer-root-update-plugin': '~1.1',
-          },
-          compareTags('2.4.3', ref) === -1 ? {} : {'magento/composer-dependency-version-audit-plugin': '~0.1'}
-        )
+        require: Object.assign({'magento/product-community-edition': ref}, additionalDependencies)
       });
 
       for (const k of ['replace', 'suggest']) {
