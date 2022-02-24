@@ -6,6 +6,8 @@ const {lastTwoDirs, httpSlurp, compareTags} = require('./utils');
 
 let archiveBaseDir = 'packages';
 
+let mageosPackageRepoUrl = 'https://mirror.mage-os.org/';
+
 const stableMtime = '2022-02-22 22:02:22';
 
 function report() {
@@ -148,6 +150,9 @@ module.exports = {
   setArchiveBaseDir(newArchiveBaseDir) {
     archiveBaseDir = newArchiveBaseDir;
   },
+  setMageosPackageRepoUrl(newMirrorUrl) {
+    mageosPackageRepoUrl = newMirrorUrl;
+  },
   createPackageForTag,
   async createPackagesForTag(url, modulesPath, excludes, ref) {
     
@@ -204,7 +209,7 @@ module.exports = {
         description: 'eCommerce Platform for Growth (Community Edition)',
         extra: {'magento-force': 'override'},
         version: ref,
-        repositories: [{type: 'composer', url: 'https://mirror.mage-os.org/'}],
+        repositories: [{type: 'composer', url: mageosPackageRepoUrl}],
         'minimum-stability': 'stable',
         require: Object.assign(
           {

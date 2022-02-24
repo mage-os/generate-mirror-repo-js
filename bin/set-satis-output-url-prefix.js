@@ -1,7 +1,7 @@
 /**
  * Run with
  *
- * node bin/set-satis-url-prefix satis.json http://repo.mirror.host
+ * node bin/set-satis-output-url-prefix satis.json http://repo.mirror.host
  */
 
 const fs = require('fs');
@@ -12,7 +12,7 @@ if (satisOutputDir.substr(-1) !== '/') {
   satisOutputDir += '/';
 }
 
-let mirrorUrl = process.argv[3] || 'https://mirror.mage-os.org/';
+let mirrorUrl = process.argv[3] || '';
 
 if (mirrorUrl.trim() === '') {
   console.log('No mirror base url specified');

@@ -2,6 +2,7 @@ const repo = require('./repository');
 const {compareTags} = require('./utils');
 const {
   setArchiveBaseDir,
+  setMageosPackageRepoUrl,
   createPackagesForTag,
   createPackageForTag,
   createMagentoCommunityEditionMetapackage,
@@ -12,6 +13,10 @@ const {
 setArchiveBaseDir(process.argv[2] || 'packages');
 if (process.argv[3]) {
   repo.setStorageDir(process.argv[3]);
+}
+
+if (process.argv[4]) {
+  setMageosPackageRepoUrl(process.argv[4]);
 }
 
 async function listTagsFrom(url, from) {
