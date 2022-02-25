@@ -26,6 +26,7 @@ async function listTagsFrom(url, from) {
 
 async function createMagentoCommunityEditionMetapackagesSinceTag(url, from) {
   const tags = await listTagsFrom(url, from);
+  console.log(`Versions to process: ${tags.join(', ')}`);
   for (const tag of tags) {
     console.log(`Processing ${tag}`);
     await createMagentoCommunityEditionMetapackage(url, tag);
@@ -35,6 +36,7 @@ async function createMagentoCommunityEditionMetapackagesSinceTag(url, from) {
 
 async function createProjectPackagesSinceTag(url, from) {
   const tags = await listTagsFrom(url, from);
+  console.log(`Versions to process: ${tags.join(', ')}`);
   for (const tag of tags) {
     console.log(`Processing ${tag}`);
     await createMagentoCommunityEditionProject(url, tag);
@@ -44,6 +46,7 @@ async function createProjectPackagesSinceTag(url, from) {
 
 async function createMetaPackagesFromRepoDir(url, from, path) {
   const tags = await listTagsFrom(url, from);
+  console.log(`Versions to process: ${tags.join(', ')}`);
   const built = [];
   for (const tag of tags) {
     console.log(`Processing ${tag}`);
@@ -59,6 +62,7 @@ async function createMetaPackagesFromRepoDir(url, from, path) {
 
 async function createPackagesSinceTag(url, from, modulesPath, excludes) {
   const tags = await listTagsFrom(url, from);
+  console.log(`Versions to process: ${tags.join(', ')}`);
   const built = [];
   for (const tag of tags) {
     console.log(`Processing ${tag}`);
@@ -74,6 +78,7 @@ async function createPackagesSinceTag(url, from, modulesPath, excludes) {
 
 async function createPackageSinceTag(url, from, modulesPath, excludes, composerJsonPath, emptyDirsToAdd) {
   const tags = await listTagsFrom(url, from);
+  console.log(`Versions to process: ${tags.join(', ')}`);
   const built = [];
   for (const tag of tags) {
     console.log(`Processing ${tag}`);
@@ -186,7 +191,7 @@ async function createPackageSinceTag(url, from, modulesPath, excludes, composerJ
   repo.clearCache();
 
   console.log('Packaging PageBuilder Packages');
-  exclude = ['metapackage/'];
+  exclude = ['app/code/Magento/_metapackage/'];
   tags = await createPackagesSinceTag('https://github.com/mage-os/mirror-magento2-page-builder.git', '1.7.0', 'app/code/Magento', exclude)
   console.log('page-builder packages', tags)
 

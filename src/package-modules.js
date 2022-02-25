@@ -109,7 +109,7 @@ async function createPackageForTag(url, moduleDir, excludes, ref, composerJsonPa
     throw {message: `Unable find package name in composer.json for ${ref}, skipping ${magentoName}`}
   }
   
-  // use fixed date for stable package checksum generation
+  // Use fixed date for stable package checksum generation
   const mtime = new Date(stableMtime);
   
   const packageFilepath = archiveFilePath(name, version);
@@ -129,7 +129,13 @@ async function createPackageForTag(url, moduleDir, excludes, ref, composerJsonPa
       file.filepath = file.filepath.substr(moduleDir ? moduleDir.length + 1 : '');
       return file;
     });
-  files.push({filepath: 'composer.json', contentBuffer: Buffer.from(composerJson, 'utf8'), mtime, isExecutable: false});
+  
+  // Ensure version is set in config because some repos (e.g. page-builder and inventory) do not provide the version
+  // in tagged composer.json files. The version is required for satis to be able to use the artifact repository type
+  const composerConfig = JSON.parse(composerJson);
+  composerConfig.version = version;
+  
+  files.push({filepath: 'composer.json', contentBuffer: Buffer.from(JSON.stringify(composerConfig, null, 2), 'utf8'), mtime, isExecutable: false});
   for (const d of (emptyDirsToAdd || [])) {
     files.push({filepath: d, contentBuffer: false, mtime, isExecutable: false});
   }
@@ -266,6 +272,10 @@ module.exports = {
       throw {message: `Unable find package name and/or version in composer.json for metapackage ${ref} in ${dir}`}
     }
     version = version || ref;
+
+    // Ensure version is set on composer config because not all repos provide the version in composer.json (e.g.
+    // page-builder) and it is required by satis to be able to use artifact repositories.
+    composerConfig.version = version;
     
     const files = [{
       filepath: 'composer.json',
