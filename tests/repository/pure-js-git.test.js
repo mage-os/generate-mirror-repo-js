@@ -1,6 +1,6 @@
 
 
-const sut = require('../src/repository');
+const sut = require('../../src/repository/pure-js-git');
 
 test('Determines directory for repository from URL', () => {
   expect(sut.testing.dirForRepoUrl('')).toBe('');
