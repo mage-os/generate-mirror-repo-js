@@ -1,5 +1,5 @@
 const repo = require('./repository');
-const {compareTags} = require('./utils');
+const {isVersionGreaterOrEqual} = require('./utils');
 const {
   setArchiveBaseDir,
   setMageosPackageRepoUrl,
@@ -20,7 +20,7 @@ if (process.argv[4]) {
 }
 
 async function listTagsFrom(url, from) {
-  return (await repo.listTags(url)).filter(tag => compareTags(tag, from) >= 0);
+  return (await repo.listTags(url)).filter(tag => isVersionGreaterOrEqual(tag, from));
 }
 
 async function createMetaPackagesSinceTag(url, from) {
@@ -65,13 +65,19 @@ async function createPackagesSinceTag(url, from, modulesPath, excludes) {
   return built;
 }
 
-async function createPackageSinceTag(url, from, modulesPath, excludes, composerJsonUrl, emptyDirsToAdd) {
+async function createPackageSinceTag(url, from, modulesPath, excludes, composerJsonPath, emptyDirsToAdd) {
   const tags = await listTagsFrom(url, from);
   const built = [];
   for (const tag of tags) {
     console.log(`Processing ${tag}`);
+    if (composerJsonPath && composerJsonPath.length) {
+      const composerJsonFile = (composerJsonPath || '').replace('{{version}}', tag);
+      composerJsonPath = fs.existsSync(composerJsonFile)
+        ? composerJsonFile
+        : (composerJsonPath || '').replace('{{version}}', 'template')
+    }
     try {
-      await createPackageForTag(url, modulesPath, excludes, tag, (composerJsonUrl || '').replace('{{version}}', tag), emptyDirsToAdd);
+      await createPackageForTag(url, modulesPath, excludes, tag, (composerJsonPath || ''), emptyDirsToAdd);
       built.push(tag);
     } catch (exception) {
       console.log(exception.message);
@@ -82,7 +88,7 @@ async function createPackageSinceTag(url, from, modulesPath, excludes, composerJ
 
 (async function () {
   
-  let tags, exclude, composerJsonUrl, emptyDirsToAdd;
+  let tags, exclude, composerJsonPath, emptyDirsToAdd;
 
   let repoUrl = 'https://github.com/mage-os/mirror-magento2.git';
 
@@ -93,10 +99,10 @@ async function createPackageSinceTag(url, from, modulesPath, excludes, composerJ
 
   console.log('Packaging Magento Base Package');
   exclude = [".github/", "app/code/", "app/design/frontend/", "app/design/adminhtml/", "app/i18n/", "lib/internal/Magento/Framework/", "composer.lock", "app/etc/vendor_path.php"];
-  composerJsonUrl = 'https://raw.githubusercontent.com/mage-os/magento2-base-composer-json/main/{{version}}/magento2-base/composer.json';
+  composerJsonPath = `${__dirname}/history/magento/magento2-base/{{version}}.json`;
   // The directories are required for the magento-composer-installer to properly function, otherwise it doesn't complete processing and app/etc is missing.
   emptyDirsToAdd = ['app/design/frontend/Magento', 'app/design/adminhtml/Magento', 'app/code/Magento', 'app/i18n/Magento', 'lib/internal/Magento'];
-  tags = await createPackageSinceTag(repoUrl, '2.4.0', '', exclude, composerJsonUrl, emptyDirsToAdd)
+  tags = await createPackageSinceTag(repoUrl, '2.4.0', '', exclude, composerJsonPath, emptyDirsToAdd)
   console.log('magento2-base packages', tags)
 
   console.log('Packaging Magento Framework');

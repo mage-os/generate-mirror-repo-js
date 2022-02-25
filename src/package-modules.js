@@ -2,7 +2,7 @@ const fs = require('fs');
 const path = require('path');
 const JSZip = require('jszip');
 const repo = require("./repository");
-const {lastTwoDirs, httpSlurp, compareTags} = require('./utils');
+const {lastTwoDirs, httpSlurp, compareVersions} = require('./utils');
 
 let archiveBaseDir = 'packages';
 
@@ -81,15 +81,23 @@ async function writePackage(packageFilepath, files) {
   stream.pipe(fs.createWriteStream(packageFilepath));
 }
 
-async function createPackageForTag(url, moduleDir, excludes, ref, composerJsonUrl, emptyDirsToAdd) {
+async function getComposerJson(url, moduleDir, ref, composerJsonPath) {
+  if (! composerJsonPath || !composerJsonPath.length) {
+    return readComposerJson(url, moduleDir, ref)
+  }
+  if (composerJsonPath.substr(0, 4) === 'http') {
+    return httpSlurp(composerJsonPath);
+  }
+  return fs.readFileSync(composerJsonPath);
+}
+
+async function createPackageForTag(url, moduleDir, excludes, ref, composerJsonPath, emptyDirsToAdd) {
 
   excludes = excludes || [];
   excludes.push('composer.json');
   let magentoName = lastTwoDirs(moduleDir) || '';
   
-  const composerJson = composerJsonUrl
-    ? await httpSlurp(composerJsonUrl)
-    : await readComposerJson(url, moduleDir, ref);
+  const composerJson = await getComposerJson(url, moduleDir, ref, composerJsonPath);
 
   if (composerJson.trim() === '404: Not Found') {
     throw {message: `Unable to find composer.json for ${ref}, skipping ${magentoName}`}
@@ -148,7 +156,7 @@ async function createComposerJsonOnlyPackage(url, ref, name, transform) {
 
 async function getLatestTag(url) {
   // filter out tags beginning with v because magento/composer-dependency-version-audit-plugin has a wrong v1.0 tag
-  const tags = (await repo.listTags(url)).filter(tag => tag.substr(0, 1) !== 'v').sort(compareTags);
+  const tags = (await repo.listTags(url)).filter(tag => tag.substr(0, 1) !== 'v').sort(compareVersions);
   return tags[tags.length -1];
 }
 
