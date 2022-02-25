@@ -1,5 +1,5 @@
 {
-  "dependencies": {
+  "require": {
     "magento/composer-root-update-plugin": "~1.1",
     "magento/composer-dependency-version-audit-plugin": "~0.1"
   }

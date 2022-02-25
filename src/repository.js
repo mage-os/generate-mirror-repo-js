@@ -169,9 +169,6 @@ module.exports = {
     const dir = await initRepo(url);
     return git.listTags({fs, dir});
   },
-  setReportFn(fn) {
-    report = fn;
-  },
   clearCache() {
     cache = {};
   },

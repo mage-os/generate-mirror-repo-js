@@ -82,13 +82,13 @@ async function writePackage(packageFilepath, files) {
 }
 
 async function getComposerJson(url, moduleDir, ref, composerJsonPath) {
-  if (! composerJsonPath || !composerJsonPath.length) {
+  if (! composerJsonPath || ! composerJsonPath.length) {
     return readComposerJson(url, moduleDir, ref)
   }
   if (composerJsonPath.substr(0, 4) === 'http') {
     return httpSlurp(composerJsonPath);
   }
-  return fs.readFileSync(composerJsonPath);
+  return fs.readFileSync(composerJsonPath).toString('utf8');
 }
 
 async function createPackageForTag(url, moduleDir, excludes, ref, composerJsonPath, emptyDirsToAdd) {
@@ -103,11 +103,11 @@ async function createPackageForTag(url, moduleDir, excludes, ref, composerJsonPa
     throw {message: `Unable to find composer.json for ${ref}, skipping ${magentoName}`}
   }
 
-  const {version, name} = JSON.parse(composerJson);
-  if (!version || !name) {
-    throw {message: `Unable find package name and/or version in composer.json for ${ref}, skipping ${magentoName}`}
+  let {version, name} = JSON.parse(composerJson);
+  version = version || ref;
+  if (!name) {
+    throw {message: `Unable find package name in composer.json for ${ref}, skipping ${magentoName}`}
   }
-  
   
   // use fixed date for stable package checksum generation
   const mtime = new Date(stableMtime);
@@ -141,7 +141,7 @@ async function createPackageForTag(url, moduleDir, excludes, ref, composerJsonPa
 async function createComposerJsonOnlyPackage(url, ref, name, transform) {
   const taggedComposerConfig = JSON.parse(await readComposerJson(url, '', ref));
 
-  const composerConfig = transform(taggedComposerConfig);
+  const composerConfig = await transform(taggedComposerConfig);
 
   const files = [{
     filepath: 'composer.json',
@@ -173,8 +173,9 @@ async function getLatestDependencies(dir) {
 
 async function getAdditionalDependencies(packageName, ref) {
   const dir = `${__dirname}/history/${packageName}`;
-  return fs.existsSync(`${dir}/${ref}.json`)
-    ? JSON.parse(fs.readFileSync(`${dir}/${ref}.json`))
+  const file = `${dir}/${ref}.json`;
+  return fs.existsSync(file)
+    ? JSON.parse(fs.readFileSync(file)).require
     : await getLatestDependencies(dir);
 }
 
@@ -218,11 +219,11 @@ module.exports = {
   },
   async createMagentoCommunityEditionMetapackage(url, ref) {
     const name = 'magento/product-community-edition';
-    await createComposerJsonOnlyPackage(url, ref, name, taggedComposerConfig => {
+    await createComposerJsonOnlyPackage(url, ref, name, async (taggedComposerConfig) => {
       
-      const additionalDependencies = getAdditionalDependencies(name, ref);
+      const additionalDependencies = await getAdditionalDependencies(name, ref);
       
-      const composerConfig = Object.assign(taggedComposerConfig, {
+      const composerConfig = Object.assign({}, taggedComposerConfig, {
         name: name,
         description: 'eCommerce Platform for Growth (Community Edition)',
         type: 'metapackage',
@@ -238,10 +239,10 @@ module.exports = {
   },
   async createMagentoCommunityEditionProject(url, ref) {
     const name = 'magento/project-community-edition';
-    await createComposerJsonOnlyPackage(url, ref, name, taggedComposerConfig => {
+    await createComposerJsonOnlyPackage(url, ref, name, async (taggedComposerConfig) => {
 
-      const additionalDependencies = getAdditionalDependencies(name, ref);
-      
+      const additionalDependencies = await getAdditionalDependencies(name, ref);
+
       const composerConfig = Object.assign(taggedComposerConfig, {
         name: name,
         description: 'eCommerce Platform for Growth (Community Edition)',
@@ -260,10 +261,11 @@ module.exports = {
   },
   async createMetaPackageFromRepoDir(url, dir, ref) {
     const composerConfig = JSON.parse(await readComposerJson(url, dir, ref));
-    const {version, name} = composerConfig;
-    if (!version || !name) {
+    let {version, name} = composerConfig;
+    if (!name) {
       throw {message: `Unable find package name and/or version in composer.json for metapackage ${ref} in ${dir}`}
     }
+    version = version || ref;
     
     const files = [{
       filepath: 'composer.json',

@@ -1,4 +1,5 @@
 const repo = require('./repository');
+const fs = require('fs');
 const {isVersionGreaterOrEqual} = require('./utils');
 const {
   setArchiveBaseDir,
@@ -23,7 +24,7 @@ async function listTagsFrom(url, from) {
   return (await repo.listTags(url)).filter(tag => isVersionGreaterOrEqual(tag, from));
 }
 
-async function createMetaPackagesSinceTag(url, from) {
+async function createMagentoCommunityEditionMetapackagesSinceTag(url, from) {
   const tags = await listTagsFrom(url, from);
   for (const tag of tags) {
     console.log(`Processing ${tag}`);
@@ -43,11 +44,17 @@ async function createProjectPackagesSinceTag(url, from) {
 
 async function createMetaPackagesFromRepoDir(url, from, path) {
   const tags = await listTagsFrom(url, from);
+  const built = [];
   for (const tag of tags) {
     console.log(`Processing ${tag}`);
-    await createMetaPackageFromRepoDir(url, path, tag);
+    try {
+      await createMetaPackageFromRepoDir(url, path, tag);
+      built.push(tag);
+    } catch (exception) {
+      console.log(exception.message);
+    }
   }
-  return tags;
+  return built;
 }
 
 async function createPackagesSinceTag(url, from, modulesPath, excludes) {
@@ -70,14 +77,15 @@ async function createPackageSinceTag(url, from, modulesPath, excludes, composerJ
   const built = [];
   for (const tag of tags) {
     console.log(`Processing ${tag}`);
+    let composerJsonFile = '';
     if (composerJsonPath && composerJsonPath.length) {
-      const composerJsonFile = (composerJsonPath || '').replace('{{version}}', tag);
-      composerJsonPath = fs.existsSync(composerJsonFile)
+      composerJsonFile = (composerJsonPath || '').replace('{{version}}', tag);
+      composerJsonFile = fs.existsSync(composerJsonFile)
         ? composerJsonFile
         : (composerJsonPath || '').replace('{{version}}', 'template')
     }
     try {
-      await createPackageForTag(url, modulesPath, excludes, tag, (composerJsonPath || ''), emptyDirsToAdd);
+      await createPackageForTag(url, modulesPath, excludes, tag, composerJsonFile, emptyDirsToAdd);
       built.push(tag);
     } catch (exception) {
       console.log(exception.message);
@@ -141,7 +149,7 @@ async function createPackageSinceTag(url, from, modulesPath, excludes, composerJ
   console.log('magento/theme-frontend-luma packages', tags)
 
   console.log('Packaging Magento Community Edition Metapackage');
-  tags = await createMetaPackagesSinceTag(repoUrl, '2.4.0');
+  tags = await createMagentoCommunityEditionMetapackagesSinceTag(repoUrl, '2.4.0');
   console.log('product-community-edition metapackage packages', tags);
 
   console.log('Packaging Magento Community Edition Project');
@@ -202,7 +210,6 @@ async function createPackageSinceTag(url, from, modulesPath, excludes, composerJ
 
   repo.clearCache();
 
-  // magento/sample-data-media
   console.log('Packaging Community Edition Sample Data');
   exclude = [];
   tags = await createPackagesSinceTag('https://github.com/mage-os/mirror-magento2-sample-data.git', '2.4.0', 'app/code/Magento', exclude)
