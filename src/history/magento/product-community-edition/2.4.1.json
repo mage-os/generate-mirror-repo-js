@@ -2,7 +2,7 @@
   "require": {
     "magento/security-package": "1.1.0",
     "magento/inventory-metapackage": "1.2.1",
-    "amzn/amazon-pay-and-login-magento-2-module": "4.0.4",
+    "amzn/amazon-pay-magento-2-module": "4.0.4",
     "dotmailer/dotmailer-magento2-extension-package": "4.8.0",
     "klarna/m2-payments": "8.1.0",
     "magento/adobe-stock-integration": "2.1.0",
