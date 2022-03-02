@@ -178,7 +178,7 @@ async function getLatestDependencies(dir) {
 }
 
 async function getAdditionalDependencies(packageName, ref) {
-  const dir = `${__dirname}/history/${packageName}`;
+  const dir = `${__dirname}/../resource/history/${packageName}`;
   const file = `${dir}/${ref}.json`;
   return fs.existsSync(file)
     ? JSON.parse(fs.readFileSync(file)).require

@@ -11,7 +11,8 @@ const {
   createMetaPackageFromRepoDir
 } = require('./package-modules');
 
-setArchiveBaseDir(process.argv[2] || 'packages');
+const archiveDir = process.argv[2] || 'packages';
+setArchiveBaseDir(archiveDir);
 if (process.argv[3]) {
   repo.setStorageDir(process.argv[3]);
 }
@@ -22,6 +23,27 @@ if (process.argv[4]) {
 
 async function listTagsFrom(url, from) {
   return (await repo.listTags(url)).filter(tag => isVersionGreaterOrEqual(tag, from));
+}
+
+async function copyAdditionalPackages() {
+  const dir = `${__dirname}/../resource/additional-packages`;
+  const dest = `${archiveDir}/additional`
+  
+  if (fs.existsSync(dir)) {
+    if (!fs.existsSync(dest)) fs.mkdirSync(dest, {recursive: true});
+    
+    fs.readdir(dir, (err, files) => {
+      if (err) {
+        console.log('' + err);
+        return;
+      }
+      const archives = (files || []).filter(file => file.substr(-4) === '.zip');
+      console.log(`Copying ${archives.length} additional archive(s) into build directory.`);
+      archives.map(file => {
+        fs.copyFile(`${dir}/${file}`, `${dest}/${file}`, err => err && console.log(err))
+      })
+    })
+  }
 }
 
 async function createMagentoCommunityEditionMetapackagesSinceTag(url, from) {
@@ -112,7 +134,7 @@ async function createPackageSinceTag(url, from, modulesPath, excludes, composerJ
 
   console.log('Packaging Magento Base Package');
   exclude = [".github/", "app/code/", "app/design/frontend/", "app/design/adminhtml/", "app/i18n/", "lib/internal/Magento/Framework/", "composer.lock", "app/etc/vendor_path.php"];
-  composerJsonPath = `${__dirname}/history/magento/magento2-base/{{version}}.json`;
+  composerJsonPath = `${__dirname}/../resource/history/magento/magento2-base/{{version}}.json`;
   // The directories are required for the magento-composer-installer to properly function, otherwise it doesn't complete processing and app/etc is missing.
   emptyDirsToAdd = ['app/design/frontend/Magento', 'app/design/adminhtml/Magento', 'app/code/Magento', 'app/i18n/Magento', 'lib/internal/Magento'];
   tags = await createPackageSinceTag(repoUrl, '2.4.0', '', exclude, composerJsonPath, emptyDirsToAdd)
@@ -225,4 +247,6 @@ async function createPackageSinceTag(url, from, modulesPath, excludes, composerJ
   tags = await createPackageSinceTag('https://github.com/mage-os/mirror-magento2-sample-data.git', '2.4.0', 'pub/media', exclude)
   console.log('magento/sample-data-media packages', tags)
 
+  await copyAdditionalPackages();
+  
 })()

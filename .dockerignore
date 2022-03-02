@@ -3,6 +3,7 @@
 
 # unignored directories
 !/src/
+!/resource/
 !/bin/
 !/node_modules/
 
