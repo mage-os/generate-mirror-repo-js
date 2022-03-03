@@ -269,7 +269,7 @@ module.exports = {
     const composerConfig = JSON.parse(await readComposerJson(url, dir, ref));
     let {version, name} = composerConfig;
     if (!name) {
-      throw {message: `Unable find package name and/or version in composer.json for metapackage ${ref} in ${dir}`}
+      throw {message: `Unable find package name and in composer.json for metapackage ${ref} in ${dir}`}
     }
     version = version || ref;
 

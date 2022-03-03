@@ -36,7 +36,7 @@ async function cloneRepo(url, dir, ref) {
   }
   
   const refConf = ref ? {ref, singleBranch: true} : {};
-  await git.clone({fs, http, cache, url, dir, noCheckout: true, depth: 15, onProgress: progress(), ...refConf});
+  await git.clone({fs, http, cache, url, dir, noCheckout: true, depth: 30, onProgress: progress(), ...refConf});
 }
 
 function fullRepoPath(url) {
