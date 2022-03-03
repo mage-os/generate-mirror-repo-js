@@ -223,6 +223,28 @@ async function createPackageSinceTag(url, from, modulesPath, excludes, composerJ
 
   repo.clearCache();
 
+  console.log('Packaging Adobe IMS Packages');
+  exclude = ['_metapackage/', '.github/'];
+  tags = await createPackagesSinceTag('https://github.com/mage-os/mirror-adobe-ims.git', '2.1.0', '', exclude)
+  console.log('adobe-ims packages', tags)
+
+  console.log('Packaging Adobe IMS Metapackage');
+  tags = await createMetaPackagesFromRepoDir('https://github.com/mage-os/mirror-adobe-ims.git', '2.1.0', '_metapackage')
+  console.log('adobe-ims metapackage packages', tags)
+
+  repo.clearCache();
+
+  console.log('Packaging Stock Integration Packages');
+  exclude = ['_metapackage/', '.github/', 'dev/'];
+  tags = await createPackagesSinceTag('https://github.com/mage-os/mirror-adobe-stock-integration.git', '1.0.0', '', exclude)
+  console.log('adobe-stock-integration packages', tags)
+
+  console.log('Packaging Adobe Stock Integration Metapackage');
+  tags = await createMetaPackagesFromRepoDir('https://github.com/mage-os/mirror-adobe-stock-integration.git', '1.0.0', '_metapackage')
+  console.log('adobe-stock-integration metapackage packages', tags)
+
+  repo.clearCache();
+
   console.log('Packaging Magento Composer Root Update Plugin');
   exclude = [];
   tags = await createPackageSinceTag('https://github.com/mage-os/mirror-composer-root-update-plugin.git', '1.0.0', 'src/Magento/ComposerRootUpdatePlugin', exclude)
