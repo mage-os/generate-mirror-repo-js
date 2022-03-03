@@ -131,9 +131,10 @@ async function createPackageForTag(url, moduleDir, excludes, ref, composerJsonPa
     });
   
   // Ensure version is set in config because some repos (e.g. page-builder and inventory) do not provide the version
-  // in tagged composer.json files. The version is required for satis to be able to use the artifact repository type
+  // in tagged composer.json files. The version is required for satis to be able to use the artifact repository type.
+  // Also, sometimes the version in a tagged commit doesn't reflect the release version (e.g. magento/inventory-metapackage:1.2.3-p1)
   const composerConfig = JSON.parse(composerJson);
-  composerConfig.version = version;
+  composerConfig.version = ref;
   
   files.push({filepath: 'composer.json', contentBuffer: Buffer.from(JSON.stringify(composerConfig, null, 2), 'utf8'), mtime, isExecutable: false});
   for (const d of (emptyDirsToAdd || [])) {
@@ -161,7 +162,7 @@ async function createComposerJsonOnlyPackage(url, ref, name, transform) {
 }
 
 async function getLatestTag(url) {
-  // filter out tags beginning with v because magento/composer-dependency-version-audit-plugin has a wrong v1.0 tag
+  // Filter out tags beginning with v because magento/composer-dependency-version-audit-plugin has a wrong v1.0 tag
   const tags = (await repo.listTags(url)).filter(tag => tag.substr(0, 1) !== 'v').sort(compareVersions);
   return tags[tags.length -1];
 }
@@ -275,7 +276,8 @@ module.exports = {
 
     // Ensure version is set on composer config because not all repos provide the version in composer.json (e.g.
     // page-builder) and it is required by satis to be able to use artifact repositories.
-    composerConfig.version = version;
+    // Also, sometimes the version in a tagged commit doesn't reflect the release version (e.g. magento/inventory-metapackage:1.2.3-p1)
+    composerConfig.version = ref;
     
     const files = [{
       filepath: 'composer.json',
