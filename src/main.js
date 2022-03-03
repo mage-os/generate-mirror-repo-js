@@ -213,6 +213,13 @@ async function createPackageSinceTag(url, from, modulesPath, excludes, composerJ
   console.log('inventory metapackages packages', tags)
 
   repo.clearCache();
+  
+  console.log('Packaging Inventory Composer Installer Packages');
+  exclude = [];
+  tags = await createPackageSinceTag('https://github.com/mage-os/mirror-inventory-composer-installer.git', '1.1.0', '', exclude)
+  console.log('inventory-composer-installer packages', tags)
+  
+  repo.clearCache();
 
   console.log('Packaging PageBuilder Packages');
   exclude = ['app/code/Magento/_metapackage/'];
