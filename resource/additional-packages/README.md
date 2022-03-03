@@ -4,8 +4,9 @@
 
 The packages in this directory are not available through packagist.org (they are only available through repo.magento.com).
 
-Because these third party bundled extensions are not included in Magento releases since 2.4.4, they are included in
-this repository so older releases can be provided through the mirror package repository.
+Because these third party bundled extensions are not included in Magento releases since 2.4.4, they are part of
+this repository so older releases can be provided through the mirror package repository.  
+Future releases will not contain these packages.
 
 ## Background
 
