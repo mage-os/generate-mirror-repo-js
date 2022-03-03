@@ -37,7 +37,9 @@ async function copyAdditionalPackages() {
         console.log('' + err);
         return;
       }
-      const archives = (files || []).filter(file => file.substr(-4) === '.zip');
+      const archives = (files || [])
+        .filter(file => file.substr(-4) === '.zip')
+        .filter(file => ! fs.existsSync(`${dest}/${file}`));
       console.log(`Copying ${archives.length} additional archive(s) into build directory.`);
       archives.map(file => {
         fs.copyFile(`${dir}/${file}`, `${dest}/${file}`, err => err && console.log(err))
