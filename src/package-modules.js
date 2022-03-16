@@ -94,7 +94,7 @@ async function getComposerJson(url, moduleDir, ref, composerJsonPath) {
 async function createPackageForTag(url, moduleDir, excludes, ref, composerJsonPath, emptyDirsToAdd) {
 
   excludes = excludes || [];
-  excludes.push('composer.json');
+  if (! excludes.includes('composer.json')) excludes.push('composer.json');
   let magentoName = lastTwoDirs(moduleDir) || '';
   
   const composerJson = await getComposerJson(url, moduleDir, ref, composerJsonPath);
@@ -104,7 +104,11 @@ async function createPackageForTag(url, moduleDir, excludes, ref, composerJsonPa
   }
 
   let {version, name} = JSON.parse(composerJson);
-  version = version || ref;
+  // Force package and composer version to match git tag
+  // This is to work around a wrong version in the magento/composer-dependency-version-audit-plugin:0.1.2 that
+  // lists version 0.1.1 in the composer.json
+  // See https://github.com/magento/composer-dependency-version-audit-plugin/blob/0.1.2/composer.json#L5
+  version = ref;
   if (!name) {
     throw {message: `Unable find package name in composer.json for ${ref}, skipping ${magentoName}`}
   }
