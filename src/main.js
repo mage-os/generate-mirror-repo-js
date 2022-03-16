@@ -169,6 +169,7 @@ async function createPackageSinceTag(url, from, modulesPath, excludes, composerJ
 
   console.log('Packaging Magento Blank Theme');
   exclude = [];
+  exclude = [];
   tags = await createPackageSinceTag(repoUrl, '2.4.0', 'app/design/frontend/Magento/blank', exclude)
   console.log('magento/theme-frontend-blank packages', tags)
 
@@ -213,12 +214,12 @@ async function createPackageSinceTag(url, from, modulesPath, excludes, composerJ
   console.log('inventory metapackages packages', tags)
 
   repo.clearCache();
-  
+
   console.log('Packaging Inventory Composer Installer Packages');
   exclude = [];
   tags = await createPackageSinceTag('https://github.com/mage-os/mirror-inventory-composer-installer.git', '1.1.0', '', exclude)
   console.log('inventory-composer-installer packages', tags)
-  
+
   repo.clearCache();
 
   console.log('Packaging PageBuilder Packages');
@@ -263,7 +264,7 @@ async function createPackageSinceTag(url, from, modulesPath, excludes, composerJ
 
   console.log('Packaging Magento Composer Dependency Version Audit Plugin');
   exclude = [];
-  tags = await createPackageSinceTag('https://github.com/mage-os/composer-dependency-version-audit-plugin.git', '0.1.0', '', exclude)
+  tags = await createPackageSinceTag('https://github.com/mage-os/mirror-composer-dependency-version-audit-plugin.git', '0.1.0', '', exclude)
   console.log('composer-dependency-version-audit-plugin packages', tags);
 
   repo.clearCache();
