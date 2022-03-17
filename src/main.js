@@ -264,7 +264,7 @@ async function createPackageSinceTag(url, from, modulesPath, excludes, composerJ
 
   console.log('Packaging Magento Composer Dependency Version Audit Plugin');
   exclude = [];
-  tags = await createPackageSinceTag('https://github.com/mage-os/mirror-composer-dependency-version-audit-plugin.git', '0.1.0', '', exclude)
+  tags = await createPackageSinceTag('https://github.com/mage-os/mirror-composer-dependency-version-audit-plugin.git', '0.1.2', '', exclude)
   console.log('composer-dependency-version-audit-plugin packages', tags);
 
   repo.clearCache();

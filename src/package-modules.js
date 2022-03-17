@@ -108,7 +108,7 @@ async function createPackageForTag(url, moduleDir, excludes, ref, composerJsonPa
   // This is to work around a wrong version in the magento/composer-dependency-version-audit-plugin:0.1.2 that
   // lists version 0.1.1 in the composer.json
   // See https://github.com/magento/composer-dependency-version-audit-plugin/blob/0.1.2/composer.json#L5
-  version = ref;
+  version = version || ref;
   if (!name) {
     throw {message: `Unable find package name in composer.json for ${ref}, skipping ${magentoName}`}
   }
@@ -216,24 +216,26 @@ module.exports = {
     let n = 0;
 
     // Asynchronously build all packages for the given ref 
-    const promises = modules.map(moduleDir => {
-      report(`${++n}/${modules.length} Packaging ${(lastTwoDirs(moduleDir, '_'))} ${ref}`);
-      return createPackageForTag(url, moduleDir, excludes, ref)
-        .then(() => built.push(moduleDir))
-        .catch(exception => report(exception.message || exception));
-    });
-    await Promise.allSettled(promises);
+    // Disable because: JavaScript heap out of memory
+    
+    // const promises = modules.map(moduleDir => {
+    //   report(`${++n}/${modules.length} Packaging ${(lastTwoDirs(moduleDir, '_'))} ${ref}`);
+    //   return createPackageForTag(url, moduleDir, excludes, ref)
+    //     .then(() => built.push(moduleDir))
+    //     .catch(exception => report(exception.message || exception));
+    // });
+    // await Promise.allSettled(promises);
 
     // Synchronously build all packages for the given ref
-    // for (const moduleDir of modules) {
-    //   report(`${++n}/${modules.length} Packaging ${(lastTwoDirs(moduleDir, '_'))} ${ref}`);
-    //   try {
-    //     await createPackageForTag(url, moduleDir, excludes, ref);
-    //     built.push(moduleDir);
-    //   } catch (exception) {
-    //     report(exception.message);
-    //   }
-    // }
+    for (const moduleDir of modules) {
+      report(`${++n}/${modules.length} Packaging ${(lastTwoDirs(moduleDir, '_'))} ${ref}`);
+      try {
+        await createPackageForTag(url, moduleDir, excludes, ref);
+        built.push(moduleDir);
+      } catch (exception) {
+        report(exception.message);
+      }
+    }
     if (built.length === 0) {
       throw {message: `No packages built for ${ref}`};
     }
