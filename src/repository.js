@@ -1,4 +1,12 @@
-const git = require('./repository/pure-js-git');
+const path = require("path");
+
+// Choose git backend implementation
+//const git = require('./repository/pure-js-git');
+const git = require('./repository/shell-git');
+
+let repoBaseDir = path.join(process.cwd(), 'repositories');
+
+git.setStorageDir(repoBaseDir)
 
 module.exports = {
   async listFolders(url, path, ref) {

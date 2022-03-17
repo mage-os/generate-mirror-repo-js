@@ -6,7 +6,7 @@ const http = require('isomorphic-git/http/node');
 let cache = {};
 let report = console.log;
 
-let repoBaseDir = path.join(process.cwd(), 'repositories');
+let repoBaseDir;
 
 function dirForRepoUrl(url) {
   // todo: add vendor namespace directory inside of repoBaseDir to path?
