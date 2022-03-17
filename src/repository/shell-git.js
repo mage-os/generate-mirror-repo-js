@@ -59,7 +59,7 @@ async function initRepo(url, ref) {
     await cloneRepo(url, dir, ref);
   }
   if (ref) {
-    const current = (await exec(`git describe --tags`, {cwd: dir})).trim();
+    const current = (await exec(`git describe --tags --always`, {cwd: dir})).trim();
     if (current !== ref) {
       await exec(`git checkout --force --quiet ${ref}`, {cwd: dir})
     }
