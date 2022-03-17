@@ -8,7 +8,7 @@ let archiveBaseDir = 'packages';
 
 let mageosPackageRepoUrl = 'https://mirror.mage-os.org/';
 
-const stableMtime = '2022-02-22 22:02:22';
+const stableMtime = '2022-02-22 22:02:22.000Z';
 
 function report() {
   console.log(...arguments);
@@ -155,7 +155,7 @@ async function createComposerJsonOnlyPackage(url, ref, name, transform) {
 
   const files = [{
     filepath: 'composer.json',
-    mtime: new Date(stableMtime),
+    mtime: mtime,
     contentBuffer: Buffer.from(JSON.stringify(composerConfig, null, 2), 'utf8'),
     isExecutable: false,
   }];
@@ -214,6 +214,7 @@ module.exports = {
     report(`Found ${modules.length} modules`);
 
     let n = 0;
+
     for (const moduleDir of modules) {
       report(`${++n}/${modules.length} Packaging ${(lastTwoDirs(moduleDir, '_'))} ${ref}`);
       try {
@@ -283,7 +284,7 @@ module.exports = {
     
     const files = [{
       filepath: 'composer.json',
-      mtime: new Date(stableMtime),
+      mtime: mtime,
       contentBuffer: Buffer.from(JSON.stringify(composerConfig, null, 2), 'utf8'),
       isExecutable: false,
     }];
