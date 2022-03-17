@@ -152,10 +152,9 @@ async function createComposerJsonOnlyPackage(url, ref, name, transform) {
   const taggedComposerConfig = JSON.parse(await readComposerJson(url, '', ref));
 
   const composerConfig = await transform(taggedComposerConfig);
-
   const files = [{
     filepath: 'composer.json',
-    mtime: mtime,
+    mtime: new Date(stableMtime),
     contentBuffer: Buffer.from(JSON.stringify(composerConfig, null, 2), 'utf8'),
     isExecutable: false,
   }];
@@ -216,15 +215,25 @@ module.exports = {
 
     let n = 0;
 
-    for (const moduleDir of modules) {
+    // Asynchronously build all packages for the given ref 
+    const promises = modules.map(moduleDir => {
       report(`${++n}/${modules.length} Packaging ${(lastTwoDirs(moduleDir, '_'))} ${ref}`);
-      try {
-        await createPackageForTag(url, moduleDir, excludes, ref);
-        built.push(moduleDir);
-      } catch (exception) {
-        report(exception.message);
-      }
-    }
+      return createPackageForTag(url, moduleDir, excludes, ref)
+        .then(() => built.push(moduleDir))
+        .catch(exception => report(exception.message || exception));
+    });
+    await Promise.allSettled(promises);
+
+    // Synchronously build all packages for the given ref
+    // for (const moduleDir of modules) {
+    //   report(`${++n}/${modules.length} Packaging ${(lastTwoDirs(moduleDir, '_'))} ${ref}`);
+    //   try {
+    //     await createPackageForTag(url, moduleDir, excludes, ref);
+    //     built.push(moduleDir);
+    //   } catch (exception) {
+    //     report(exception.message);
+    //   }
+    // }
     if (built.length === 0) {
       throw {message: `No packages built for ${ref}`};
     }
@@ -285,7 +294,7 @@ module.exports = {
     
     const files = [{
       filepath: 'composer.json',
-      mtime: mtime,
+      mtime: new Date(stableMtime),
       contentBuffer: Buffer.from(JSON.stringify(composerConfig, null, 2), 'utf8'),
       isExecutable: false,
     }];
