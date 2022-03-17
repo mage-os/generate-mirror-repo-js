@@ -5,7 +5,6 @@
  */
 
 const fs = require('fs');
-const path = require('path');
 
 const mirrorUrl = process.argv[2] || '';
 if (mirrorUrl.trim() === '') {
@@ -21,4 +20,8 @@ if (! fs.existsSync(satisConfigFile)) {
 
 const satisConfig = JSON.parse(fs.readFileSync(satisConfigFile));
 
-console.log(JSON.stringify({...satisConfig, homepage: mirrorUrl}, null, 2))
+// Set "name" to "mage-os/${mirrorUrl} repository" but only the lowest level domain
+// (e.g. mage-os/mirror for https://mirror.mage-os.org)
+const url = new URL(mirrorUrl);
+const lowestLevelDomain = url.host.substr(0, url.host.indexOf('.'));
+console.log(JSON.stringify({...satisConfig, homepage: mirrorUrl, name: `mage-os/${lowestLevelDomain}`}, null, 2))
