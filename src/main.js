@@ -78,7 +78,7 @@ async function createMetaPackagesFromRepoDir(url, from, path) {
       await createMetaPackageFromRepoDir(url, path, tag);
       built.push(tag);
     } catch (exception) {
-      console.log(exception.message);
+      console.log(exception.message || exception);
     }
   }
   return built;
@@ -94,7 +94,7 @@ async function createPackagesSinceTag(url, from, modulesPath, excludes) {
       await createPackagesForTag(url, modulesPath, excludes, tag);
       built.push(tag)
     } catch (exception) {
-      console.log(exception.message);
+      console.log(exception.message || exception);
     }
   }
   return built;
@@ -117,7 +117,7 @@ async function createPackageSinceTag(url, from, modulesPath, excludes, composerJ
       await createPackageForTag(url, modulesPath, excludes, tag, composerJsonFile, emptyDirsToAdd);
       built.push(tag);
     } catch (exception) {
-      console.log(exception.message);
+      console.log(exception.message || exception);
     }
   }
   return built;
