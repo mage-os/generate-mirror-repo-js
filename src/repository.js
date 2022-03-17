@@ -4,8 +4,8 @@ module.exports = {
   async listFolders(url, path, ref) {
     return git.listFolders(url, path, ref);
   },
-  async listFiles(url, path, ref) {
-    return git.listFiles(url, path, ref)
+  async listFiles(url, path, ref, excludes) {
+    return git.listFiles(url, path, ref, excludes)
   },
   async readFile(url, filepath, ref) {
     return git.readFile(url, filepath, ref)

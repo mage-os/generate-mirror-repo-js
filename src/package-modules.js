@@ -121,7 +121,7 @@ async function createPackageForTag(url, moduleDir, excludes, ref, composerJsonPa
     return;
   }
 
-  const files = (await repo.listFiles(url, moduleDir, ref))
+  const files = (await repo.listFiles(url, moduleDir, ref, excludes))
     .filter(file => {
       const isExcluded = (excludes || []).find(exclude => {
         return file.filepath === exclude || file.filepath.startsWith(exclude)
@@ -200,8 +200,9 @@ module.exports = {
   async createPackagesForTag(url, modulesPath, excludes, ref) {
     
     const built = [];
-    
-    const modules = (await repo.listFolders(url, modulesPath, ref))
+
+    const folders = await repo.listFolders(url, modulesPath, ref);
+    const modules = folders
       .filter(dir => dir !== '.')
       .filter(dir => {
         const isExcluded = (excludes || []).find(exclude => {

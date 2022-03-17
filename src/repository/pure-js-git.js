@@ -146,7 +146,7 @@ module.exports = {
     //report(`Reading folders in "${path || '.'}"`);
     return git.walk({fs, dir, trees, cache, map: isFoldersIn(path)});
   },
-  async listFiles(url, path, ref) {
+  async listFiles(url, path, ref, excludes) {
     const dir = await initRepo(url, ref);
     const trees = [git.TREE({ref})];
     //report(`Listing files in ${path}`);
