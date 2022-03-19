@@ -1,18 +1,35 @@
 /**
  * Run with
  *
- * node bin/set-satis-homepage.js satis-config-file.json http://repo.mirror.host
+ * node bin/set-satis-homepage.js --satisConfig satis-config.json --mirrorUrl http://repo.mirror.host
  */
 
 const fs = require('fs');
+const parseOptions = require('parse-options');
 
-const mirrorUrl = process.argv[2] || '';
-if (mirrorUrl.trim() === '') {
-  console.log('No mirror base url specified');
+const options = parseOptions(
+  `$mirrorUrl $satisConfig @help|h`,
+  process.argv
+);
+
+if (options.help || '' === (options.mirrorUrl || '').trim()) {
+  console.log(`Print satis.config to STDOUT with given name and homepage.
+
+Usage:
+  node bin/set-satis-homepage-url.js [OPTIONS]
+
+Options:
+  --satisConfig= The satis.config file to use as an input (default: /build/satis.json)
+  --mirrorUrl=   Mirror base URL (for example https://mirror.mage-os.org/)
+  `);
   process.exit(1);
 }
 
-const satisConfigFile = process.argv[3] || '/build/satis.json';
+const mirrorUrl = options.mirrorUrl.substr(0, 4) !== 'http'
+  ? `https://${options.mirrorUrl}`
+  : options.mirrorUrl;
+
+const satisConfigFile = options.satisConfig || '/build/satis.json';
 if (! fs.existsSync(satisConfigFile)) {
   console.log(`Unable to find satis input configuration "${satisConfigFile}"`);
   process.exit(2);

@@ -8,7 +8,7 @@ set -e
 }
 
 # Build Packages in /build/packages
-node src/main.js /build/packages /generate-repo/repositories "$MIRROR_BASE_URL"
+node src/main.js --outputDir=/build/packages --gitRepoDir=/generate-repo/repositories --mirrorUrl="$MIRROR_BASE_URL"
 
 echo Running satis...
 
@@ -16,11 +16,11 @@ cd /satis
 
 # Set the repository homepage for the satis build config
 [[ -n "$MIRROR_BASE_URL" ]] && {
-  node /generate-repo/bin/set-satis-homepage-url.js "$MIRROR_BASE_URL" /generate-repo/satis.json > /tmp/satis.json   
+  node /generate-repo/bin/set-satis-homepage-url.js --satisConfig=/generate-repo/satis.json --mirrorUrl="$MIRROR_BASE_URL" > /tmp/satis.json   
 }
 
 [[ -z "$MIRROR_BASE_URL" ]] && {
-  cp /generate-repo/satis.json > /tmp/satis.json   
+  cp /generate-repo/satis.json /tmp/satis.json   
 }
 
 
@@ -31,5 +31,5 @@ echo Setting url prefix in generated output to $MIRROR_BASE_URL...
 
 # Fix host prefix in generated output
 [[ -n "$MIRROR_BASE_URL" ]] && {
-  node /generate-repo/bin/set-satis-output-url-prefix.js /build "$MIRROR_BASE_URL"  
+  node /generate-repo/bin/set-satis-output-url-prefix.js --satisOutputDir=/build --mirrorUrl="$MIRROR_BASE_URL"  
 }

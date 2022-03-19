@@ -1,5 +1,6 @@
 const repo = require('./repository');
 const fs = require('fs');
+const parseOptions = require('parse-options');
 const {isVersionGreaterOrEqual} = require('./utils');
 const {
   setArchiveBaseDir,
@@ -11,14 +12,35 @@ const {
   createMetaPackageFromRepoDir
 } = require('./package-modules');
 
-const archiveDir = process.argv[2] || 'packages';
-setArchiveBaseDir(archiveDir);
-if (process.argv[3]) {
-  repo.setStorageDir(process.argv[3]);
+const options = parseOptions(
+  `$outputDir $gitRepoDir $mirrorUrl @help|h`,
+  process.argv
+);
+
+
+if (options.help) {
+  console.log(`Build Mage-OS composer packages from github.com/mage-os git repositories.
+
+Usage:
+  node src/main [OPTIONS]
+  
+Options:
+  --outputDir=   Dir to contain the built packages (default: packages)
+  --gitRepoDir=  Dir to clone repositories into (default: repositories)
+  --mirrorUrl=   Composer repository URL to use in base backage (default: https://mirror.mage-os.org/)
+`);
+  process.exit(1);
 }
 
-if (process.argv[4]) {
-  setMageosPackageRepoUrl(process.argv[4]);
+const archiveDir = options.outputDir || 'packages';
+setArchiveBaseDir(archiveDir);
+
+if (options.gitRepoDir) {
+  repo.setStorageDir(options.gitRepoDir);
+}
+
+if (options.mirrorUrl) {
+  setMageosPackageRepoUrl(options.mirrorUrl);
 }
 
 async function listTagsFrom(url, from) {
