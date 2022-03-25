@@ -41,6 +41,8 @@ if (mirrorUrl.substr(-1) !== '/') {
   mirrorUrl += '/';
 }
 
+let parsedUrl = new URL(mirrorUrl);
+
 let satisUrlPrefix = satisOutputDir;
 
 const packagesFile = fs.readFileSync(path.join(satisOutputDir, 'packages.json'));
@@ -81,10 +83,12 @@ for (const includeFileName in (packages.includes || {})) {
   writeJson(includeFile, newIncludeData);
 }
 
-const packagePathTemplate = packages['metadata-url'];
+let packagePathTemplate = packages['metadata-url'];
+if (packagePathTemplate.startsWith(parsedUrl.pathname)) {
+    packagePathTemplate = '/' + packagePathTemplate.slice(parsedUrl.pathname.length);
+}
 for (const packageName of packages['available-packages']) {
   const packageFilePath = path.join(satisOutputDir, packagePathTemplate.replace('%package%', packageName));
-  
   const packageData = JSON.parse(fs.readFileSync(packageFilePath));
 
   packageData.packages[packageName] = (packageData.packages[packageName] || []).map(packageRelease => {
