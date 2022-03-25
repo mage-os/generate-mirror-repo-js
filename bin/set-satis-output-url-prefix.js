@@ -25,6 +25,12 @@ Options:
   process.exit(1);
 }
 
+
+function writeJson(file, data) {
+  fs.writeFileSync(file + '~', Buffer.from(JSON.stringify(data, null, 2), 'utf8'));
+  fs.renameSync(file + '~', file);
+}
+
 let satisOutputDir = options.satisOutputDir || '/build/';
 if (satisOutputDir.substr(-1) !== '/') {
   satisOutputDir += '/';
@@ -41,21 +47,14 @@ if (mirrorUrl.substr(-1) !== '/') {
   mirrorUrl += '/';
 }
 
-let parsedUrl = new URL(mirrorUrl);
-
-let satisUrlPrefix = satisOutputDir;
-
 const packagesFile = fs.readFileSync(path.join(satisOutputDir, 'packages.json'));
 const packages = JSON.parse(packagesFile);
 
-function writeJson(file, data) {
-  fs.writeFileSync(file + '~', Buffer.from(JSON.stringify(data, null, 2), 'utf8'));
-  fs.renameSync(file + '~', file);
-}
+const parsedUrl = new URL(mirrorUrl);
 
 function fixUrl(o) {
-  if (o.url.substr(0, satisUrlPrefix.length) === satisUrlPrefix) {
-    o.url =  mirrorUrl + o.url.substr(satisUrlPrefix.length);
+  if (o.url.substr(0, satisOutputDir.length) === satisOutputDir) {
+    o.url =  mirrorUrl + o.url.substr(satisOutputDir.length);
   }
 }
 
@@ -84,9 +83,13 @@ for (const includeFileName in (packages.includes || {})) {
 }
 
 let packagePathTemplate = packages['metadata-url'];
+
+// Satis uses the path of the homepage URL as the start of the path path in the package metadata-url.
+// We need the actual name inside the build/ dir, so we remove the mirrorUrl pathname
 if (packagePathTemplate.startsWith(parsedUrl.pathname)) {
     packagePathTemplate = '/' + packagePathTemplate.slice(parsedUrl.pathname.length);
 }
+
 for (const packageName of packages['available-packages']) {
   const packageFilePath = path.join(satisOutputDir, packagePathTemplate.replace('%package%', packageName));
   const packageData = JSON.parse(fs.readFileSync(packageFilePath));
