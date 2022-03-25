@@ -22,6 +22,8 @@ if (mirrorUrl.substr(-1) !== '/') {
   mirrorUrl += '/';
 }
 
+let parsedUrl = new URL(mirrorUrl);
+
 if (!fs.existsSync(satisOutputDir)) {
   console.log(`Unable to find satis output dir ${satisOutputDir}`);
   process.exit(2);
@@ -72,10 +74,12 @@ for (const includeFileName in (packages.includes || {})) {
   writeJson(includeFile, newIncludeData);
 }
 
-const packagePathTemplate = packages['metadata-url'];
+let packagePathTemplate = packages['metadata-url'];
+if (packagePathTemplate.startsWith(parsedUrl.pathname)) {
+    packagePathTemplate = '/' + packagePathTemplate.slice(parsedUrl.pathname.length);
+}
 for (const packageName of packages['available-packages']) {
   const packageFilePath = path.join(satisOutputDir, packagePathTemplate.replace('%package%', packageName));
-  
   const packageData = JSON.parse(fs.readFileSync(packageFilePath));
 
   packageData.packages[packageName] = (packageData.packages[packageName] || []).map(packageRelease => {
