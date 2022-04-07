@@ -55,12 +55,13 @@ podman run --rm --init -it \
 docker build -t magece/mirror-repo-js .
 ```
 ## manual installation
+**Warning: This method is unsupported and might break without further notice!** 
 
-It is also possible to generate the Repo without using docker
+It is also possible to generate the Repo without using docker.
 
-For this, you'll need nodejs 16, php8-0 (or 7.4), yarn, git, composer and a webserver
+For this, you'll need nodejs 16, php8-0 (or 7.4), yarn, git, composer and a webserver.
 
-To generate the repos, you can issue the following commands.
+To generate the repos, you can issue the following commands:
 
 ```bash
 export MIRROR_BASE_URL="https://example.com"
