@@ -54,6 +54,27 @@ podman run --rm --init -it \
 ```bash
 docker build -t magece/mirror-repo-js .
 ```
+## manual installation
+
+It is also possible to generate the Repo without using docker
+
+For this, you'll need nodejs 16, php8-0 (or 7.4), yarn, git, composer and a webserver
+
+To generate the repos, you can issue the following commands.
+
+```bash
+export MIRROR_BASE_URL="https://example.com"
+git clone https://github.com/mage-os/generate-mirror-repo-js.git
+cd generate-mirror-repo-js/
+composer2  create-project composer/satis --stability=dev
+yarn install
+node src/main.js --outputDir=./build/packages --gitRepoDir=./generate-repo/repositories --mirrorUrl="$MIRROR_BASE_URL"
+node bin/set-satis-homepage-url.js --satisConfig=satis.json  --mirrorUrl="$MIRROR_BASE_URL" > /tmp/satis.json   
+./satis/bin/satis build  /tmp/satis.json ./build/
+node ./bin/set-satis-output-url-prefix.js --satisOutputDir=./build --mirrorUrl="$MIRROR_BASE_URL"  
+```
+
+afterwards you can serve the build directory with your webserver.
 
 ## TODO
 * Improve performance of package generation, maybe by switching to https://www.nodegit.org/api/libgit_2/
