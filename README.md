@@ -39,7 +39,7 @@ docker run --rm --init -it --user $(id -u):$(id -g) \
 
 ### podman
 
-If you prefer to execute the container with `podman`, you should not specify the `--user` argument, as the in-container root user will automatically map to the current system.
+If you prefer to execute the container with `podman`, you should not specify the `--user` argument, as the in-container root user will automatically map to the current system user.
 To generate the repository in `~/html` using podman, run the following command, replacing `https://mirror.mage-os.org` with the URL of your mirror:
 
 ```bash
@@ -49,15 +49,15 @@ podman run --rm --init -it \
   magece/mirror-repo-js:latest --mirror-base-url=https://mirror.mage-os.org
 ```
 
-### Manual generation
+### manual generation
 **Warning: This method is unsupported and might break without further notice!** 
 
-Alternatively it is possible to generate the Repo without using a container.  
+Alternatively it is possible to generate the repo without using a container.  
 This is mainly useful in order to debug the build process or to help understand what happens inside a container during the build.
 
 For this, you'll need nodejs 16, php8-0 (or 7.4), yarn, git and composer.
 
-To generate the repos, you can issue the following commands:
+To generate the repo in the directory `./build/`, issue the following commands:
 
 ```bash
 export MIRROR_BASE_URL="https://example.com"
