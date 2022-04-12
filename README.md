@@ -71,7 +71,23 @@ node bin/set-satis-homepage-url.js --satisConfig=satis.json  --mirrorUrl="$MIRRO
 node ./bin/set-satis-output-url-prefix.js --satisOutputDir=./build --mirrorUrl="$MIRROR_BASE_URL"  
 ```
 
-## Building
+## Updating a mirror with a new release
+
+If you are using cached git repositories, be sure to fetch the latest tags.
+For example, if the git repos are cached in a directory `./repositories`, run the following command:
+
+```sh
+cd repositories
+for repo in *; do cd $repo; git fetch --tags; cd -; done
+cd .. 
+```
+
+Be sure to fetch the latest version of the image with `podman pull magece/mirror-repo-js:latest`
+or `docker pull magece/mirror-repo-js:latest`.
+
+Then re-run the repository generation with the same arguments as the initial generation.
+
+## Building the docker image
 
 ```bash
 docker build -t magece/mirror-repo-js .
