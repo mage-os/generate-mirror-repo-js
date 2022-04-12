@@ -95,6 +95,7 @@ async function createPackageForTag(url, moduleDir, excludes, ref, composerJsonPa
 
   excludes = excludes || [];
   if (! excludes.includes('composer.json')) excludes.push('composer.json');
+  if (! excludes.includes('.git/')) excludes.push('.git/');
   let magentoName = lastTwoDirs(moduleDir) || '';
   
   const composerJson = await getComposerJson(url, moduleDir, ref, composerJsonPath);
