@@ -191,7 +191,6 @@ async function createPackageSinceTag(url, from, modulesPath, excludes, composerJ
 
   console.log('Packaging Magento Blank Theme');
   exclude = [];
-  exclude = [];
   tags = await createPackageSinceTag(repoUrl, '2.4.0', 'app/design/frontend/Magento/blank', exclude)
   console.log('magento/theme-frontend-blank packages', tags)
 
