@@ -74,7 +74,9 @@ node ./bin/set-satis-output-url-prefix.js --satisOutputDir=./build --mirrorUrl="
 ## Updating a mirror with a new release
 
 If you are using cached git repositories, be sure to fetch the latest tags.
-For example, if the git repos are cached in a directory `./repositories`, run the following command:
+In case you didn't specify a repository cache directory when generating the image, this step can be skipped as the repositories will be cloned again while updating the mirror.
+
+For example, to fetch the latest release tags, if the git repos are cached in a directory `./repositories`, run the following command:
 
 ```sh
 cd repositories
