@@ -3,7 +3,8 @@ const {constants, accessSync} = require('fs');
 const {tmpdir} = require('os');
 const {cwd, chdir} = require('process');
 const path = require('path');
-const childProcess = require("child_process");
+const childProcess = require('child_process');
+const {createHash} = require('crypto');
 
 function fsExists(dirOrFile)
 {
@@ -49,7 +50,8 @@ module.exports = {
   async determineDependencies(dir, files) {
     const prevCwd = cwd();
     try {
-      const workDir = `${tmpdir()}/workdir`;
+      const hash = createHash('md5').update(dir).digest('hex');
+      const workDir = `${tmpdir()}/workdir-${hash}`;
       await setupWorkDir(dir, workDir);
       chdir(workDir);
       if (! fsExists(path.join(workDir, 'vendor/autoload.php'))) {
