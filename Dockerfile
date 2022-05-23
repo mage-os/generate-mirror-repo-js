@@ -16,4 +16,7 @@ COPY . /generate-repo
 
 RUN mkdir /generate-repo/repositories && chmod 0777 /generate-repo/repositories && chmod -R 0777 /satis/vendor/composer
 
+RUN curl -L https://github.com/mage-os/php-dependency-list/raw/main/php-classes.phar -o /usr/local/bin/php-classes.phar
+RUN chmod +x /usr/local/bin/php-classes.phar
+
 ENTRYPOINT ["/generate-repo/bin/docker-entrypoint.sh"]

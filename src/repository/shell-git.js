@@ -115,6 +115,9 @@ module.exports = {
     const out = await exec(`git tag`, {cwd: dir});
     return out.trim().split("\n");
   },
+  async checkout(url, ref) {
+    return initRepo(url, ref);
+  },
   clearCache() {
     // noop
   },

@@ -7,6 +7,9 @@ set -e
    MIRROR_BASE_URL="${1#*=}"
 }
 
+# Make composer discoverable
+PATH="$PATH:/satis/vendor/bin"
+
 # Build Packages in /build/packages
 node src/main.js --outputDir=/build/packages --gitRepoDir=/generate-repo/repositories --mirrorUrl="$MIRROR_BASE_URL"
 

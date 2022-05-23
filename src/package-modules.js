@@ -1,5 +1,6 @@
 const fs = require('fs');
 const path = require('path');
+const { determineDependencies } = require('./determine-dependencies');
 const JSZip = require('jszip');
 const repo = require("./repository");
 const {lastTwoDirs, httpSlurp, compareVersions} = require('./utils');
@@ -128,11 +129,6 @@ async function createPackageForTag(url, moduleDir, excludes, ref, composerJsonPa
         return file.filepath === exclude || file.filepath.startsWith(exclude)
       })
       return ! isExcluded;
-    })
-    .map(file => {
-      file.mtime = mtime;
-      file.filepath = file.filepath.substr(moduleDir ? moduleDir.length + 1 : '');
-      return file;
     });
   
   // Ensure version is set in config because some repos (e.g. page-builder and inventory) do not provide the version
@@ -140,13 +136,24 @@ async function createPackageForTag(url, moduleDir, excludes, ref, composerJsonPa
   const composerConfig = JSON.parse(composerJson);
   composerConfig.version = version;
   
-  files.push({filepath: 'composer.json', contentBuffer: Buffer.from(JSON.stringify(composerConfig, null, 2), 'utf8'), mtime, isExecutable: false});
-  for (const d of (emptyDirsToAdd || [])) {
-    files.push({filepath: d, contentBuffer: false, mtime, isExecutable: false});
+  if (composerJsonPath.endsWith('template.json')) {
+    const dir = await(repo.checkout(url, ref));
+    composerJson.require = await determineDependencies(dir, files);
   }
-  files.sort((a, b) => ('' + a.filepath).localeCompare('' + b.filepath));
+  
+  const filesInZip = files.map(file => {
+    file.mtime = mtime;
+    file.filepath = file.filepath.substr(moduleDir ? moduleDir.length + 1 : '');
+    return file;
+  });
+  
+  filesInZip.push({filepath: 'composer.json', contentBuffer: Buffer.from(JSON.stringify(composerConfig, null, 2), 'utf8'), mtime, isExecutable: false});
+  for (const d of (emptyDirsToAdd || [])) {
+    filesInZip.push({filepath: d, contentBuffer: false, mtime, isExecutable: false});
+  }
+  filesInZip.sort((a, b) => ('' + a.filepath).localeCompare('' + b.filepath));
 
-  await writePackage(packageFilepath, files)
+  await writePackage(packageFilepath, filesInZip)
 }
 
 async function createComposerJsonOnlyPackage(url, ref, name, transform) {

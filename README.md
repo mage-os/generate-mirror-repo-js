@@ -57,6 +57,13 @@ This is mainly useful in order to debug the build process or to help understand 
 
 For this, you'll need nodejs 16, php8-0 (or 7.4), yarn, git and composer.
 
+Also, the [github.com/mage-os/php-dependency-list](https://github.com/mage-os/php-dependency-list) phar executable is expected to be in the PATH.
+
+```sh
+curl -L https://github.com/mage-os/php-dependency-list/raw/main/php-classes.phar -o /usr/local/bin/php-classes.phar
+chmod +x /usr/local/bin/php-classes.phar
+```
+
 To generate the repo in the directory `./build/`, issue the following commands:
 
 ```bash
@@ -95,10 +102,8 @@ Then re-run the repository generation with the same arguments as the initial gen
 docker build -t magece/mirror-repo-js .
 ```
 
-
 ## TODO
 * Improve performance of package generation, maybe by switching to https://www.nodegit.org/api/libgit_2/
-* Make command line parsing of --mirror-base-url more robust
 
 
 ## Copyright 2022 Vinai Kopp

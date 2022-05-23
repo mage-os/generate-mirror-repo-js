@@ -29,14 +29,14 @@ function collapseCommit(commit) {
 }
 
 async function cloneRepo(url, dir, ref) {
-  report(`Creating shallow clone of ${ref || 'all branches'} w/o working copy in "${dir.split('/').slice(-2).join('/')}"...`);
+  report(`Creating shallow clone of ${ref || 'all branches'} in "${dir.split('/').slice(-2).join('/')}"...`);
   
   if (! fs.existsSync(path.dirname(dir))) {
     fs.mkdirSync(path.dirname(dir), {recursive: true})
   }
   
   const refConf = ref ? {ref, singleBranch: true} : {};
-  await git.clone({fs, http, cache, url, dir, noCheckout: true, depth: 30, onProgress: progress(), ...refConf});
+  await git.clone({fs, http, cache, url, dir, noCheckout: false, depth: 30, onProgress: progress(), ...refConf});
 }
 
 function fullRepoPath(url) {
@@ -168,6 +168,9 @@ module.exports = {
   async listTags(url) {
     const dir = await initRepo(url);
     return git.listTags({fs, dir});
+  },
+  async checkout(url, ref) {
+    return initRepo(url, ref);
   },
   clearCache() {
     cache = {};

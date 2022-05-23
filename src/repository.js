@@ -24,6 +24,9 @@ module.exports = {
   async listTags(url) {
     return git.listTags(url)
   },
+  async checkout(url, ref) {
+    return git.checkout(url, ref);
+  },
   clearCache() {
     git.clearCache()
   },
