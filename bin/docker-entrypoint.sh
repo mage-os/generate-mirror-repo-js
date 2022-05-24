@@ -11,7 +11,7 @@ set -e
 PATH="$PATH:/satis/vendor/bin"
 
 # Build Packages in /build/packages
-node src/main.js --outputDir=/build/packages --gitRepoDir=/generate-repo/repositories --mirrorUrl="$MIRROR_BASE_URL"
+node src/mirror.js --outputDir=/build/packages --gitRepoDir=/generate-repo/repositories --mirrorUrl="$MIRROR_BASE_URL"
 
 echo Running satis...
 

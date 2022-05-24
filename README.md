@@ -72,7 +72,7 @@ git clone https://github.com/mage-os/generate-mirror-repo-js.git
 cd generate-mirror-repo-js/
 composer2  create-project composer/satis --stability=dev
 yarn install
-node src/main.js --outputDir=./build/packages --gitRepoDir=./generate-repo/repositories --mirrorUrl="$MIRROR_BASE_URL"
+node src/mirror.js --outputDir=./build/packages --gitRepoDir=./generate-repo/repositories --mirrorUrl="$MIRROR_BASE_URL"
 node bin/set-satis-homepage-url.js --satisConfig=satis.json  --mirrorUrl="$MIRROR_BASE_URL" > /tmp/satis.json   
 ./satis/bin/satis build  /tmp/satis.json ./build/
 node ./bin/set-satis-output-url-prefix.js --satisOutputDir=./build --mirrorUrl="$MIRROR_BASE_URL"  
