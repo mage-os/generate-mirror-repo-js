@@ -6,7 +6,7 @@ const {
   createPackageForRef,
   createMagentoCommunityEditionMetapackage,
   createMagentoCommunityEditionProject,
-  createMetaPackageFromRepoDir
+  createMetaPackageFromRepoDir,
 } = require('./package-modules');
 
 
@@ -114,11 +114,53 @@ async function createPackageSinceTag(url, from, modulesPath, excludes, composerJ
   return built;
 }
 
+/**
+ * @param instructions Object with build instructions
+ * @returns {Promise<void>}
+ */
+async function processMirrorInstruction(instructions) {
+  let tags = [];
+
+  const {repoUrl, fromTag} = instructions;
+
+  for (const packageDir of (instructions.packageDirs || [])) {
+    const {label, dir, exclude} = Object.assign({exclude: []}, packageDir);
+    console.log(`Packaging ${label}`);
+    tags = await createPackagesSinceTag(repoUrl, fromTag, dir, exclude)
+    console.log(label, tags);
+  }
+
+  for (const individualPackage of (instructions.packageIndividual || [])) {
+    const defaults = {exclude: [], composerJsonPath: '', emptyDirsToAdd: []};
+    const {label, dir, exclude, composerJsonPath, emptyDirsToAdd} = Object.assign(defaults, individualPackage);
+    console.log(`Packaging ${label}`);
+    tags = await createPackageSinceTag(repoUrl, fromTag, dir, exclude, composerJsonPath, emptyDirsToAdd);
+    console.log(label, tags);
+  }
+
+  for (const packageMeta of (instructions.packageMetaFromDirs || [])) {
+    const {label, dir} = packageMeta;
+    console.log(`Packaging ${label}`);
+    tags = await createMetaPackagesFromRepoDir(repoUrl, fromTag, dir);
+    console.log(label, tags);
+  }
+
+  if (instructions.magentoCommunityEditionMetapackage) {
+    console.log('Packaging Magento Community Edition Product Metapackage');
+    tags = await createMagentoCommunityEditionMetapackagesSinceTag(repoUrl, fromTag);
+    console.log('Magento Community Edition Product Metapackage', tags);
+  }
+
+  if (instructions.magentoCommunityEditionProject) {
+    console.log('Packaging Magento Community Edition Project');
+    tags = await createProjectPackagesSinceTag(repoUrl, fromTag);
+    console.log('Magento Community Edition Project', tags);
+  }
+  
+  repo.clearCache();
+}
+
 module.exports = {
-  createPackageSinceTag,
-  createPackagesSinceTag,
-  createMetaPackagesFromRepoDir,
-  createProjectPackagesSinceTag,
-  createMagentoCommunityEditionMetapackagesSinceTag,
   copyAdditionalPackages,
+  processMirrorInstruction
 }

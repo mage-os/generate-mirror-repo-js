@@ -31,6 +31,7 @@ async function composerInstall() {
     const bufferBytes = 4 * 1024 * 1024; // 4M
     childProcess.exec(command, {maxBuffer: bufferBytes}, (error, stdout, stderr) => {
       if (stderr && stderr.includes('Warning: The lock file is not up to date with the latest changes in composer.json')) stderr = '';
+      if (stderr && stderr.includes('Generating autoload files')) stderr = '';
       if (error) {
         reject(`Error executing command: ${error.message}`);
       }
@@ -48,8 +49,8 @@ module.exports = {
     try {
       const hash = createHash('md5').update(dir).digest('hex');
       const workDir = `${tmpdir()}/workdir-${hash}`;
-      chdir(workDir);
       await setupWorkDir(dir, workDir);
+      chdir(workDir);
       if (! fsExists(path.join(workDir, 'vendor/autoload.php'))) {
         await composerInstall();
       }

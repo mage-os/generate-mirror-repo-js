@@ -1,7 +1,7 @@
 const repo = require('./repository');
 const parseOptions = require('parse-options');
-const {setArchiveBaseDir, setMageosPackageRepoUrl} = require('./package-modules');
-const {copyAdditionalPackages, processMirrorInstruction} = require('./mirror-build-tools');
+
+const {setArchiveBaseDir, setMageosPackageRepoUrl, processBuildInstructions} = require('./package-modules');
 
 const options = parseOptions(
   `$outputDir $gitRepoDir $mirrorUrl @help|h`,
@@ -34,14 +34,28 @@ if (options.mirrorUrl) {
   setMageosPackageRepoUrl(options.mirrorUrl);
 }
 
-const mirrorInstructions = [
+function getReleaseDate() {
+  const d = new Date();
+  return `${d.getFullYear()}${(d.getMonth() + 1).toString().padStart(2, '0')}${d.getDate().toString().padStart(2, '0')}`;
+}
+
+const releaseDate = getReleaseDate();
+
+// Note to self:
+//
+// Next step: multi-pass processing of build instructions:
+// 1. pass: determine which packages will be generated
+// 2. pass: build packages and set the version for dependencies on to-be-generated packages to the release
+
+const buildInstructions = [
   {
     repoUrl: 'https://github.com/mage-os/mirror-magento2.git',
-    fromTag: '2.4.0',
+    ref: '2.4-develop',
+    release: `2.4.x-${releaseDate}`,
 
     magentoCommunityEditionProject: true,
     magentoCommunityEditionMetapackage: true,
-
+    
     packageDirs: [
       {label: 'Magento Core Modules', dir: 'app/code/Magento'},
       {label: 'Magento Language packages', dir: 'app/i18n/Magento'}
@@ -87,9 +101,11 @@ const mirrorInstructions = [
     ],
     packageMetaFromDirs: [],
   },
+  // ##### TODO: create mageos fork for the following repos: ######
   {
     repoUrl: 'https://github.com/mage-os/mirror-security-package.git',
-    fromTag: '1.0.0',
+    ref: 'develop',
+    release: `1.1.x-${releaseDate}`,
 
     packageDirs: [
       {
@@ -108,7 +124,8 @@ const mirrorInstructions = [
   },
   {
     repoUrl: 'https://github.com/mage-os/mirror-inventory.git',
-    fromTag: '1.1.5',
+    ref: '1.2-develop',
+    release: `1.2.x-${releaseDate}`,
 
     packageDirs: [
       {
@@ -127,7 +144,8 @@ const mirrorInstructions = [
   },
   {
     repoUrl: 'https://github.com/mage-os/mirror-inventory-composer-installer.git',
-    fromTag: '1.1.0',
+    ref: 'master',
+    release: `1.2.x-${releaseDate}`,
 
     packageDirs: [],
     packageIndividual: [
@@ -140,7 +158,8 @@ const mirrorInstructions = [
   },
   {
     repoUrl: 'https://github.com/mage-os/mirror-magento2-page-builder.git',
-    fromTag: '1.7.0',
+    ref: 'develop',
+    release: `1.6.x-${releaseDate}`,
 
     packageDirs: [
       {
@@ -159,7 +178,8 @@ const mirrorInstructions = [
   },
   {
     repoUrl: 'https://github.com/mage-os/mirror-adobe-ims.git',
-    fromTag: '2.1.0',
+    ref: '2.1.0-develop',
+    release: `2.1.x-${releaseDate}`,
 
     packageDirs: [
       {
@@ -178,7 +198,8 @@ const mirrorInstructions = [
   },
   {
     repoUrl: 'https://github.com/mage-os/mirror-adobe-stock-integration.git',
-    fromTag: '1.0.0',
+    ref: 'develop',
+    release: `1.6.x-${releaseDate}`,
 
     packageDirs: [
       {
@@ -197,7 +218,8 @@ const mirrorInstructions = [
   },
   {
     repoUrl: 'https://github.com/mage-os/mirror-composer-root-update-plugin.git',
-    fromTag: '1.0.0',
+    ref: 'develop',
+    release: `2.0.x-${releaseDate}`,
 
     packageDirs: [],
     packageIndividual: [
@@ -210,7 +232,8 @@ const mirrorInstructions = [
   },
   {
     repoUrl: 'https://github.com/mage-os/mirror-composer-dependency-version-audit-plugin.git',
-    fromTag: '1.2.0',
+    ref: 'main',
+    release: `0.1.x-${releaseDate}`,
 
     packageDirs: [],
     packageIndividual: [
@@ -223,7 +246,8 @@ const mirrorInstructions = [
   },
   {
     repoUrl: 'https://github.com/mage-os/mirror-magento2-sample-data.git',
-    fromTag: '2.4.0',
+    ref: '2.4-develop',
+    release: `2.4.x-${releaseDate}`,
 
     packageDirs: [
       {
@@ -242,8 +266,8 @@ const mirrorInstructions = [
 ];
 
 (async () => {
-  for (const instruction of mirrorInstructions) {
-    await processMirrorInstruction(instruction);
-  }
-  await copyAdditionalPackages(archiveDir);
+  for (const instruction of buildInstructions) {
+    await processBuildInstructions(instruction);
+  }  
 })()
+
