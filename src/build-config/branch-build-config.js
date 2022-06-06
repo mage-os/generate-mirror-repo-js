@@ -14,7 +14,6 @@ const branchBuildConfig = {
     ref: '2.4-develop',
     release: `2.4-a${releaseDate}`,
   },
-  // ##### TODO: create mageos fork for the following repos: ######
   'security-package': {
     repoUrl: 'https://github.com/mage-os/mirror-security-package.git',
     ref: 'develop',
