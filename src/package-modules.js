@@ -338,7 +338,7 @@ async function createPackagesForRef(url, modulesPath, ref, options) {
 
   for (const moduleDir of modules) {
     const current = (++n).toString().padStart(modules.length.toString().length, ' ');
-    report(`${current}/${modules.length} Packaging ${ref} ${(lastTwoDirs(moduleDir, '_'))}: ${release || ref}`);
+    report(`${current}/${modules.length} Packaging [${ref}] ${(lastTwoDirs(moduleDir, '_'))}: ${release || ref}`);
     try {
       const packageToVersion = await createPackageForRef(url, moduleDir, ref, {excludes, release, dependencyVersions});
       Object.assign(built, packageToVersion);
@@ -352,7 +352,7 @@ async function createPackagesForRef(url, modulesPath, ref, options) {
   return built;
 }
 
-async function determineMagentoCommunityEditionMetapackage(ref, release) {
+async function determineMagentoCommunityEditionMetapackage(repoUrl, ref, release) {
   const version = release || ref;
   return {'magento/product-community-edition': version};
 }
@@ -405,11 +405,12 @@ async function determineMagentoCommunityEditionProject(url, ref, release) {
  *
  * @param {String} url The URL of the source git repository
  * @param {String} ref Git ref to check out (string of tag or branch)
- * @param {{release:String|undefined, dependencyVersions:{}}} options
+ * @param {{release:String|undefined, dependencyVersions:{}, minimumStability:String|undefined}} options
  * @returns {Promise<{}>}
  */
 async function createMagentoCommunityEditionProject(url, ref, options) {
-  const {release, dependencyVersions} = Object.assign({release: undefined, dependencyVersions: {}}, (options || {}))
+  const defaults = {release: undefined, dependencyVersions: {}, minimumStability: 'stable'};
+  const {release, dependencyVersions, minimumStability} = Object.assign(defaults, (options || {}))
   const name = 'magento/project-community-edition';
   const version = release || ref;
   await createComposerJsonOnlyPackage(url, ref, name, async (refComposerConfig) => {
@@ -422,7 +423,7 @@ async function createMagentoCommunityEditionProject(url, ref, options) {
       extra: {'magento-force': 'override'},
       version: version,
       repositories: [{type: 'composer', url: mageosPackageRepoUrl}],
-      'minimum-stability': 'stable',
+      'minimum-stability': minimumStability,
       require: Object.assign({'magento/product-community-edition': version}, additionalDependencies)
     });
 
@@ -432,7 +433,7 @@ async function createMagentoCommunityEditionProject(url, ref, options) {
     setDependencyVersions(composerConfig, dependencyVersions);
 
     return composerConfig;
-  });
+  }, release);
 
   return {[name]: version}
 }

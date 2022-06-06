@@ -112,7 +112,8 @@ async function processBuildInstruction(instruction, dependencyVersions) {
 
   if (instruction.magentoCommunityEditionProject) {
     console.log('Packaging Magento Community Edition Project');
-    built = await createMagentoCommunityEditionProject(repoUrl, ref, {release, dependencyVersions});
+    const minimumStability = 'alpha';
+    built = await createMagentoCommunityEditionProject(repoUrl, ref, {release, dependencyVersions, minimumStability});
     Object.assign(packages, built);
   }
 
