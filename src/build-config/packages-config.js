@@ -14,7 +14,7 @@ module.exports = {
       {
         label: 'Magento Base Package',
         dir: '',
-        exclude: [".github/", "app/code/", "app/design/frontend/", "app/design/adminhtml/", "app/i18n/", "lib/internal/Magento/Framework/", "composer.lock", "app/etc/vendor_path.php"],
+        excludes: [".github/", "app/code/", "app/design/frontend/", "app/design/adminhtml/", "app/i18n/", "lib/internal/Magento/Framework/", "composer.lock", "app/etc/vendor_path.php"],
         composerJsonPath: `${__dirname}/../../resource/history/magento/magento2-base/template.json`,
         // The directories are required for the magento-composer-installer to properly function, otherwise it doesn't complete processing and app/etc is missing.
         emptyDirsToAdd: ['app/design/frontend/Magento', 'app/design/adminhtml/Magento', 'app/code/Magento', 'app/i18n/Magento', 'lib/internal/Magento'],
@@ -22,7 +22,7 @@ module.exports = {
       {
         label: 'Magento Framework',
         dir: 'lib/internal/Magento/Framework',
-        exclude: ['lib/internal/Magento/Framework/Amqp/', 'lib/internal/Magento/Framework/Bulk/', 'lib/internal/Magento/Framework/MessageQueue/'],
+        excludes: ['lib/internal/Magento/Framework/Amqp/', 'lib/internal/Magento/Framework/Bulk/', 'lib/internal/Magento/Framework/MessageQueue/'],
       },
       {
         label: 'Magento Framework_Amqp',
@@ -58,7 +58,7 @@ module.exports = {
       {
         label: 'Security Packages',
         dir: '',
-        exclude: ['.github/', '_metapackage/'],
+        excludes: ['.github/', '_metapackage/'],
       }
     ],
     packageIndividual: [],
@@ -76,7 +76,7 @@ module.exports = {
       {
         label: 'Inventory Packages',
         dir: '',
-        exclude: ['.github/', '_metapackage/', 'dev/'],
+        excludes: ['.github/', '_metapackage/', 'dev/'],
       }
     ],
     packageIndividual: [],
@@ -106,7 +106,7 @@ module.exports = {
       {
         label: 'PageBuilder Packages',
         dir: 'app/code/Magento',
-        exclude: ['app/code/Magento/_metapackage/'],
+        excludes: ['app/code/Magento/_metapackage/'],
       }
     ],
     packageIndividual: [],
@@ -124,7 +124,7 @@ module.exports = {
       {
         label: 'Adobe IMS Packages',
         dir: '',
-        exclude: ['_metapackage/', '.github/'],
+        excludes: ['_metapackage/', '.github/'],
       }
     ],
     packageIndividual: [],
@@ -142,7 +142,7 @@ module.exports = {
       {
         label: 'Stock Integration Packages',
         dir: '',
-        exclude: ['_metapackage/', '.github/', 'dev/'],
+        excludes: ['_metapackage/', '.github/', 'dev/'],
       }
     ],
     packageIndividual: [],

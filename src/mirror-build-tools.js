@@ -80,7 +80,7 @@ async function createPackagesSinceTag(url, from, modulesPath, excludes) {
   for (const tag of tags) {
     console.log(`Processing ${tag}`);
     try {
-      await createPackagesForRef(url, modulesPath, excludes, tag);
+      await createPackagesForRef(url, modulesPath, tag, {excludes});
       built.push(tag)
     } catch (exception) {
       console.log(exception.message || exception);
@@ -105,7 +105,7 @@ async function createPackageSinceTag(url, from, modulesPath, excludes, composerJ
         : (composerJsonPath || '').replace('{{version}}', 'template')
     }
     try {
-      await createPackageForRef(url, modulesPath, excludes, tag, composerJsonFile, emptyDirsToAdd);
+      await createPackageForRef(url, modulesPath, tag, {excludes, composerJsonFile, emptyDirsToAdd});
       built.push(tag);
     } catch (exception) {
       console.log(exception.message || exception);
@@ -115,7 +115,7 @@ async function createPackageSinceTag(url, from, modulesPath, excludes, composerJ
 }
 
 /**
- * @param instructions Object with build instructions
+ * @param {{repoUrl:String, fromTag:String}} instructions Array with build instructions
  * @returns {Promise<void>}
  */
 async function processMirrorInstruction(instructions) {
@@ -124,17 +124,17 @@ async function processMirrorInstruction(instructions) {
   const {repoUrl, fromTag} = instructions;
 
   for (const packageDir of (instructions.packageDirs || [])) {
-    const {label, dir, exclude} = Object.assign({exclude: []}, packageDir);
+    const {label, dir, excludes} = Object.assign({excludes: []}, packageDir);
     console.log(`Packaging ${label}`);
-    tags = await createPackagesSinceTag(repoUrl, fromTag, dir, exclude)
+    tags = await createPackagesSinceTag(repoUrl, fromTag, dir, excludes)
     console.log(label, tags);
   }
 
   for (const individualPackage of (instructions.packageIndividual || [])) {
-    const defaults = {exclude: [], composerJsonPath: '', emptyDirsToAdd: []};
-    const {label, dir, exclude, composerJsonPath, emptyDirsToAdd} = Object.assign(defaults, individualPackage);
+    const defaults = {excludes: [], composerJsonPath: '', emptyDirsToAdd: []};
+    const {label, dir, excludes, composerJsonPath, emptyDirsToAdd} = Object.assign(defaults, individualPackage);
     console.log(`Packaging ${label}`);
-    tags = await createPackageSinceTag(repoUrl, fromTag, dir, exclude, composerJsonPath, emptyDirsToAdd);
+    tags = await createPackageSinceTag(repoUrl, fromTag, dir, excludes, composerJsonPath, emptyDirsToAdd);
     console.log(label, tags);
   }
 

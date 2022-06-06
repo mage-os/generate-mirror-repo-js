@@ -14,7 +14,7 @@ if (options.help) {
   console.log(`Build Mage-OS composer release packages from github.com/mage-os git repositories.
 
 Usage:
-  node src/main [OPTIONS]
+  node src/release-branch [OPTIONS]
   
 Options:
   --outputDir=   Dir to contain the built packages (default: packages)
@@ -41,10 +41,5 @@ if (options.mirrorUrl) {
 // 1. pass: determine which packages will be generated
 // 2. pass: build packages and set the version for dependencies on to-be-generated packages to the release
 
-
-(async () => {
-  for (const instruction of branchBuildInstructions) {
-    await processBuildInstructions(instruction);
-  }  
-})()
+processBuildInstructions(branchBuildInstructions);
 

@@ -15,7 +15,7 @@ if (options.help) {
   console.log(`Build Mage-OS mirror composer packages from github.com/mage-os git repositories.
 
 Usage:
-  node src/main [OPTIONS]
+  node src/mirror [OPTIONS]
   
 Options:
   --outputDir=   Dir to contain the built packages (default: packages)
