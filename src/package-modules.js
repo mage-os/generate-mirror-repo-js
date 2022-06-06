@@ -368,7 +368,7 @@ async function determineMagentoCommunityEditionMetapackage(ref, release) {
  * @returns {Promise<{}>}
  */
 async function createMagentoCommunityEditionMetapackage(url, ref, options) {
-  const {release, dependencyVersions} = Object.assign({}, (options || {}))
+  const {release, dependencyVersions} = Object.assign({release: undefined, dependencyVersions: {}}, (options || {}))
   const version = release || ref;
   const name = 'magento/product-community-edition';
   await createComposerJsonOnlyPackage(url, ref, name, async (refComposerConfig) => {
