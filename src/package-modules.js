@@ -1,6 +1,6 @@
 const fs = require('fs');
 const path = require('path');
-const { determineDependencies } = require('./determine-dependencies');
+const {determineDependencies} = require('./determine-dependencies');
 const JSZip = require('jszip');
 const repo = require("./repository");
 const {lastTwoDirs, httpSlurp, compareVersions} = require('./utils');
@@ -259,7 +259,8 @@ async function createPackagesForRef(url, modulesPath, excludes, ref, release) {
   // Synchronously build all packages for the given ref
 
   for (const moduleDir of modules) {
-    report(`${++n}/${modules.length} Packaging ${ref} ${(lastTwoDirs(moduleDir, '_'))}: ${release || ref}`);
+    const current = (++n).toString().padStart(modules.length.toString().length, ' ');
+    report(`${current}/${modules.length} Packaging ${ref} ${(lastTwoDirs(moduleDir, '_'))}: ${release || ref}`);
     try {
       let packageToVersion = await createPackageForRef(url, moduleDir, excludes, ref, undefined, undefined, release);
       Object.assign(built, packageToVersion);
@@ -366,55 +367,6 @@ async function createMetaPackageFromRepoDir(url, dir, ref, release) {
   return {[name]: version}
 }
 
-/**
- * @param instructions
- * @returns {Promise<{}>}
- */
-async function processBuildInstructions(instructions) {
-  const packages = {}
-  let built = {};
-
-  const {repoUrl, ref, release} = instructions;
-
-  for (const packageDir of (instructions.packageDirs || [])) {
-    const {label, dir, exclude} = Object.assign({exclude: []}, packageDir);
-    console.log(`Packaging ${label}`);
-    built = await createPackagesForRef(repoUrl, dir, exclude, ref, release);
-    Object.assign(packages, built);
-  }
-
-  for (const individualPackage of (instructions.packageIndividual || [])) {
-    const defaults = {exclude: [], composerJsonPath: '', emptyDirsToAdd: []};
-    const {label, dir, exclude, composerJsonPath, emptyDirsToAdd} = Object.assign(defaults, individualPackage);
-    console.log(`Packaging ${label}`);
-    built = await createPackageForRef(repoUrl, dir, exclude, ref, composerJsonPath, emptyDirsToAdd, release);
-    Object.assign(packages, built);
-  }
-
-  for (const packageMeta of (instructions.packageMetaFromDirs || [])) {
-    const {label, dir} = packageMeta;
-    console.log(`Packaging ${label}`);
-    built = await createMetaPackageFromRepoDir(repoUrl, dir, ref, release);
-    Object.assign(packages, built);
-  }
-
-  if (instructions.magentoCommunityEditionMetapackage) {
-    console.log('Packaging Magento Community Edition Product Metapackage');
-    built = await createMagentoCommunityEditionMetapackage(repoUrl, ref, release);
-    Object.assign(packages, built);
-  }
-
-  if (instructions.magentoCommunityEditionProject) {
-    console.log('Packaging Magento Community Edition Project');
-    built = await createMagentoCommunityEditionProject(repoUrl, ref, release);
-    Object.assign(packages, built);
-  }
-
-  repo.clearCache();
-  return packages;
-}
-
-
 module.exports = {
   setArchiveBaseDir(newArchiveBaseDir) {
     archiveBaseDir = newArchiveBaseDir;
@@ -427,5 +379,4 @@ module.exports = {
   createMagentoCommunityEditionMetapackage,
   createMagentoCommunityEditionProject,
   createMetaPackageFromRepoDir,
-  processBuildInstructions,
 }
