@@ -10,6 +10,12 @@ COPY --from=node /usr/local/bin /usr/local/bin
 
 ENV NODE_ENV=production
 
+ADD https://github.com/mlocati/docker-php-extension-installer/releases/latest/download/install-php-extensions /usr/local/bin/
+
+ENV IPE_GD_WITHOUTAVIF=1
+RUN chmod +x /usr/local/bin/install-php-extensions && \
+    install-php-extensions bcmath gd intl pdo_mysql soap xsl
+
 WORKDIR /generate-repo
 
 COPY . /generate-repo

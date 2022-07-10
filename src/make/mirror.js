@@ -1,12 +1,12 @@
-const repo = require('./repository');
+const repo = require('./../repository');
 const parseOptions = require('parse-options');
-const {setArchiveBaseDir, setMageosPackageRepoUrl} = require('./package-modules');
-const {copyAdditionalPackages, processMirrorInstruction} = require('./mirror-build-tools');
-const {buildConfig: mirrorInstructions} = require('./build-config/mirror-build-config');
+const {setArchiveBaseDir, setMageosPackageRepoUrl} = require('./../package-modules');
+const {copyAdditionalPackages, processMirrorInstruction} = require('./../mirror-build-tools');
+const {buildConfig: mirrorInstructions} = require('./../build-config/mirror-build-config');
 
 
 const options = parseOptions(
-  `$outputDir $gitRepoDir $mirrorUrl @help|h`,
+  `$outputDir $gitRepoDir $repoUrl @help|h`,
   process.argv
 );
 
@@ -15,12 +15,12 @@ if (options.help) {
   console.log(`Build Mage-OS mirror composer packages from github.com/mage-os git repositories.
 
 Usage:
-  node src/mirror [OPTIONS]
+  node src/make/mirror.js [OPTIONS]
   
 Options:
   --outputDir=   Dir to contain the built packages (default: packages)
   --gitRepoDir=  Dir to clone repositories into (default: repositories)
-  --mirrorUrl=   Composer repository URL to use in base package (default: https://mirror.mage-os.org/)
+  --repoUrl=     Composer repository URL to use in base package (default: https://repo.mage-os.org/)
 `);
   process.exit(1);
 }
@@ -32,8 +32,8 @@ if (options.gitRepoDir) {
   repo.setStorageDir(options.gitRepoDir);
 }
 
-if (options.mirrorUrl) {
-  setMageosPackageRepoUrl(options.mirrorUrl);
+if (options.repoUrl) {
+  setMageosPackageRepoUrl(options.repoUrl);
 }
 
 

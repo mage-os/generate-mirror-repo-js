@@ -1,7 +1,7 @@
 const repo = require('./repository');
 const parseOptions = require('parse-options');
 const {getPackageVersionsForBuildInstructions} = require('./release-branch-build-tools');
-const {buildConfig: branchBuildInstructions} = require('./build-config/branch-build-config');
+const {buildConfig: branchBuildInstructions} = require('./build-config/upstream-nightly-build-config');
 
 const options = parseOptions(
   `$gitRepoDir @help|h`,

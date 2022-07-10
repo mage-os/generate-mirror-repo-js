@@ -7,7 +7,7 @@ const {lastTwoDirs, httpSlurp, compareVersions} = require('./utils');
 
 let archiveBaseDir = 'packages';
 
-let mageosPackageRepoUrl = 'https://mirror.mage-os.org/';
+let mageosPackageRepoUrl = 'https://repo.mage-os.org/';
 
 const stableMtime = '2022-02-22 22:02:22.000Z';
 

@@ -99,10 +99,10 @@ async function createPackageSinceTag(url, from, modulesPath, excludes, composerJ
     // Note: if the composerJsonFile ends with the "template.json" the composer dependencies will be calculated
     // This is only used for the magento2-base-package
     if (composerJsonPath && composerJsonPath.length) {
-      composerJsonFile = (composerJsonPath || '').replace('{{version}}', tag);
+      composerJsonFile = (composerJsonPath || '').replace('template.json', `${tag}.json`);
       composerJsonFile = fs.existsSync(composerJsonFile)
         ? composerJsonFile
-        : (composerJsonPath || '').replace('{{version}}', 'template')
+        : composerJsonPath;
     }
     try {
       await createPackageForRef(url, modulesPath, tag, {excludes, composerJsonFile, emptyDirsToAdd});

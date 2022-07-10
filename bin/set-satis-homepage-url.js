@@ -1,18 +1,18 @@
 /**
  * Run with
  *
- * node bin/set-satis-homepage.js --satisConfig satis-config.json --mirrorUrl http://repo.mirror.host
+ * node bin/set-satis-homepage.js --satisConfig satis-config.json --repoUrl http://repo.mirror.host
  */
 
 const fs = require('fs');
 const parseOptions = require('parse-options');
 
 const options = parseOptions(
-  `$mirrorUrl $satisConfig @help|h`,
+  `$repoUrl $satisConfig @help|h`,
   process.argv
 );
 
-if (options.help || '' === (options.mirrorUrl || '').trim()) {
+if (options.help || '' === (options.repoUrl || '').trim()) {
   console.log(`Print satis.config to STDOUT with given name and homepage.
 
 Usage:
@@ -20,14 +20,14 @@ Usage:
 
 Options:
   --satisConfig= The satis.config file to use as an input (default: /build/satis.json)
-  --mirrorUrl=   Mirror base URL (for example https://mirror.mage-os.org/)
+  --repoUrl=     Repository base URL (for example https://repo.mage-os.org/)
   `);
   process.exit(1);
 }
 
-const mirrorUrl = options.mirrorUrl.substr(0, 4) !== 'http'
-  ? `https://${options.mirrorUrl}`
-  : options.mirrorUrl;
+const repoUrl = options.repoUrl.substr(0, 4) !== 'http'
+  ? `https://${options.repoUrl}`
+  : options.repoUrl;
 
 const satisConfigFile = options.satisConfig || '/build/satis.json';
 if (! fs.existsSync(satisConfigFile)) {
@@ -37,8 +37,8 @@ if (! fs.existsSync(satisConfigFile)) {
 
 const satisConfig = JSON.parse(fs.readFileSync(satisConfigFile));
 
-// Set "name" to "mage-os/${mirrorUrl} repository" but only the lowest level domain
+// Set "name" to "mage-os/${repoUrl} repository" but only the lowest level domain
 // (e.g. mage-os/mirror for https://mirror.mage-os.org)
-const url = new URL(mirrorUrl);
+const url = new URL(repoUrl);
 const lowestLevelDomain = url.host.substr(0, url.host.indexOf('.'));
-console.log(JSON.stringify({...satisConfig, homepage: mirrorUrl, name: `mage-os/${lowestLevelDomain}`}, null, 2))
+console.log(JSON.stringify({...satisConfig, homepage: repoUrl, name: `mage-os/${lowestLevelDomain}`}, null, 2))

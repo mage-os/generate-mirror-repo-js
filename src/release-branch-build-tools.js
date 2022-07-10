@@ -11,8 +11,6 @@ const {
   determineMagentoCommunityEditionMetapackage,
   determineMagentoCommunityEditionProject,
 } = require('./package-modules');
-const {buildConfig: branchBuildInstructions} = require("./build-config/branch-build-config");
-
 
 /**
  * @param {{repoUrl:String, ref:String, release:String|undefined}} instructions

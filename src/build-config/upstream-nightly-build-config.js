@@ -34,11 +34,12 @@ const branchBuildConfig = {
     ref: 'develop',
     release: `1.6-a${releaseDate}`,
   },
-  'adobe-ims': {
-    repoUrl: 'https://github.com/mage-os/mirror-adobe-ims.git',
-    ref: 'develop',
-    release: `2.1-a${releaseDate}`,
-  },
+  // Starting from Adobe Commerce and Magento Open Source 2.4.5 release Adobe IMS Integration package became part of Magento Open Source project.
+  // 'adobe-ims': {
+  //   repoUrl: 'https://github.com/mage-os/mirror-adobe-ims.git',
+  //   ref: 'develop',
+  //   release: `2.1-a${releaseDate}`,
+  // },
   'adobe-stock-integration': {
     repoUrl: 'https://github.com/mage-os/mirror-adobe-stock-integration.git',
     ref: 'develop',

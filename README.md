@@ -1,8 +1,9 @@
 # Mage-OS Mirror Repository Generator - JS Edition
 
 Experimental JavaScript implementation.  
-This is not primarily intended to go into production, but rather it is for learning purposes.  
-The main implementation will be based on <https://github.com/mage-os/package-splitter> when it is ready.
+This project was started not with the primary goal to go into production, but rather to explore and learn how to build Magento Open Source releases.
+
+The main implementation will probably be based on <https://github.com/mage-os/package-splitter> when it is ready.
 
 ## Generated versions
 
@@ -11,30 +12,55 @@ This might change in the future.
 
 ## Usage
 
-The composer package repository is generated using a docker image.  
+This project provides a docker image to generate a composer package repository.  
 
-Mount the directory to contain the generated files into `/build` while executing the container image.  
-This should be the DOCUMENT_ROOT of the host serving the mirror, for example `--volume /var/www/html:/build`.  
+Mount the directory to contain the generated files into `/build` while executing the image.  
+Usually this will be the DOCUMENT_ROOT of the host serving the composer repo, for example `--volume /var/www/html:/build`.  
 
-Optional: a `~/.composer` directory can be mounted, too, which will allow satis to benefit from existing caches. This doesn't make a big difference though.  
+### Specifying the build target(s)
+
+This project can generate different types of composer repositories. At the time of writing, the supported build targets are ``  
+Multiple
+
+#### --target=mirror (default)
+
+By default, a Magento Open Source mirror repository is generated.
+
+#### --target=upstream-nightly
+
+Alternatively a release of the current development versions of Magento Open Source can be generated. This is known as a "nightly" build.
+
+
+### Caching git repositories
+
+Caching git repos is optional. Without caching, every git repository will be cloned each time the repo is generated. This ensures the latest versions will be used to generate the packages.  
+However, cloning large repositories like Magento Open Source takes some time, so it can be beneficial to cache the cloned repository.  
+
+A local directory can be mounted at `/generate-repo/repositories` in order to cache the cloned GitHub repos.  
+Be aware that existing git repositories currently will not be updated on subsequent runs. This is mainly useful during development when executing the container image multiple times consecutively.
+If you want to update a cached git repo before packages are generated, either delete the cache dir, or run `git fetch --tags` manually before executing the image. 
+
+Example: `--volume "${HOME}/repo-cache:/generate-repo/repositories"`
+
+### Mounting a composer dir
+
+A `~/.composer` directory can be mounted, too, which will allow satis to benefit from existing caches. This doesn't make a big difference though.  
 Example: `--volume "${COMPOSER_HOME:-$HOME/.composer}:/composer"`
 
-A local cache directory can be mounted at `/generate-repo/repositories` in order to persist the cloned GitHub repos.  
-Be aware that in existing git repositories currently will not be updated on subsequent runs. This is mainly useful during development when executing the container image multiple times consecutively.  
-If you want to experiment with creating a mirror repo, I suggest you use this, since the current JS git implementation is quite slow cloning a repo as large as magento2 (even as a shallow clone).  
-Example: `--volume "${$HOME}/repo-cache:/generate-repo/repositories"`
+### Regenerating exiting packages
 
-If a package for a given version already exist, it won't be overwritten. Regenerating specific packages means deleting the packages in question and then re-executing the container. 
+If a package for a given version already exist, it will be skipped during subsequent runs.  
+Regenerating specific packages requires deleting the packages in question and then re-executing the image. 
 
-### docker
+### Example with docker
 
-For example, to generate the repository in `~/html`, run the following command, replacing `https://mirror.mage-os.org` with the URL of your mirror:
+To generate the repository in the directory `~/html`, run the following command, replacing `https://mirror.mage-os.org` with the URL of your mirror:
 
 ```bash
 docker run --rm --init -it --user $(id -u):$(id -g) \
   --volume "$(pwd)/html:/build" \
   --volume "${COMPOSER_HOME:-$HOME/.composer}:/composer" \
-  magece/mirror-repo-js:latest --mirror-base-url=https://mirror.mage-os.org
+  magece/mageos-repo-js:latest  --target=mirror --mirror-base-url=https://mirror.mage-os.org
 ```
 
 ### podman
@@ -46,7 +72,7 @@ To generate the repository in `~/html` using podman, run the following command, 
 podman run --rm --init -it \
   --volume "$(pwd)/html:/build:z"  \
   --volume "${COMPOSER_HOME:-$HOME/.composer}:/composer:z" \
-  magece/mirror-repo-js:latest --mirror-base-url=https://mirror.mage-os.org
+  magece/mageos-repo-js:latest --mirror-base-url=https://mirror.mage-os.org
 ```
 
 ### manual generation
@@ -66,22 +92,30 @@ chmod +x /usr/local/bin/php-classes.phar
 
 To generate the repo in the directory `./build/`, issue the following commands:
 
-```bash
+```sh
 export MIRROR_BASE_URL="https://example.com"
 git clone https://github.com/mage-os/generate-mirror-repo-js.git
 cd generate-mirror-repo-js/
 composer2  create-project composer/satis --stability=dev
 yarn install
-node src/mirror.js --outputDir=./build/packages --gitRepoDir=./generate-repo/repositories --mirrorUrl="$MIRROR_BASE_URL"
-node bin/set-satis-homepage-url.js --satisConfig=satis.json  --mirrorUrl="$MIRROR_BASE_URL" > /tmp/satis.json   
+node src/make/mirror.js --outputDir=./build/packages --gitRepoDir=./generate-repo/repositories --repoUrl="$MIRROR_BASE_URL"
+node bin/set-satis-homepage-url.js --satisConfig=satis.json  --repoUrl="$MIRROR_BASE_URL" > /tmp/satis.json   
 ./satis/bin/satis build  /tmp/satis.json ./build/
-node ./bin/set-satis-output-url-prefix.js --satisOutputDir=./build --mirrorUrl="$MIRROR_BASE_URL"  
+node ./bin/set-satis-output-url-prefix.js --satisOutputDir=./build --repoUrl="$MIRROR_BASE_URL"  
+```
+
+To generate an upstream-nightly build, replace the first node command with
+
+```sh
+node src/make/upstream.js --outputDir=./build/packages --gitRepoDir=./generate-repo/repositories --repoUrl="$MIRROR_BASE_URL"
 ```
 
 ## Updating a mirror with a new release
 
-If you are using cached git repositories, be sure to fetch the latest tags.
-In case you didn't specify a repository cache directory when generating the image, this step can be skipped as the repositories will be cloned again while updating the mirror.
+### 1. Update cached git repos
+
+If you are using cached git repositories, be sure to fetch the latest tags .  
+In case you didn't specify a repository cache directory when generating the image, this step can be skipped as the repositories will be cloned again always.
 
 For example, to fetch the latest release tags, if the git repos are cached in a directory `./repositories`, run the following command:
 
@@ -91,10 +125,17 @@ for repo in *; do cd $repo; git fetch --tags; cd -; done
 cd .. 
 ```
 
-Be sure to fetch the latest version of the image with `podman pull magece/mirror-repo-js:latest`
-or `docker pull magece/mirror-repo-js:latest`.
+Alternatively, delete the contents of the repo cache dir, and all repos will be cloned again. 
+
+### 2. Update the container image
+
+Be sure to fetch the latest version of the image with `podman pull magece/mageos-repo-js:latest`
+or `docker pull magece/mageos-repo-js:latest`.
+
+### 3. Re-run the command to generate the composer repo
 
 Then re-run the repository generation with the same arguments as the initial generation.
+
 
 ## Building the docker image
 
@@ -103,7 +144,9 @@ docker build -t magece/mirror-repo-js .
 ```
 
 ## TODO
-* Improve performance of package generation, maybe by switching to https://www.nodegit.org/api/libgit_2/
+* Improve performance of package generation without using significantly more memory.
+  Maybe this can be done by switching to https://www.nodegit.org/api/libgit_2/    
+  Note: this has a low priority, as for my purposes it currently is "fast enough".
 
 
 ## Copyright 2022 Vinai Kopp
