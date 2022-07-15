@@ -121,7 +121,7 @@ For example, to fetch the latest release tags, if the git repos are cached in a 
 
 ```sh
 cd repositories
-for repo in *; do cd $repo; git fetch --tags; cd -; done
+for repo in *; do cd $repo; git pull; git fetch --tags; cd -; done
 cd .. 
 ```
 
