@@ -1,0 +1,5 @@
+{
+  "require": {
+    "magento/composer-root-update-plugin": "~1.1"
+  }
+}
