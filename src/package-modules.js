@@ -44,15 +44,15 @@ function zipFileWith(files) {
 }
 
 function ltrim(str, c) {
-  while (c && str && c.includes(str.substr(0, 1))) {
-    str = str.substr(1);
+  while (c && str && c.includes(str.slice(0, 1))) {
+    str = str.slice(1);
   }
   return str;
 }
 
 function rtrim(str, c) {
-  while (c && str && c.includes(str.substr(-1))) {
-    str = str.substr(0, str.length -1);
+  while (c && str && c.includes(str.slice(-1))) {
+    str = str.slice(0, str.length -1);
   }
   return str;
 }
@@ -88,7 +88,7 @@ async function getComposerJson(url, moduleDir, ref, composerJsonPath) {
   if (! composerJsonPath || ! composerJsonPath.length) {
     return readComposerJson(url, moduleDir, ref)
   }
-  if (composerJsonPath.substr(0, 4) === 'http') {
+  if (composerJsonPath.slice(0, 4) === 'http') {
     return httpSlurp(composerJsonPath);
   }
   return fs.readFileSync(composerJsonPath, 'utf8');
@@ -277,7 +277,7 @@ async function createComposerJsonOnlyPackage(url, ref, name, transform, release)
 
 async function getLatestTag(url) {
   // Filter out tags beginning with v because magento/composer-dependency-version-audit-plugin has a wrong v1.0 tag
-  const tags = (await repo.listTags(url)).filter(tag => tag.substr(0, 1) !== 'v').sort(compareVersions);
+  const tags = (await repo.listTags(url)).filter(tag => tag.slice(0, 1) !== 'v').sort(compareVersions);
   return tags[tags.length -1];
 }
 
@@ -287,7 +287,7 @@ async function getLatestDependencies(dir) {
   }
   const template = JSON.parse(fs.readFileSync(`${dir}/dependencies-template.json`));
   return Object.entries(template.dependencies).reduce(async (deps, [dependency, url]) => {
-    const tag = url.substr(0, 4) === 'http' ? await getLatestTag(url) : url;
+    const tag = url.slice(0, 4) === 'http' ? await getLatestTag(url) : url;
     return Object.assign(await deps, {[dependency]: tag});
   }, Promise.resolve({}));
 }

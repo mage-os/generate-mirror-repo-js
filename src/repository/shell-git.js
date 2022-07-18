@@ -7,14 +7,14 @@ let report = console.log;
 
 function dirForRepoUrl(url) {
   // todo: add vendor namespace directory inside of repoBaseDir to path?
-  if (url.substr(-4).toLowerCase() === '.git') {
-    url = url.substr(0, url.length - 4);
+  if (url.slice(-4).toLowerCase() === '.git') {
+    url = url.slice(0, url.length - 4);
   }
-  if (url.substr(-1) === '/') {
-    url = url.substr(0, url.length - 1);
+  if (url.slice(-1) === '/') {
+    url = url.slice(0, url.length - 1);
   }
   return url.includes('/')
-    ? url.substr(url.lastIndexOf('/'))
+    ? url.slice(url.lastIndexOf('/'))
     : url;
 }
 
@@ -23,7 +23,7 @@ function fullRepoPath(url) {
 }
 
 function trimDir(dir) {
-  return dir.substr(-1) === '/' ? dir.substr(0, dir.length -1) : dir;
+  return dir.slice(-1) === '/' ? dir.slice(0, dir.length -1) : dir;
 }
 
 async function exec(cmd, options) {

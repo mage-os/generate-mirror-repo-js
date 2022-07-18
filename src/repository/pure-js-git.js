@@ -10,14 +10,14 @@ let repoBaseDir;
 
 function dirForRepoUrl(url) {
   // todo: add vendor namespace directory inside of repoBaseDir to path?
-  if (url.substr(-4).toLowerCase() === '.git') {
-    url = url.substr(0, url.length - 4);
+  if (url.slice(-4).toLowerCase() === '.git') {
+    url = url.slice(0, url.length - 4);
   }
-  if (url.substr(-1) === '/') {
-    url = url.substr(0, url.length - 1);
+  if (url.slice(-1) === '/') {
+    url = url.slice(0, url.length - 1);
   }
   return url.includes('/')
-    ? url.substr(url.lastIndexOf('/'))
+    ? url.slice(url.lastIndexOf('/'))
     : url;
 }
 
@@ -64,7 +64,7 @@ async function expandHistory(url, depth) {
 
 function isFoldersIn(dir) {
   const targetDir = dir
-    ? (dir.substr(-1) === '/' ? dir.substr(0, dir.length - 1) : dir)
+    ? (dir.slice(-1) === '/' ? dir.slice(0, dir.length - 1) : dir)
     : '.';
   
   return async (filepath, [entry]) => {
@@ -78,7 +78,7 @@ function isFoldersIn(dir) {
 let isFirstWalk = true;
 function listFilesIn(url, dir) {
   const targetDir = dir
-    ? (dir.substr(-1) !== '/' ? dir + '/' : dir)
+    ? (dir.slice(-1) !== '/' ? dir + '/' : dir)
     : '';
   
   return async (filepath, [entry]) => {

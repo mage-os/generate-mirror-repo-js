@@ -27,7 +27,7 @@ async function copyAdditionalPackages(archiveDir) {
         return;
       }
       const archives = (files || [])
-        .filter(file => file.substr(-4) === '.zip')
+        .filter(file => file.slice(-4) === '.zip')
         .filter(file => ! fs.existsSync(`${dest}/${file}`));
       console.log(`Copying ${archives.length} additional archive(s) into build directory.`);
       archives.map(file => {
