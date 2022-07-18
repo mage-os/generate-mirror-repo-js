@@ -105,7 +105,7 @@ async function createPackageSinceTag(url, from, modulesPath, excludes, composerJ
         : composerJsonPath;
     }
     try {
-      await createPackageForRef(url, modulesPath, tag, {excludes, composerJsonFile, emptyDirsToAdd});
+      await createPackageForRef(url, modulesPath, tag, {excludes, composerJsonPath: composerJsonFile, emptyDirsToAdd});
       built.push(tag);
     } catch (exception) {
       console.log(exception.message || exception);

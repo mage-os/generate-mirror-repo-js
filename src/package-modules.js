@@ -237,7 +237,7 @@ async function createPackageForRef(url, moduleDir, ref, options) {
 
   const filesInZip = files.map(file => {
     file.mtime = mtime;
-    file.filepath = file.filepath.substr(moduleDir ? moduleDir.length + 1 : '');
+    file.filepath = file.filepath.slice(moduleDir ? moduleDir.length + 1 : 0);
     return file;
   });
   
@@ -326,7 +326,8 @@ async function findModulesToBuild(url, modulesPath, ref, excludes) {
  */
 async function createPackagesForRef(url, modulesPath, ref, options) {
   const defaults = {excludes: [], release: undefined, dependencyVersions: {}};
-  const {excludes, release, dependencyVersions} = Object.assign(defaults, (options || {}));
+  let configOptions = Object.assign(defaults, (options || {}));
+  const {excludes, release} = configOptions;
   const modules = await findModulesToBuild(url, modulesPath, ref, excludes);
 
   report(`Found ${modules.length} modules`);
@@ -340,7 +341,7 @@ async function createPackagesForRef(url, modulesPath, ref, options) {
     const current = (++n).toString().padStart(modules.length.toString().length, ' ');
     report(`${current}/${modules.length} Packaging [${ref}] ${(lastTwoDirs(moduleDir, '_'))}: ${release || ref}`);
     try {
-      const packageToVersion = await createPackageForRef(url, moduleDir, ref, {excludes, release, dependencyVersions});
+      const packageToVersion = await createPackageForRef(url, moduleDir, ref, configOptions);
       Object.assign(built, packageToVersion);
     } catch (exception) {
       report(exception.message);

@@ -71,14 +71,14 @@ async function initRepo(url, ref) {
 async function listFileNames(repoDir, path, excludes) {
   const excludeGit = `-not -path '.git' -not -path '.git/*'`;
   const excludeArgs = excludes.map(excludePath => {
-    return excludePath.substr(-1) === '/'
+    return excludePath.slice(-1) === '/'
       ? `-not -path '${excludePath}*'`
       : `-not -path '${excludePath}'`;
   }).join(' ');
   const out = await exec(`find '${path || '.'}' -type f ${excludeGit} ${excludeArgs}`, {cwd: repoDir});
   const files = out.trim().split("\n");
   return path === ''
-    ? files.map(file => file.substr(2)) // cut off leading ./ if path is empty
+    ? files.map(file => file.slice(2)) // cut off leading ./ if path is empty
     : files;
   
 }
@@ -86,11 +86,13 @@ async function listFileNames(repoDir, path, excludes) {
 module.exports = {
   async listFolders(url, pathInRepo, ref) {
     const dir = await initRepo(url, ref);
+    if (! fs.existsSync(path.join(dir, pathInRepo))) return [];
     const out = await exec(`ls -1 -d ${path.join(pathInRepo, '*/')}`, {cwd: dir});
     return out.trim().split("\n").map(trimDir);
   },
   async listFiles(url, pathInRepo, ref, excludes) {
     const dir = await initRepo(url, ref);
+    if (! fs.existsSync(path.join(dir, pathInRepo))) return [];
     const fileNames = await listFileNames(dir, pathInRepo, excludes || []);
     return fileNames.map(filepath => {
       const fullPath = path.join(dir, filepath);
