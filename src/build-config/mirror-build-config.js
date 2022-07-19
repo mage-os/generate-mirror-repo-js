@@ -18,7 +18,7 @@ const mirrorBuildConfig = {
     repoUrl: 'https://github.com/mage-os/mirror-inventory-composer-installer.git',
     fromTag: '1.1.0',
   },
-  'magento2-page-builder': {
+  'page-builder': {
     repoUrl: 'https://github.com/mage-os/mirror-magento2-page-builder.git',
     fromTag: '1.7.0',
   },
