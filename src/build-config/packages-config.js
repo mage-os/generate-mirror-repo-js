@@ -17,7 +17,7 @@ module.exports = {
         excludes: [".github/", "app/code/", "app/design/frontend/", "app/design/adminhtml/", "app/i18n/", "lib/internal/Magento/Framework/", "composer.lock", "app/etc/vendor_path.php"],
         composerJsonPath: `${__dirname}/../../resource/history/magento/magento2-base/template.json`,
         // The directories are required for the magento-composer-installer to properly function, otherwise it doesn't complete processing and app/etc is missing.
-        emptyDirsToAdd: ['app/design/frontend/Magento', 'app/design/adminhtml/Magento', 'app/code/Magento', 'app/i18n/Magento', 'lib/internal/Magento'],
+        emptyDirsToAdd: ['.github', 'app/design/frontend/Magento', 'app/design/adminhtml/Magento', 'app/code/Magento', 'app/i18n/Magento', 'lib/internal/Magento'],
       },
       {
         label: 'Magento Framework',

@@ -40,7 +40,7 @@ const mirrorBuildConfig = {
   },
   'composer-dependency-version-audit-plugin': {
     repoUrl: 'https://github.com/mage-os/mirror-composer-dependency-version-audit-plugin.git',
-    fromTag: '1.2.0',
+    fromTag: '0.1.2',
   },
   'magento2-sample-data': {
     repoUrl: 'https://github.com/mage-os/mirror-magento2-sample-data.git',
