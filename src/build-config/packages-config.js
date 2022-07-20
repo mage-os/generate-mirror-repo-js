@@ -153,6 +153,18 @@ module.exports = {
       },
     ],
   },
+  'magento-composer-installer': {
+    repoUrl: 'https://github.com/mage-os/mirror-magento-composer-installer.git',
+
+    packageDirs: [],
+    packageIndividual: [
+      {
+        label: 'Magento Composer Installer',
+        dir: '',
+      }
+    ],
+    packageMetaFromDirs: [],
+  },
   'composer-root-update-plugin': {
     repoUrl: 'https://github.com/mage-os/mirror-composer-root-update-plugin.git',
 

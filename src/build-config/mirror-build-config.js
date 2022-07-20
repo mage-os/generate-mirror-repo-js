@@ -30,6 +30,10 @@ const mirrorBuildConfig = {
     repoUrl: 'https://github.com/mage-os/mirror-adobe-stock-integration.git',
     fromTag: '1.0.0',
   },
+  'magento-composer-installer': {
+    repoUrl: 'https://github.com/mage-os/mirror-magento-composer-installer.git',
+    fromTag: '0.1.4',
+  },
   'composer-root-update-plugin': {
     repoUrl: 'https://github.com/mage-os/mirror-composer-root-update-plugin.git',
     fromTag: '1.0.0',
