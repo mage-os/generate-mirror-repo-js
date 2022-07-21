@@ -123,10 +123,13 @@ module.exports = {
   async createTagForRef(url, ref, tag, details) {
     const dir = await initRepo(url);
     const msg = await exec(`git tag -n ${tag}`, {cwd: dir});
-    if (msg.length > 0 && ! msg.includes('MageOS Extra Ref')) {
+    if (msg.trim().length === 0) {
+      // Create tag if it doesn't exist
+      await exec(`git tag -a ${tag} ${ref} -m "MageOS Extra Ref"`, {cwd: dir});
+    } else if (! msg.includes('MageOS Extra Ref')) {
+      // Throw if the tag was not created by package generator
       throw details;
     }
-    await exec(`git tag -a ${tag} ${ref} -m "MageOS Extra Ref"`, {cwd: dir});
   },
   clearCache() {
     // noop
