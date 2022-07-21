@@ -121,7 +121,9 @@ async function createPackageSinceTag(url, from, modulesPath, excludes, composerJ
 async function processMirrorInstruction(instructions) {
   let tags = [];
 
-  const {repoUrl, fromTag} = instructions;
+  const {repoUrl, fromTag, extraRefToRelease} = instructions;
+
+  (extraRefToRelease || []).map(extra => repo.createTagForRef(repoUrl, extra.ref, extra.release, extra.details))
 
   for (const packageDir of (instructions.packageDirs || [])) {
     const {label, dir, excludes} = Object.assign({excludes: []}, packageDir);

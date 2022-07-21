@@ -13,6 +13,15 @@ const mirrorBuildConfig = {
   'inventory': {
     repoUrl: 'https://github.com/mage-os/mirror-inventory.git',
     fromTag: '1.1.5',
+    extraRefToRelease: [
+      // This is a workaround for a missing upstream release tag, see https://github.com/magento/inventory/issues/3354
+      // This commit ref is the head for the 1.2-p1-alpha branch (at the time of writing)  
+      {
+        ref: '2a6fdb4e08dc307cd92ca4a7a0958128611be757',
+        release: '1.2.0-p1',
+        details: 'Remove extraRefToRelease from mirror build config if https://github.com/magento/inventory/issues/3354 is resolved'
+      }
+    ],
   },
   'inventory-composer-installer': {
     repoUrl: 'https://github.com/mage-os/mirror-inventory-composer-installer.git',

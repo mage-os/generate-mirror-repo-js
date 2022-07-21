@@ -27,6 +27,9 @@ module.exports = {
   async checkout(url, ref) {
     return git.checkout(url, ref);
   },
+  async createTagForRef(url, ref, tag, details) {
+    return git.createTagForRef(url, ref, tag, details)
+  },
   clearCache() {
     git.clearCache()
   },

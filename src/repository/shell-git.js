@@ -120,6 +120,14 @@ module.exports = {
   async checkout(url, ref) {
     return initRepo(url, ref);
   },
+  async createTagForRef(url, ref, tag, details) {
+    const dir = await initRepo(url);
+    const msg = await exec(`git tag -n ${tag}`, {cwd: dir});
+    if (msg.length > 0 && ! msg.includes('MageOS Extra Ref')) {
+      throw details;
+    }
+    await exec(`git tag -a ${tag} ${ref} -m "MageOS Extra Ref"`, {cwd: dir});
+  },
   clearCache() {
     // noop
   },
