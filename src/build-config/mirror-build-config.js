@@ -4,7 +4,7 @@ const packagesConfig = require('./packages-config');
 const mirrorBuildConfig = {
   'magento2': {
     repoUrl: 'https://github.com/mage-os/mirror-magento2.git',
-    fromTag: '2.4.0',
+    fromTag: '2.3.7-p3',
   },
   'security-package': {
     repoUrl: 'https://github.com/mage-os/mirror-security-package.git',
