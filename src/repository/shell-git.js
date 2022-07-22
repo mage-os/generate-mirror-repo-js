@@ -125,10 +125,12 @@ module.exports = {
     const msg = await exec(`git tag -n ${tag}`, {cwd: dir});
     if (msg.trim().length === 0) {
       // Create tag if it doesn't exist
-      await exec(`git tag -a ${tag} ${ref} -m "MageOS Extra Ref"`, {cwd: dir});
-    } else if (! msg.includes('MageOS Extra Ref')) {
+      await exec(`git config user.email "repo@mage-os.org"`, {cwd: dir});
+      await exec(`git config user.name "Mage-OS Mirror Repo"`, {cwd: dir});
+      await exec(`git tag -a ${tag} ${ref} -m "Mage-OS Extra Ref"`, {cwd: dir});
+    } else if (! msg.includes('Mage-OS Extra Ref')) {
       // Throw if the tag was not created by package generator
-      throw details;
+      throw (details || `Tag ${tag} already exists on repo ${url}`);
     }
   },
   clearCache() {
