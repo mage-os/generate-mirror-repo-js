@@ -7,7 +7,7 @@ The main implementation will probably be based on <https://github.com/mage-os/pa
 
 ## Generated versions
 
-All packages required to install Magento Open Source 2.4.0 and newer will be generated.
+All packages required to install Magento Open Source 2.3.7-p3 and newer will be generated.
 This might change in the future.
 
 ## Usage

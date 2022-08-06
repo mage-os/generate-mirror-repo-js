@@ -53,7 +53,7 @@ const mirrorBuildConfig = {
   },
   'magento2-sample-data': {
     repoUrl: 'https://github.com/mage-os/mirror-magento2-sample-data.git',
-    fromTag: '2.4.0',
+    fromTag: '2.3.7-p3',
   }
 }
 

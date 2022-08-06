@@ -18,42 +18,42 @@ const {
  */
 async function getPackagesForBuildInstruction(instructions) {
   const packages = {}
-  let built = {};
+  let toBeBuilt = {};
 
   const {repoUrl, ref, release} = instructions;
 
   for (const packageDir of (instructions.packageDirs || [])) {
     const {label, dir, excludes} = Object.assign({excludes: []}, packageDir);
     console.log(`Inspecting ${label}`);
-    built = await determinePackagesForRef(repoUrl, dir, ref, {excludes, release});
-    Object.assign(packages, built);
+    toBeBuilt = await determinePackagesForRef(repoUrl, dir, ref, {excludes, release});
+    Object.assign(packages, toBeBuilt);
   }
 
   for (const individualPackage of (instructions.packageIndividual || [])) {
     const defaults = {excludes: [], composerJsonPath: '', emptyDirsToAdd: []};
     const {label, dir, excludes, composerJsonPath, emptyDirsToAdd} = Object.assign(defaults, individualPackage);
     console.log(`Inspecting ${label}`);
-    built = await determinePackageForRef(repoUrl, dir, ref, {excludes, composerJsonPath, emptyDirsToAdd, release});
-    Object.assign(packages, built);
+    toBeBuilt = await determinePackageForRef(repoUrl, dir, ref, {excludes, composerJsonPath, emptyDirsToAdd, release});
+    Object.assign(packages, toBeBuilt);
   }
 
   for (const packageMeta of (instructions.packageMetaFromDirs || [])) {
     const {label, dir} = packageMeta;
     console.log(`Inspecting ${label}`);
-    built = await determineMetaPackageFromRepoDir(repoUrl, dir, ref, release);
-    Object.assign(packages, built);
+    toBeBuilt = await determineMetaPackageFromRepoDir(repoUrl, dir, ref, release);
+    Object.assign(packages, toBeBuilt);
   }
 
   if (instructions.magentoCommunityEditionMetapackage) {
     console.log('Inspecting Magento Community Edition Product Metapackage');
-    built = await determineMagentoCommunityEditionMetapackage(repoUrl, ref, release);
-    Object.assign(packages, built);
+    toBeBuilt = await determineMagentoCommunityEditionMetapackage(repoUrl, ref, release);
+    Object.assign(packages, toBeBuilt);
   }
 
   if (instructions.magentoCommunityEditionProject) {
     console.log('Inspecting Magento Community Edition Project');
-    built = await determineMagentoCommunityEditionProject(repoUrl, ref, release);
-    Object.assign(packages, built);
+    toBeBuilt = await determineMagentoCommunityEditionProject(repoUrl, ref, release);
+    Object.assign(packages, toBeBuilt);
   }
 
   repo.clearCache();
