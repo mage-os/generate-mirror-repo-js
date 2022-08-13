@@ -38,6 +38,18 @@ const mirrorBuildConfig = {
   'adobe-stock-integration': {
     repoUrl: 'https://github.com/mage-os/mirror-adobe-stock-integration.git',
     fromTag: '1.0.0',
+    fixVersions: {
+      "2.1.1": {
+        "magento/module-adobe-stock-admin-ui": "1.3.0",
+        "magento/module-adobe-stock-asset": "1.3.0",
+        "magento/module-adobe-stock-asset-api": "2.0.0",
+        "magento/module-adobe-stock-client": "1.3.0",
+        "magento/module-adobe-stock-client-api": "2.1.0",
+        "magento/module-adobe-stock-image": "1.3.0",
+        "magento/module-adobe-stock-image-admin-ui": "1.3.0",
+        "magento/module-adobe-stock-image-api": "1.3.0",
+      }
+    }
   },
   'magento-composer-installer': {
     repoUrl: 'https://github.com/mage-os/mirror-magento-composer-installer.git',

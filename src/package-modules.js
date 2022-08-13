@@ -101,9 +101,22 @@ function chooseNameAndVersion(magentoName, composerJson, ref, release) {
   // This is to work around a wrong version in the magento/composer-dependency-version-audit-plugin:0.1.2 that
   // lists version 0.1.1 in the composer.json
   // See https://github.com/magento/composer-dependency-version-audit-plugin/blob/0.1.2/composer.json#L5
-  version = release || version || ref;
+  version = release || version;
   if (!name) {
-    throw {message: `Unable find package name in composer.json for ${ref}, skipping ${magentoName}`}
+    throw {
+      kind: 'NAME_UNKNOWN',
+      message: `Unable find package name in composer.json for ${ref}, skipping ${magentoName}`,
+      name,
+      ref,
+    }
+  }
+  if (!version) {
+    throw {
+      kind: 'VERSION_UNKNOWN',
+      message: `Unable find package version in ${name} composer.json for ${ref}, skipping ${magentoName}`,
+      name,
+      ref,
+    }
   }
   return {name, version};
 }
@@ -203,9 +216,17 @@ async function createPackageForRef(url, moduleDir, ref, options) {
     throw {message: `Unable to find composer.json for ${ref}, skipping ${magentoName}`}
   }
 
-  let {name, version} = chooseNameAndVersion(magentoName, composerJson, ref, release);
+
+  let name, version;
+  try {
+    ({name, version} = chooseNameAndVersion(magentoName, composerJson, ref, release));
+  } catch (e) {
+    if (e.kind === 'VERSION_UNKNOWN' && dependencyVersions[e.name]) {
+      ({name, version} = chooseNameAndVersion(magentoName, composerJson, ref, dependencyVersions[e.name]));
+    }
+  }
   const packageWithVersion = {[name]: version};
-  
+
   // Use fixed date for stable package checksum generation
   const mtime = new Date(stableMtime);
   
