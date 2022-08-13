@@ -223,13 +223,14 @@ async function createPackageForRef(url, moduleDir, ref, options) {
   } catch (e) {
     if (e.kind === 'VERSION_UNKNOWN' && dependencyVersions[e.name]) {
       ({name, version} = chooseNameAndVersion(magentoName, composerJson, ref, dependencyVersions[e.name]));
+    } else {
+      throw e;
     }
   }
   const packageWithVersion = {[name]: version};
 
   // Use fixed date for stable package checksum generation
   const mtime = new Date(stableMtime);
-  
   const packageFilepath = archiveFilePath(name, version);
   if (fs.existsSync(packageFilepath)) {
     return packageWithVersion;
