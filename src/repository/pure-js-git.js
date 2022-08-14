@@ -172,7 +172,7 @@ module.exports = {
   async checkout(url, ref) {
     return initRepo(url, ref);
   },
-  async async createTagForRef(url, ref, tag, details) {
+  async createTagForRef(url, ref, tag, details) {
     throw "createTagForRef() is not implemented for the pure-js git implementation";
   },
   clearCache() {

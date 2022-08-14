@@ -61,6 +61,9 @@ const mirrorBuildConfig = {
   },
   'composer-dependency-version-audit-plugin': {
     repoUrl: 'https://github.com/mage-os/mirror-composer-dependency-version-audit-plugin.git',
+    // Start from 0.1.2 to work around a wrong version in the magento/composer-dependency-version-audit-plugin:0.1.2
+    // that lists version 0.1.1 in the composer.json
+    // See https://github.com/magento/composer-dependency-version-audit-plugin/blob/0.1.2/composer.json#L5
     fromTag: '0.1.2',
   },
   'magento2-sample-data': {

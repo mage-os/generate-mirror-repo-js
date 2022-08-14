@@ -44,7 +44,8 @@ async function composerInstall() {
 }
 
 module.exports = {
-  async determineDependencies(dir, files) {
+  // This determineSourceDependencies function is used to determine the actual source dependencies for the base package 
+  async determineSourceDependencies(dir, files) {
     const prevCwd = cwd();
     try {
       console.log(`Determining dependencies for package being built...`);

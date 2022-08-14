@@ -1,6 +1,6 @@
 const fs = require('fs');
 const path = require('path');
-const {determineDependencies} = require('./determine-dependencies');
+const {determineSourceDependencies} = require('./determine-dependencies');
 const JSZip = require('jszip');
 const repo = require("./repository");
 const {lastTwoDirs, httpSlurp, compareVersions} = require('./utils');
@@ -97,10 +97,6 @@ async function getComposerJson(url, moduleDir, ref, composerJsonPath) {
 function chooseNameAndVersion(magentoName, composerJson, ref, release) {
   const composerConfig = JSON.parse(composerJson);
   let {version, name} = composerConfig;
-  // Force package and composer version to match version from composer.json instead of the git tag (if no release given)
-  // This is to work around a wrong version in the magento/composer-dependency-version-audit-plugin:0.1.2 that
-  // lists version 0.1.1 in the composer.json
-  // See https://github.com/magento/composer-dependency-version-audit-plugin/blob/0.1.2/composer.json#L5
   version = release || version;
   if (!name) {
     throw {
@@ -153,14 +149,23 @@ async function determinePackageForRef(url, moduleDir, ref, options) {
   const {composerJsonPath, release} = Object.assign(defaults, (options || {}));
   const magentoName = lastTwoDirs(moduleDir) || '';
 
-  const composerJson = await getComposerJson(url, moduleDir, ref, composerJsonPath);
+  try {
+    const composerJson = await getComposerJson(url, moduleDir, ref, composerJsonPath);
 
-  if (composerJson.trim() === '404: Not Found') {
-    throw {message: `Unable to find composer.json for ${ref}, skipping ${magentoName}`}
+    if (composerJson.trim() === '404: Not Found') {
+      throw {message: `Unable to find composer.json for ${ref}, skipping ${magentoName}`}
+    }
+    const {name, version} = chooseNameAndVersion(magentoName, composerJson, ref, release);
+
+    return {[name]: version}
+  } catch (e) {
+    // Special case for the base package that never includes a version in the tagged release base composer.json
+    if (e.kind === 'VERSION_UNKNOWN' && e.name === 'magento/magento2-base') {
+      return {[e.name]: e.ref}
+    }
+    console.log(`Unable to determine name and version for ${magentoName} in ${ref}: ${e.message || e}`);
+    return {};
   }
-  const {name, version} = chooseNameAndVersion(magentoName, composerJson, ref, release);
-
-  return {[name]: version}
 }
 
 /**
@@ -251,7 +256,7 @@ async function createPackageForRef(url, moduleDir, ref, options) {
   
   if ((composerJsonPath || '').endsWith('template.json')) {
     const dir = await(repo.checkout(url, ref));
-    const deps = await determineDependencies(dir, files);
+    const deps = await determineSourceDependencies(dir, files);
     composerConfig.require = {};
     Object.keys(deps).sort().forEach(dependency => composerConfig.require[dependency] = deps[dependency]);
   }
@@ -531,6 +536,8 @@ module.exports = {
   createMagentoCommunityEditionProject,
   createMetaPackageFromRepoDir,
 
+  getLatestTag,
+  
   determinePackageForRef,
   determinePackagesForRef,
   determineMagentoCommunityEditionMetapackage,

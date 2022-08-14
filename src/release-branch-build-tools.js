@@ -10,49 +10,54 @@ const {
   determineMetaPackageFromRepoDir,
   determineMagentoCommunityEditionMetapackage,
   determineMagentoCommunityEditionProject,
+  getLatestTag
 } = require('./package-modules');
 
 /**
- * @param {{repoUrl:String, ref:String, release:String|undefined}} instructions
+ * @param {{repoUrl:String}} instructions
  * @returns {Promise<{}>}
  */
 async function getPackagesForBuildInstruction(instructions) {
   const packages = {}
   let toBeBuilt = {};
 
-  const {repoUrl, ref, release} = instructions;
+  const {repoUrl} = instructions;
+  
+  
+  // use the latest tag in branch ref
+  const baseVersionsOnRef = await getLatestTag(repoUrl);
 
   for (const packageDir of (instructions.packageDirs || [])) {
     const {label, dir, excludes} = Object.assign({excludes: []}, packageDir);
     console.log(`Inspecting ${label}`);
-    toBeBuilt = await determinePackagesForRef(repoUrl, dir, ref, {excludes, release});
+    toBeBuilt = await determinePackagesForRef(repoUrl, dir, baseVersionsOnRef, {excludes});
     Object.assign(packages, toBeBuilt);
   }
-
+  
   for (const individualPackage of (instructions.packageIndividual || [])) {
     const defaults = {excludes: [], composerJsonPath: '', emptyDirsToAdd: []};
     const {label, dir, excludes, composerJsonPath, emptyDirsToAdd} = Object.assign(defaults, individualPackage);
     console.log(`Inspecting ${label}`);
-    toBeBuilt = await determinePackageForRef(repoUrl, dir, ref, {excludes, composerJsonPath, emptyDirsToAdd, release});
+    toBeBuilt = await determinePackageForRef(repoUrl, dir, baseVersionsOnRef, {excludes, composerJsonPath, emptyDirsToAdd});
     Object.assign(packages, toBeBuilt);
   }
 
   for (const packageMeta of (instructions.packageMetaFromDirs || [])) {
     const {label, dir} = packageMeta;
     console.log(`Inspecting ${label}`);
-    toBeBuilt = await determineMetaPackageFromRepoDir(repoUrl, dir, ref, release);
+    toBeBuilt = await determineMetaPackageFromRepoDir(repoUrl, dir, baseVersionsOnRef, undefined);
     Object.assign(packages, toBeBuilt);
   }
 
   if (instructions.magentoCommunityEditionMetapackage) {
     console.log('Inspecting Magento Community Edition Product Metapackage');
-    toBeBuilt = await determineMagentoCommunityEditionMetapackage(repoUrl, ref, release);
+    toBeBuilt = await determineMagentoCommunityEditionMetapackage(repoUrl, baseVersionsOnRef);
     Object.assign(packages, toBeBuilt);
   }
 
   if (instructions.magentoCommunityEditionProject) {
     console.log('Inspecting Magento Community Edition Project');
-    toBeBuilt = await determineMagentoCommunityEditionProject(repoUrl, ref, release);
+    toBeBuilt = await determineMagentoCommunityEditionProject(repoUrl, baseVersionsOnRef);
     Object.assign(packages, toBeBuilt);
   }
 
@@ -60,13 +65,38 @@ async function getPackagesForBuildInstruction(instructions) {
   return packages;
 }
 
-async function getPackageVersionsForBuildInstructions(buildInstructions) {
+function getReleaseDateString() {
+  const d = new Date();
+  return `${d.getFullYear()}${(d.getMonth() + 1).toString().padStart(2, '0')}${d.getDate().toString().padStart(2, '0')}`;
+}
+
+async function getPackageVersionsForBuildInstructions(buildInstructions, suffix) {
   console.log(`Determining package versions`);
   let packages = {};
   for (const instruction of buildInstructions) {
     Object.assign(packages, await getPackagesForBuildInstruction(instruction));
   }
-  return packages;
+  return transformVersionsToNightlyBuildVersions(packages, suffix);
+}
+
+function transformVersionsToNightlyBuildVersions(packageToVersionMap, suffix) {
+  return Object.keys(packageToVersionMap).reduce((newMap, name) => {
+    newMap[name] = `${calcNightlyBuildPackageVersion(packageToVersionMap[name])}-a${suffix}`;
+    return newMap;
+  }, {});
+}
+
+function calcNightlyBuildPackageVersion(version) {
+  if (! version.match(/^v?(?:\d+\.){0,3}\d+$/)) {
+    throw Error(`Unable to determine nightly release version for input version "${version}"`)
+  }
+  const parts = version.split('.');
+  if (parts.length < 4) {
+    parts.push('1')
+  } else {
+    parts[parts.length - 1]++;
+  }
+  return parts.join('.');
 }
 
 /**
@@ -133,4 +163,7 @@ async function processBuildInstructions(instructions) {
 module.exports = {
   processBuildInstructions,
   getPackageVersionsForBuildInstructions,
+  transformVersionsToNightlyBuildVersions,
+  calcNightlyBuildPackageVersion,
+  getReleaseDateString,
 };
