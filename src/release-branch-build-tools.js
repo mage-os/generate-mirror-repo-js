@@ -81,7 +81,7 @@ async function getPackageVersionsForBuildInstructions(buildInstructions, suffix)
 
 function transformVersionsToNightlyBuildVersions(packageToVersionMap, suffix) {
   return Object.keys(packageToVersionMap).reduce((newMap, name) => {
-    newMap[name] = `${calcNightlyBuildPackageVersion(packageToVersionMap[name])}-a${suffix}`;
+    newMap[name] = `${calcNightlyBuildPackageVersion(packageToVersionMap[name])}-a${suffix || 'lpha'}`;
     return newMap;
   }, {});
 }
@@ -154,7 +154,7 @@ async function processBuildInstruction(instruction, dependencyVersions) {
  * @returns {Promise<void>}
  */
 async function processBuildInstructions(instructions) {
-  const packageVersions = await getPackageVersionsForBuildInstructions(instructions);
+  const packageVersions = await getPackageVersionsForBuildInstructions(instructions, getReleaseDateString());
   for (const instruction of instructions) {
     await processBuildInstruction(instruction, packageVersions);
   }
