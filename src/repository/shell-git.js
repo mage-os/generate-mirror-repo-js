@@ -93,7 +93,8 @@ module.exports = {
   async listFiles(url, pathInRepo, ref, excludes) {
     const dir = await initRepo(url, ref);
     if (! fs.existsSync(path.join(dir, pathInRepo))) return [];
-    const fileNames = await listFileNames(dir, pathInRepo, excludes || []);
+    const excludeStrings = excludes.map(exclude => typeof exclude === 'function' ? exclude(ref) : exclude).filter(exclude => exclude.length > 0);
+    const fileNames = await listFileNames(dir, pathInRepo, excludeStrings || []);
     return fileNames.map(filepath => {
       const fullPath = path.join(dir, filepath);
       return {

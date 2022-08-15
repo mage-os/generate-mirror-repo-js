@@ -244,7 +244,9 @@ async function createPackageForRef(url, moduleDir, ref, options) {
   const files = (await repo.listFiles(url, moduleDir, ref, excludes))
     .filter(file => {
       const isExcluded = (excludes || []).find(exclude => {
-        return file.filepath === exclude || file.filepath.startsWith(exclude)
+        return typeof exclude === 'function'
+          ? exclude(ref, file.filepath)
+          : file.filepath === exclude || file.filepath.startsWith(exclude)
       })
       return ! isExcluded;
     });
@@ -362,11 +364,11 @@ async function createPackagesForRef(url, modulesPath, ref, options) {
   let n = 0;
   const built = {};
 
-  // Synchronously build all packages for the given ref because building them async caused JS to go OOM
+  // Synchronously build all packages for the given ref because building them async causes JS to go OOM
 
   for (const moduleDir of modules) {
     const current = (++n).toString().padStart(modules.length.toString().length, ' ');
-    report(`${current}/${modules.length} Packaging [${ref}] ${(lastTwoDirs(moduleDir, '_'))}: ${release || ref}`);
+    report(`${current}/${modules.length} Packaging [${ref}] ${(lastTwoDirs(moduleDir, '_'))}`);
     try {
       const packageToVersion = await createPackageForRef(url, moduleDir, ref, configOptions);
       Object.assign(built, packageToVersion);

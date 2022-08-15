@@ -14,7 +14,17 @@ module.exports = {
       {
         label: 'Magento Base Package',
         dir: '',
-        excludes: ["app/code/", "app/design/frontend/", "app/design/adminhtml/", "app/i18n/", "lib/internal/Magento/Framework/", "composer.lock", "app/etc/vendor_path.php", "dev/tests/static/testsuite/Magento/Test/Legacy/FilesystemTest.php"],
+        // Excludes can either be (A) strings that are matched against the beginning of a file path, or (B) a function
+        // Exclude functions are called in two ways:
+        // - with a ref and a filename: it should return a boolean if the file should be excluded or not (true === excluded)
+        // - with only a ref: in that case it should return a string filename that should be excluded, or an empty string if none.
+        // Exclude functions will be called with both arities during a build!
+        excludes: [ (ref, file) => {
+          if (typeof file === "undefined") {
+            return ref.startsWith('2.4.0') ? '' : '.github/';
+          }
+          return file.startsWith('.github') && !ref.startsWith('2.4.0');
+        }, "app/code/", "app/design/frontend/", "app/design/adminhtml/", "app/i18n/", "lib/internal/Magento/Framework/", "composer.lock", "app/etc/vendor_path.php", "dev/tests/static/testsuite/Magento/Test/Legacy/FilesystemTest.php"],
         composerJsonPath: `${__dirname}/../../resource/history/magento/magento2-base/template.json`,
         // The directories are required for the magento-composer-installer to properly function, otherwise it doesn't complete processing and app/etc is missing.
         emptyDirsToAdd: ['app/design/frontend/Magento', 'app/design/adminhtml/Magento', 'app/code/Magento', 'app/i18n/Magento', 'lib/internal/Magento'],
