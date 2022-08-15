@@ -314,7 +314,7 @@ async function getLatestDependencies(dir) {
   if (! fs.existsSync(`${dir}/dependencies-template.json`)) {
     return {};
   }
-  const template = JSON.parse(fs.readFileSync(`${dir}/dependencies-template.json`));
+  const template = JSON.parse(fs.readFileSync(`${dir}/dependencies-template.json`, 'utf8'));
   return Object.entries(template.dependencies).reduce(async (deps, [dependency, url]) => {
     const tag = url.slice(0, 4) === 'http' ? await getLatestTag(url) : url;
     return Object.assign(await deps, {[dependency]: tag});
@@ -325,7 +325,7 @@ async function getAdditionalDependencies(packageName, ref) {
   const dir = `${__dirname}/../resource/history/${packageName}`;
   const file = `${dir}/${ref}.json`;
   return fs.existsSync(file)
-    ? JSON.parse(fs.readFileSync(file)).require
+    ? JSON.parse(fs.readFileSync(file, 'utf8')).require
     : await getLatestDependencies(dir);
 }
 
@@ -475,11 +475,10 @@ async function createMagentoCommunityEditionProject(url, ref, options) {
     files.push({
       filepath: '.gitignore',
       mtime: new Date(stableMtime),
-      contentBuffer: Buffer.from(`${__dirname}/../../resource/history/magento/project-community-edition/2.4.0-gitignore`, 'utf8'),
+      contentBuffer: fs.readFileSync(`${__dirname}/../../resource/history/magento/project-community-edition/2.4.0-gitignore`),
       isExecutable: false,
     })
   }
-  
   
   await writePackage(packageFilepath, files)
 
