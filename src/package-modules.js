@@ -475,7 +475,7 @@ async function createMagentoCommunityEditionProject(url, ref, options) {
     files.push({
       filepath: '.gitignore',
       mtime: new Date(stableMtime),
-      contentBuffer: fs.readFileSync(`${__dirname}/../../resource/history/magento/project-community-edition/2.4.0-gitignore`),
+      contentBuffer: fs.readFileSync(`${__dirname}/../resource/history/magento/project-community-edition/2.4.0-gitignore`),
       isExecutable: false,
     })
   }
