@@ -285,9 +285,9 @@ async function createPackageForRef(url, moduleDir, ref, options) {
  * @param {String} url The URL of the source git repository
  * @param {String} ref Git ref to check out (string of tag or branch)
  * @param {String} name The composer name to use in the composer.json and for the package archive
- * @param {String} transform Transformation fn, takes the source composer.json config, returns updated composer config
+ * @param {Function} transform Transformation fn, takes the source composer.json config, returns updated composer config
  * @param {String|undefined} release Release version to use in the package archive name. Defaults to ref
- * @returns {Promise<void>}
+ * @returns {Promise: <{packageFilepath: String, files: {filepath:String, mtime: Date, contentBugger: Buffer, isExecutable: Boolean}}>}
  */
 async function createComposerJsonOnlyPackage(url, ref, name, transform, release) {
   const refComposerConfig = JSON.parse(await readComposerJson(url, '', ref));
@@ -301,7 +301,7 @@ async function createComposerJsonOnlyPackage(url, ref, name, transform, release)
   }];
 
   const packageFilepath = archiveFilePath(name, release || ref);
-  await writePackage(packageFilepath, files)
+  return {packageFilepath, files}
 }
 
 async function getLatestTag(url) {
@@ -401,7 +401,7 @@ async function createMagentoCommunityEditionMetapackage(url, ref, options) {
   const {release, dependencyVersions} = Object.assign({release: undefined, dependencyVersions: {}}, (options || {}))
   const version = release || ref;
   const name = 'magento/product-community-edition';
-  await createComposerJsonOnlyPackage(url, ref, name, async (refComposerConfig) => {
+  const {packageFilepath, files} = await createComposerJsonOnlyPackage(url, ref, name, async (refComposerConfig) => {
 
     const additionalDependencies = await getAdditionalDependencies(name, ref);
 
@@ -420,6 +420,9 @@ async function createMagentoCommunityEditionMetapackage(url, ref, options) {
 
     return composerConfig;
   }, release);
+  
+  await writePackage(packageFilepath, files);
+  
   return {[name]: version};
 }
 
@@ -443,7 +446,7 @@ async function createMagentoCommunityEditionProject(url, ref, options) {
   const {release, dependencyVersions, minimumStability} = Object.assign(defaults, (options || {}))
   const name = 'magento/project-community-edition';
   const version = release || ref;
-  await createComposerJsonOnlyPackage(url, ref, name, async (refComposerConfig) => {
+  const {packageFilepath, files} = await createComposerJsonOnlyPackage(url, ref, name, async (refComposerConfig) => {
 
     const additionalDependencies = await getAdditionalDependencies(name, ref);
 
@@ -461,9 +464,24 @@ async function createMagentoCommunityEditionProject(url, ref, options) {
       delete composerConfig[k];
     }
     setDependencyVersions(composerConfig, dependencyVersions);
-
+    
     return composerConfig;
   }, release);
+  
+  // Special case - in these releases the base package also contained a .gitignore file in addition to the composer.json file.
+  // The .gitignore file is identical for those two releases. However, it is not the same as the .gitignore file in the tagged release,
+  // so we copy it from resource/history/magento/project-community-edition/2.4.0-gitignore
+  if (ref === '2.4.0' || ref === '2.4.0-p1') {
+    files.push({
+      filepath: '.gitignore',
+      mtime: new Date(stableMtime),
+      contentBuffer: Buffer.from(`${__dirname}/../../resource/history/magento/project-community-edition/2.4.0-gitignore`, 'utf8'),
+      isExecutable: false,
+    })
+  }
+  
+  
+  await writePackage(packageFilepath, files)
 
   return {[name]: version}
 }

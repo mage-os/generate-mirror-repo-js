@@ -19,11 +19,17 @@ module.exports = {
         // - with a ref and a filename: it should return a boolean if the file should be excluded or not (true === excluded)
         // - with only a ref: in that case it should return a string filename that should be excluded, or an empty string if none.
         // Exclude functions will be called with both arities during a build!
-        excludes: [ (ref, file) => {
+        excludes: [(ref, file) => {
           if (typeof file === "undefined") {
             return ref.startsWith('2.4.0') ? '' : '.github/';
           }
-          return file.startsWith('.github') && !ref.startsWith('2.4.0');
+          return !ref.startsWith('2.4.0') && (file === '.github' || file.startsWith('.github/'));
+        }, (ref, file) => {
+          const releasesWithoutGitIgnore = ['2.4.1', '2.4.1-p1', '2.4.2'];
+          if (typeof file === "undefined") {
+            return releasesWithoutGitIgnore.includes(ref) ? '.gitignore' : '';
+          }
+          return file === '.gitignore' && releasesWithoutGitIgnore.includes(ref);
         }, "app/code/", "app/design/frontend/", "app/design/adminhtml/", "app/i18n/", "lib/internal/Magento/Framework/", "composer.lock", "app/etc/vendor_path.php", "dev/tests/static/testsuite/Magento/Test/Legacy/FilesystemTest.php"],
         composerJsonPath: `${__dirname}/../../resource/history/magento/magento2-base/template.json`,
         // The directories are required for the magento-composer-installer to properly function, otherwise it doesn't complete processing and app/etc is missing.

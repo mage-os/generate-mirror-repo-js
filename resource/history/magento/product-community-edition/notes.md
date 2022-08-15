@@ -1,5 +1,12 @@
 # Notes
 
+This directory mostly contains the core bundled extension dependencies of the `magento/product-community-edition` packages.  
+
+## dependencies-template.json
+
+This file contains the core bundled extension dependencies of the latest upstream `magento/product-community-edition` release.  
+It is used for the dependencies of the nightly `magento/product-community-edition` build.
+
 ## Missing release tag 2.1.2 in magento/adobe-stock-integration 
 
 The dependency on `"magento/adobe-stock-integration": "2.1.2-p1",` in `2.4.3.json` in upstream is a dependency on `2.1.2`.  
