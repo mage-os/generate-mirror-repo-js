@@ -125,7 +125,7 @@ function setDependencyVersions(composerConfig, dependencyVersions) {
   for (const dependencyType of ['require', 'require-dev']) {
     for (const dep in (composerConfig[dependencyType] || {})) {
       if (dependencyVersions[dep]) {
-        composerConfig[dependencyType][dep] = dependencyVersions[dep];
+        composerConfig[dependencyType][dep] = dependencyVersions[dep].version ?? dependencyVersions[dep];
       }
     }
   }
@@ -227,7 +227,8 @@ async function createPackageForRef(url, moduleDir, ref, options) {
     ({name, version} = chooseNameAndVersion(magentoName, composerJson, ref, release));
   } catch (e) {
     if (e.kind === 'VERSION_UNKNOWN' && dependencyVersions[e.name]) {
-      ({name, version} = chooseNameAndVersion(magentoName, composerJson, ref, dependencyVersions[e.name]));
+      const fixVersion = dependencyVersions[e.name].version ?? dependencyVersions[e.name];
+      ({name, version} = chooseNameAndVersion(magentoName, composerJson, ref, fixVersion));
     } else {
       throw e;
     }
@@ -237,7 +238,18 @@ async function createPackageForRef(url, moduleDir, ref, options) {
   // Use fixed date for stable package checksum generation
   const mtime = new Date(stableMtime);
   const packageFilepath = archiveFilePath(name, version);
+
   if (fs.existsSync(packageFilepath)) {
+    return packageWithVersion;
+  }
+
+  if (dependencyVersions[name]?.localOverride) {
+    const override = `${__dirname}/../resource/additional-packages/${name.replace('/', '-') + '-' + version + '.zip'}`;
+    if (!fs.existsSync(override)) {
+      throw {message: `Local override doesn't exist in ${override}.`}
+    }
+
+    fs.copyFileSync(override, packageFilepath);
     return packageWithVersion;
   }
 

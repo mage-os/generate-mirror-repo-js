@@ -30,6 +30,30 @@ const mirrorBuildConfig = {
   'page-builder': {
     repoUrl: 'https://github.com/mage-os/mirror-magento2-page-builder.git',
     fromTag: '1.7.0',
+    fixVersions: {
+      "1.7.0": {
+        "magento/module-aws-s3-page-builder": "1.0.1",
+        "magento/module-catalog-page-builder-analytics": "1.6.1",
+        "magento/module-cms-page-builder-analytics": "1.6.1",
+        "magento/module-page-builder": "2.2.1",
+        "magento/module-page-builder-admin-analytics": "1.1.1",
+        "magento/module-page-builder-analytics": "1.6.1",
+      },
+      "1.7.0-p1": {
+        "magento/module-aws-s3-page-builder": {
+          version: "1.0.1-p1",
+          localOverride: true
+        },
+        "magento/module-catalog-page-builder-analytics": "1.6.1-p1",
+        "magento/module-cms-page-builder-analytics": "1.6.1-p1",
+        "magento/module-page-builder": {
+          version: "2.2.1-p1",
+          localOverride: true
+        },
+        "magento/module-page-builder-admin-analytics": "1.1.1-p1",
+        "magento/module-page-builder-analytics": "1.6.1-p1",
+      }
+    }
   },
   'adobe-ims': {
     repoUrl: 'https://github.com/mage-os/mirror-adobe-ims.git',
