@@ -125,7 +125,7 @@ function setDependencyVersions(composerConfig, dependencyVersions) {
   for (const dependencyType of ['require', 'require-dev']) {
     for (const dep in (composerConfig[dependencyType] || {})) {
       if (dependencyVersions[dep]) {
-        composerConfig[dependencyType][dep] = dependencyVersions[dep];
+        composerConfig[dependencyType][dep] = dependencyVersions[dep].version ?? dependencyVersions[dep];
       }
     }
   }
