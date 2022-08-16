@@ -87,10 +87,19 @@ const mirrorBuildConfig = {
         "magento/module-adobe-stock-admin-ui": "1.3.0-p1",
         "magento/module-adobe-stock-asset": "1.3.0-p1",
         "magento/module-adobe-stock-asset-api": "2.0.0-p1",
-        "magento/module-adobe-stock-client": "1.3.1-p1",
+        "magento/module-adobe-stock-client": {
+          version: "1.3.1-p1",
+          localOverride: true
+        },
         "magento/module-adobe-stock-client-api": "2.1.0-p1",
-        "magento/module-adobe-stock-image": "1.3.1-p1",
-        "magento/module-adobe-stock-image-admin-ui": "1.3.1-p1",
+        "magento/module-adobe-stock-image": {
+          version: "1.3.1-p1",
+          localOverride: true
+        },
+        "magento/module-adobe-stock-image-admin-ui": {
+          version: "1.3.1-p1",
+          localOverride: true
+        },
         "magento/module-adobe-stock-image-api": "1.3.0-p1",
       }
     }
