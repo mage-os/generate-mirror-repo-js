@@ -7,7 +7,7 @@
     "dotmailer/dotmailer-magento2-extension-package": "4.12.0",
     "klarna/m2-payments": "8.3.2",
     "magento/adobe-ims": "2.1.2",
-    "magento/adobe-stock-integration": "2.1.2",
+    "magento/adobe-stock-integration": "2.1.2-p1",
     "magento/google-shopping-ads": "4.0.1",
     "paypal/module-braintree": "4.2.4",
     "temando/module-shipping": "2.0.0",
