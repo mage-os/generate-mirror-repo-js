@@ -4,7 +4,7 @@ const packagesConfig = require('./packages-config');
 const mirrorBuildConfig = {
   'magento2': {
     repoUrl: 'https://github.com/mage-os/mirror-magento2.git',
-    fromTag: '2.3.7-p3',
+    fromTag: '2.3.7',
     fixVersions: {
       // Upstream correctly sets the module version to 100.3.7-p3 in the git tag, but in the actual upstream 2.3.7-p3
       // release they used 100.3.7 as the dependency.
