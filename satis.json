@@ -1,11 +1,11 @@
 {
   "name": "mage-os/magece-repository",
   "homepage": "https://mirror.mage-os.org",
-  "output-dir": "/build",
+  "output-dir": "build",
   "repositories": [
     {
       "type": "artifact",
-      "url": "/build/packages"
+      "url": "build/packages"
     }
   ],
   "require-all": true

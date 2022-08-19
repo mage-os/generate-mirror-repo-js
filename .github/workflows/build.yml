@@ -1,0 +1,39 @@
+name: Build & Deploy
+
+on:
+  workflow_dispatch: {}
+  push:
+    branches:
+    - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - uses: shivammathur/setup-php@v2
+      with:
+        php-version: 8.1
+        tools: composer:v2
+    - uses: actions/setup-node@v3
+      with:
+        node-version: 16
+        cache: 'yarn'
+    - run: curl -L https://github.com/mage-os/php-dependency-list/raw/main/php-classes.phar -o /usr/local/bin/php-classes.phar
+    - run: chmod +x /usr/local/bin/php-classes.phar
+
+    - run: composer create-project composer/satis --stability=dev
+    - run: yarn install
+    - run: node src/make/mirror.js --outputDir=build/packages --gitRepoDir=generate-repo/repositories --repoUrl="${{ secrets.REPOSITORY_URL }}"
+    - run: node bin/set-satis-homepage-url.js --satisConfig=satis.json --repoUrl="${{ secrets.REPOSITORY_URL }}" > /tmp/satis.json
+    - run: satis/bin/satis build /tmp/satis.json build
+    - run: node bin/set-satis-output-url-prefix.js --satisOutputDir=build --repoUrl="${{ secrets.REPOSITORY_URL }}"
+
+    - uses: easingthemes/ssh-deploy@v2.2.11
+      env:
+        SSH_PRIVATE_KEY: ${{ secrets.SERVER_SSH_KEY }}
+        REMOTE_HOST: ${{ secrets.REMOTE_HOST }}
+        REMOTE_USER: ${{ secrets.REMOTE_USER }}
+        TARGET: ${{ secrets.REMOTE_TARGET }}
+        ARGS: "-rltgoDzvO --delete"
+        SOURCE: "build/*"
