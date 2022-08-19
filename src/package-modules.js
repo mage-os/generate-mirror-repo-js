@@ -568,6 +568,7 @@ module.exports = {
   createMetaPackageFromRepoDir,
 
   getLatestTag,
+  archiveFilePath,
   
   determinePackageForRef,
   determinePackagesForRef,
