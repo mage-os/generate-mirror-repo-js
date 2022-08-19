@@ -12,12 +12,14 @@ const mirrorBuildConfig = {
         'magento/module-bundle': '100.3.7'
       },
 
-      // Upstream ships versions of adobe stock that don't exist in version control at all.
-      // These overrides are specifically for the metapackage.
-      // Overrides for child dependencies are listed below in adobe-stock-integration.
-      '2.3.7-p3': {'magento/adobe-stock-integration': {version: '1.0.3-p2', localOverride: true}},
-      '2.3.7-p4': {'magento/adobe-stock-integration': {version: '1.0.3-p3', localOverride: true}},
-      '2.4.3':    {'magento/adobe-stock-integration': {version: '2.1.2',    localOverride: true}}
+      // Upstream doesn't have tag 2.1.2. It does have a branch with that name but the metapackage is incorrect.
+      // See https://github.com/magento/adobe-stock-integration/issues/1871
+      '2.4.3': {
+        'magento/adobe-stock-integration': {
+          version: '2.1.2',
+          localOverride: true
+        }
+      }
     }
   },
   'security-package': {
@@ -55,7 +57,7 @@ const mirrorBuildConfig = {
       },
       '1.7.0-p1': {
         'magento/module-page-builder':                   {version: '2.2.1-p1', localOverride: true},
-        'magento/module-aws-s3-page-builder':            {version: '1.0.1-p1', localOverride: true },
+        'magento/module-aws-s3-page-builder':            {version: '1.0.1-p1', localOverride: true},
         'magento/module-catalog-page-builder-analytics': '1.6.1-p1',
         'magento/module-cms-page-builder-analytics':     '1.6.1-p1',
         'magento/module-page-builder-admin-analytics':   '1.1.1-p1',
@@ -72,6 +74,7 @@ const mirrorBuildConfig = {
     fromTag: '1.0.0',
     fixVersions: {
       '1.0.3-p2': {
+        // Upstream repo ships with 1.0.2-p1 that doesn't exist in version control.
         'magento/module-adobe-ims':                  {version: '1.0.2-p1', localOverride: true},
         'magento/module-adobe-ims-api':              {version: '1.0.2-p1', localOverride: true},
         'magento/module-adobe-stock-admin-ui':       {version: '1.0.2-p1', localOverride: true},
@@ -79,23 +82,12 @@ const mirrorBuildConfig = {
         'magento/module-adobe-stock-asset-api':      {version: '1.0.2-p1', localOverride: true},
         'magento/module-adobe-stock-client':         {version: '1.0.2-p1', localOverride: true},
         'magento/module-adobe-stock-client-api':     {version: '1.0.2-p1', localOverride: true},
-        'magento/module-adobe-stock-image':          {version: '1.0.2-p2', localOverride: true},
-        'magento/module-adobe-stock-image-admin-ui': {version: '1.0.3-p2', localOverride: true},
         'magento/module-adobe-stock-image-api':      {version: '1.0.2-p1', localOverride: true},
-      },
-      '1.0.3-p3': {
-        'magento/module-adobe-ims':                  {version: '1.0.2',    localOverride: true},
-        'magento/module-adobe-ims-api':              {version: '1.0.2',    localOverride: true},
-        'magento/module-adobe-stock-admin-ui':       {version: '1.0.2',    localOverride: true},
-        'magento/module-adobe-stock-asset':          {version: '1.0.2',    localOverride: true},
-        'magento/module-adobe-stock-asset-api':      {version: '1.0.2',    localOverride: true},
-        'magento/module-adobe-stock-client':         {version: '1.0.2',    localOverride: true},
-        'magento/module-adobe-stock-client-api':     {version: '1.0.2',    localOverride: true},
         'magento/module-adobe-stock-image':          {version: '1.0.2-p2', localOverride: true},
-        'magento/module-adobe-stock-image-admin-ui': {version: '1.0.3-p2', localOverride: true},
-        'magento/module-adobe-stock-image-api':      {version: '1.0.2',    localOverride: true},
+        'magento/module-adobe-stock-image-admin-ui': {version: '1.0.3-p2', localOverride: true}
       },
       '2.1.1': {
+        // Metapackage missing pinned versions.
         'magento/module-adobe-stock-admin-ui':       '1.3.0',
         'magento/module-adobe-stock-asset':          '1.3.0',
         'magento/module-adobe-stock-asset-api':      '2.0.0',
@@ -106,21 +98,20 @@ const mirrorBuildConfig = {
         'magento/module-adobe-stock-image-api':      '1.3.0',
       },
       '2.1.2': {
-        'magento/module-adobe-stock-admin-ui':       '1.3.0',
-        'magento/module-adobe-stock-asset':          '1.3.0',
-        'magento/module-adobe-stock-asset-api':      '2.0.0',
-        'magento/module-adobe-stock-client-api':     '2.1.0',
-        'magento/module-adobe-stock-image-api':      '1.3.0',
+        // Files are different in version control.
         'magento/module-adobe-stock-client':         {version: '1.3.1', localOverride: true},
         'magento/module-adobe-stock-image':          {version: '1.3.1', localOverride: true},
         'magento/module-adobe-stock-image-admin-ui': {version: '1.3.1', localOverride: true},
       },
       '2.1.2-p1': {
+        // Metapackage missing pinned versions.
         'magento/module-adobe-stock-admin-ui':       '1.3.0-p1',
         'magento/module-adobe-stock-asset':          '1.3.0-p1',
         'magento/module-adobe-stock-asset-api':      '2.0.0-p1',
         'magento/module-adobe-stock-client-api':     '2.1.0-p1',
         'magento/module-adobe-stock-image-api':      '1.3.0-p1',
+
+        // Files are different in version control
         'magento/module-adobe-stock-client':         {version: '1.3.1-p1', localOverride: true},
         'magento/module-adobe-stock-image':          {version: '1.3.1-p1', localOverride: true},
         'magento/module-adobe-stock-image-admin-ui': {version: '1.3.1-p1', localOverride: true},
