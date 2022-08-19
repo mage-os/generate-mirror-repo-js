@@ -26,6 +26,7 @@ jobs:
     - run: yarn install
     - run: node src/make/mirror.js --outputDir=build/packages --gitRepoDir=generate-repo/repositories --repoUrl="${{ secrets.REPOSITORY_URL }}"
     - run: node bin/set-satis-homepage-url.js --satisConfig=satis.json --repoUrl="${{ secrets.REPOSITORY_URL }}" > /tmp/satis.json
+    - run: cat <<< $(jq '."output-dir" = "build" | .repositories[0].url = "build/packages"' /tmp/satis.json) > /tmp/satis.json
     - run: satis/bin/satis build /tmp/satis.json build
     - run: node bin/set-satis-output-url-prefix.js --satisOutputDir=build --repoUrl="${{ secrets.REPOSITORY_URL }}"
 
