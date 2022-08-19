@@ -538,7 +538,7 @@ async function createMetaPackageFromRepoDir(url, dir, ref, options) {
 
   // Ensure version is set on composer config because not all repos provide the version in composer.json (e.g.
   // page-builder) and it is required by satis to be able to use artifact repositories.
-  composerConfig.version = version;
+  composerConfig.version = dependencyVersions[name] ?? version;
   setDependencyVersions(composerConfig, dependencyVersions);
 
   const files = [{
