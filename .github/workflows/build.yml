@@ -6,9 +6,14 @@ on:
     branches:
     - main
 
+env:
+  remote_host: "preview-mirror.mage-os.org"
+  remote_dir: "/var/www/preview-mirror.mage-os.org/html/"
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    name: "Deploy to ${{ env.remote_host }}"
     steps:
     - uses: actions/checkout@v3
     - uses: shivammathur/setup-php@v2
@@ -38,8 +43,8 @@ jobs:
       name: "Rsync over SSH"
       env:
         SSH_PRIVATE_KEY: ${{ secrets.SERVER_SSH_KEY }}
-        REMOTE_HOST: ${{ secrets.REMOTE_HOST }}
+        REMOTE_HOST: ${{ env.remote_host }}
         REMOTE_USER: ${{ secrets.REMOTE_USER }}
-        TARGET: ${{ secrets.REMOTE_TARGET }}
+        TARGET: ${{ env.remote_dir }}
         ARGS: "-rltgoDzvO --delete"
         SOURCE: "build/*"
