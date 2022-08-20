@@ -125,7 +125,7 @@ function setDependencyVersions(composerConfig, dependencyVersions) {
   for (const dependencyType of ['require', 'require-dev']) {
     for (const dep in (composerConfig[dependencyType] || {})) {
       if (dependencyVersions[dep]) {
-        composerConfig[dependencyType][dep] = dependencyVersions[dep].version ?? dependencyVersions[dep];
+        composerConfig[dependencyType][dep] = dependencyVersions[dep];
       }
     }
   }
@@ -220,19 +220,11 @@ async function createPackageForRef(url, moduleDir, ref, options) {
   if (composerJson.trim() === '404: Not Found') {
     throw {message: `Unable to find composer.json for ${ref}, skipping ${magentoName}`}
   }
-
-
+  
+  const composerConfig = JSON.parse(composerJson);
+  
   let name, version;
-  try {
-    ({name, version} = chooseNameAndVersion(magentoName, composerJson, ref, release));
-  } catch (e) {
-    if (e.kind === 'VERSION_UNKNOWN' && dependencyVersions[e.name]) {
-      const fixVersion = dependencyVersions[e.name].version ?? dependencyVersions[e.name];
-      ({name, version} = chooseNameAndVersion(magentoName, composerJson, ref, fixVersion));
-    } else {
-      throw e;
-    }
-  }
+  ({name, version} = chooseNameAndVersion(magentoName, composerJson, ref, (dependencyVersions[composerConfig.name] ?? release)));
   const packageWithVersion = {[name]: version};
 
   // Use fixed date for stable package checksum generation
@@ -255,7 +247,6 @@ async function createPackageForRef(url, moduleDir, ref, options) {
   
   // Ensure version is set in config because some repos (e.g. page-builder and inventory) do not provide the version
   // in tagged composer.json files. The version is required for satis to be able to use the artifact repository type.
-  const composerConfig = JSON.parse(composerJson);
   composerConfig.version = version;
   
   if ((composerJsonPath || '').endsWith('template.json')) {

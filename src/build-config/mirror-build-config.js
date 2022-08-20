@@ -73,7 +73,7 @@ const mirrorBuildConfig = {
     fromTag: '1.0.0',
     fixVersions: {
       '1.0.3-p2': {
-        // Upstream repo ships with 1.0.2-p1 that doesn't exist in version control.
+        // Upstream release ships with these deps, but in the tagged release * dependencies are used in the metapackage
         'magento/module-adobe-ims':                  '1.0.2-p1',
         'magento/module-adobe-ims-api':              '1.0.2-p1',
         'magento/module-adobe-stock-admin-ui':       '1.0.2-p1',
@@ -83,7 +83,7 @@ const mirrorBuildConfig = {
         'magento/module-adobe-stock-client-api':     '1.0.2-p1',
         'magento/module-adobe-stock-image-api':      '1.0.2-p1',
         'magento/module-adobe-stock-image':          '1.0.2-p2',
-        'magento/module-adobe-stock-image-admin-ui': '1.0.3-p2'
+        'magento/module-adobe-stock-image-admin-ui': '1.0.3-p2',
       },
       '2.1.1': {
         // Metapackage missing pinned versions.
