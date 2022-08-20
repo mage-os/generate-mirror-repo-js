@@ -243,16 +243,6 @@ async function createPackageForRef(url, moduleDir, ref, options) {
     return packageWithVersion;
   }
 
-  if (dependencyVersions[name]?.localOverride) {
-    const override = `${__dirname}/../resource/additional-packages/${name.replace('/', '-') + '-' + version + '.zip'}`;
-    if (!fs.existsSync(override)) {
-      throw {message: `Local override doesn't exist in ${override}.`}
-    }
-
-    fs.copyFileSync(override, packageFilepath);
-    return packageWithVersion;
-  }
-
   const files = (await repo.listFiles(url, moduleDir, ref, excludes))
     .filter(file => {
       const isExcluded = (excludes || []).find(exclude => {
