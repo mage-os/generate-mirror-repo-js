@@ -1,9 +1,7 @@
 # Mage-OS Mirror Repository Generator - JS Edition
 
-Experimental JavaScript implementation.  
-This project was started not with the primary goal to go into production, but rather to explore and learn how to build Magento Open Source releases.
-
-The main implementation will probably be based on <https://github.com/mage-os/package-splitter> when it is ready.
+This project was started not with the primary goal to go into production, but rather to explore and learn how to build Magento Open Source releases.  
+It has evolved to be used in production. However, the intention is to create additional implementations, for example in Rust <https://github.com/mage-os/package-splitter>.  
 
 ## Generated versions
 
@@ -19,14 +17,13 @@ Usually this will be the DOCUMENT_ROOT of the host serving the composer repo, fo
 
 ### Specifying the build target(s)
 
-This project can generate different types of composer repositories. At the time of writing, the supported build targets are ``  
-Multiple
+This project can generate different types of composer repositories. At the time of writing, the supported build targets are
 
-#### --target=mirror (default)
+#### `--target=mirror` (default)
 
 By default, a Magento Open Source mirror repository is generated.
 
-#### --target=upstream-nightly
+#### `--target=upstream-nightly`
 
 Alternatively a release of the current development versions of Magento Open Source can be generated. This is known as a "nightly" build.
 
@@ -121,7 +118,7 @@ For example, to fetch the latest release tags, if the git repos are cached in a 
 
 ```sh
 cd repositories
-for repo in *; do cd $repo; git pull; git fetch --tags; cd -; done
+for repo in *; do cd $repo; git fetch --all; git fetch --tags; cd -; done
 cd .. 
 ```
 
