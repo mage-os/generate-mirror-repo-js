@@ -8,8 +8,16 @@ const mirrorBuildConfig = {
     fixVersions: {
       // Upstream correctly sets the module version to 100.3.7-p3 in the git tag, but in the actual upstream 2.3.7-p3
       // release they used 100.3.7 as the dependency.
-      "2.3.7-p3": {
-        "magento/module-bundle": "100.3.7"
+      '2.3.7-p3': {
+        // The result of this configuration is that anywhere the module magento/module-bundle is referenced, the version
+        // 100.3.7 is used, both for building the package and when it is referenced as a dependency.
+        'magento/module-bundle': '100.3.7'
+      },
+
+      // Upstream doesn't have tag 2.1.2. It does have a branch with that name but the metapackage is incorrect.
+      // See https://github.com/magento/adobe-stock-integration/issues/1871
+      '2.4.3': {
+        'magento/adobe-stock-integration': '2.1.2'
       }
     }
   },
@@ -38,27 +46,21 @@ const mirrorBuildConfig = {
     repoUrl: 'https://github.com/mage-os/mirror-magento2-page-builder.git',
     fromTag: '1.7.0',
     fixVersions: {
-      "1.7.0": {
-        "magento/module-aws-s3-page-builder": "1.0.1",
-        "magento/module-catalog-page-builder-analytics": "1.6.1",
-        "magento/module-cms-page-builder-analytics": "1.6.1",
-        "magento/module-page-builder": "2.2.1",
-        "magento/module-page-builder-admin-analytics": "1.1.1",
-        "magento/module-page-builder-analytics": "1.6.1",
+      '1.7.0': {
+        'magento/module-page-builder':                   '2.2.1',
+        'magento/module-aws-s3-page-builder':            '1.0.1',
+        'magento/module-catalog-page-builder-analytics': '1.6.1',
+        'magento/module-cms-page-builder-analytics':     '1.6.1',
+        'magento/module-page-builder-admin-analytics':   '1.1.1',
+        'magento/module-page-builder-analytics':         '1.6.1',
       },
-      "1.7.0-p1": {
-        "magento/module-aws-s3-page-builder": {
-          version: "1.0.1-p1",
-          localOverride: true
-        },
-        "magento/module-catalog-page-builder-analytics": "1.6.1-p1",
-        "magento/module-cms-page-builder-analytics": "1.6.1-p1",
-        "magento/module-page-builder": {
-          version: "2.2.1-p1",
-          localOverride: true
-        },
-        "magento/module-page-builder-admin-analytics": "1.1.1-p1",
-        "magento/module-page-builder-analytics": "1.6.1-p1",
+      '1.7.0-p1': {
+        'magento/module-page-builder':                   '2.2.1-p1',
+        'magento/module-aws-s3-page-builder':            '1.0.1-p1',
+        'magento/module-catalog-page-builder-analytics': '1.6.1-p1',
+        'magento/module-cms-page-builder-analytics':     '1.6.1-p1',
+        'magento/module-page-builder-admin-analytics':   '1.1.1-p1',
+        'magento/module-page-builder-analytics':         '1.6.1-p1',
       }
     }
   },
@@ -70,46 +72,44 @@ const mirrorBuildConfig = {
     repoUrl: 'https://github.com/mage-os/mirror-adobe-stock-integration.git',
     fromTag: '1.0.0',
     fixVersions: {
-      "2.1.1": {
-        "magento/module-adobe-stock-admin-ui": "1.3.0",
-        "magento/module-adobe-stock-asset": "1.3.0",
-        "magento/module-adobe-stock-asset-api": "2.0.0",
-        "magento/module-adobe-stock-client": "1.3.0",
-        "magento/module-adobe-stock-client-api": "2.1.0",
-        "magento/module-adobe-stock-image": "1.3.0",
-        "magento/module-adobe-stock-image-admin-ui": "1.3.0",
-        "magento/module-adobe-stock-image-api": "1.3.0",
+      '1.0.3-p2': {
+        // Upstream repo ships with 1.0.2-p1 that doesn't exist in version control.
+        'magento/module-adobe-ims':                  '1.0.2-p1',
+        'magento/module-adobe-ims-api':              '1.0.2-p1',
+        'magento/module-adobe-stock-admin-ui':       '1.0.2-p1',
+        'magento/module-adobe-stock-asset':          '1.0.2-p1',
+        'magento/module-adobe-stock-asset-api':      '1.0.2-p1',
+        'magento/module-adobe-stock-client':         '1.0.2-p1',
+        'magento/module-adobe-stock-client-api':     '1.0.2-p1',
+        'magento/module-adobe-stock-image-api':      '1.0.2-p1',
+        'magento/module-adobe-stock-image':          '1.0.2-p2',
+        'magento/module-adobe-stock-image-admin-ui': '1.0.3-p2'
       },
-      "2.1.2": {
-        "magento/module-adobe-stock-admin-ui": "1.3.0",
-        "magento/module-adobe-stock-asset": "1.3.0",
-        "magento/module-adobe-stock-asset-api": "2.0.0",
-        "magento/module-adobe-stock-client": "1.3.1",
-        "magento/module-adobe-stock-client-api": "2.1.0",
-        "magento/module-adobe-stock-image": "1.3.1",
-        "magento/module-adobe-stock-image-admin-ui": "1.3.1",
-        "magento/module-adobe-stock-image-api": "1.3.0",
+      '2.1.1': {
+        // Metapackage missing pinned versions.
+        'magento/module-adobe-stock-admin-ui':       '1.3.0',
+        'magento/module-adobe-stock-asset':          '1.3.0',
+        'magento/module-adobe-stock-asset-api':      '2.0.0',
+        'magento/module-adobe-stock-client':         '1.3.0',
+        'magento/module-adobe-stock-client-api':     '2.1.0',
+        'magento/module-adobe-stock-image':          '1.3.0',
+        'magento/module-adobe-stock-image-admin-ui': '1.3.0',
+        'magento/module-adobe-stock-image-api':      '1.3.0',
       },
-      "2.1.2-p1": {
-        "magento/module-adobe-stock-admin-ui": "1.3.0-p1",
-        "magento/module-adobe-stock-asset": "1.3.0-p1",
-        "magento/module-adobe-stock-asset-api": "2.0.0-p1",
-        "magento/module-adobe-stock-client": {
-          version: "1.3.1-p1",
-          localOverride: true
-        },
-        "magento/module-adobe-stock-client-api": "2.1.0-p1",
-        "magento/module-adobe-stock-image": {
-          version: "1.3.1-p1",
-          localOverride: true
-        },
-        "magento/module-adobe-stock-image-admin-ui": {
-          version: "1.3.1-p1",
-          localOverride: true
-        },
-        "magento/module-adobe-stock-image-api": "1.3.0-p1",
+      '2.1.2-p1': {
+        // Metapackage missing pinned versions.
+        'magento/module-adobe-stock-admin-ui':       '1.3.0-p1',
+        'magento/module-adobe-stock-asset':          '1.3.0-p1',
+        'magento/module-adobe-stock-asset-api':      '2.0.0-p1',
+        'magento/module-adobe-stock-client-api':     '2.1.0-p1',
+        'magento/module-adobe-stock-image-api':      '1.3.0-p1',
+
+        // Files are different in version control.
+        'magento/module-adobe-stock-client':         '1.3.1-p1',
+        'magento/module-adobe-stock-image':          '1.3.1-p1',
+        'magento/module-adobe-stock-image-admin-ui': '1.3.1-p1',
       }
-    }
+    },
   },
   'magento-composer-installer': {
     repoUrl: 'https://github.com/mage-os/mirror-magento-composer-installer.git',
