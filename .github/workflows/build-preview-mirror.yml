@@ -1,4 +1,4 @@
-name: Build & Deploy
+name: Build & Deploy preview-mirror
 
 on:
   workflow_dispatch:
@@ -62,7 +62,6 @@ jobs:
         ARGS: "-rltgoDzvO --delete"
         SOURCE: "build/*"
 
-
   compute-matrix:
     runs-on: ubuntu-latest
     outputs:
@@ -73,7 +72,8 @@ jobs:
         with:
           kind: all
         id: supported-version
-  integrity-test:
+
+  integrity-check:
     name: ${{ matrix.magento }}
     needs: [compute-matrix, deploy]
     runs-on: ubuntu-latest
@@ -95,7 +95,7 @@ jobs:
           php-version: ${{ matrix.php }}
 
       - name: Create Magento ${{ matrix.magento }} Project
-        uses: ./checkout-magento
+        uses: ./.github/actions/checkout-magento
         with:
           repository-url: 'https://repo.magento.com/'
           install-directory: ${{ github.workspace }}/magento
