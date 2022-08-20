@@ -243,16 +243,6 @@ async function createPackageForRef(url, moduleDir, ref, options) {
     return packageWithVersion;
   }
 
-  if (dependencyVersions[name]?.localOverride) {
-    const override = `${__dirname}/../resource/additional-packages/${name.replace('/', '-') + '-' + version + '.zip'}`;
-    if (!fs.existsSync(override)) {
-      throw {message: `Local override doesn't exist in ${override}.`}
-    }
-
-    fs.copyFileSync(override, packageFilepath);
-    return packageWithVersion;
-  }
-
   const files = (await repo.listFiles(url, moduleDir, ref, excludes))
     .filter(file => {
       const isExcluded = (excludes || []).find(exclude => {
@@ -538,7 +528,7 @@ async function createMetaPackageFromRepoDir(url, dir, ref, options) {
 
   // Ensure version is set on composer config because not all repos provide the version in composer.json (e.g.
   // page-builder) and it is required by satis to be able to use artifact repositories.
-  composerConfig.version = version;
+  composerConfig.version = dependencyVersions[name] ?? version;
   setDependencyVersions(composerConfig, dependencyVersions);
 
   const files = [{
@@ -568,6 +558,7 @@ module.exports = {
   createMetaPackageFromRepoDir,
 
   getLatestTag,
+  archiveFilePath,
   
   determinePackageForRef,
   determinePackagesForRef,

@@ -1,12 +1,14 @@
 const fs = require('fs');
 const repo = require('./repository');
 const {isVersionGreaterOrEqual} = require('./utils');
+const zip = require('jszip');
 const {
   createPackagesForRef,
   createPackageForRef,
   createMagentoCommunityEditionMetapackage,
   createMagentoCommunityEditionProject,
   createMetaPackageFromRepoDir,
+  archiveFilePath
 } = require('./package-modules');
 
 
@@ -114,6 +116,27 @@ async function createPackageSinceTag(url, from, modulesPath, excludes, composerJ
   return built;
 }
 
+async function replacePackageFiles(name, version, files) {
+  const packageFilePath = archiveFilePath(name, version);
+  if (!fs.existsSync(packageFilePath)) {
+    throw {message: `Could not find archive for replacement: ${name}:${version}.`};
+  }
+
+  fs.readFile(packageFilePath, function(_, data) {
+    zip.loadAsync(data).then(function(contents) {
+      files.forEach(function(file) {
+        const replacementFilePath = `${__dirname}/../resource/replace/${name}/${version}/${file}`;
+        if (!fs.existsSync(replacementFilePath)) {
+          throw {message: `Replacement file does not exist: ${replacementFilePath}`}
+        }
+        contents.file(file, fs.readFileSync(replacementFilePath));
+      })
+      const stream = contents.generateNodeStream({streamFiles: false, platform: 'UNIX'});
+      stream.pipe(fs.createWriteStream(packageFilePath));
+    })
+  });
+}
+
 /**
  * @param {{repoUrl:String, fromTag:String}} instructions Array with build instructions
  * @returns {Promise<void>}
@@ -147,6 +170,10 @@ async function processMirrorInstruction(instructions) {
     console.log(`Packaging ${label}`);
     tags = await createMetaPackagesFromRepoDir(repoUrl, fromTag, dir, fixVersions);
     console.log(label, tags);
+  }
+
+  for (const packageReplacement of (instructions.packageReplacements || [])) {
+    await replacePackageFiles(...Object.values(packageReplacement));
   }
 
   if (instructions.magentoCommunityEditionMetapackage) {
