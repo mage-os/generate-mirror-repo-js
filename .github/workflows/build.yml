@@ -35,6 +35,7 @@ jobs:
       name: "Fix path to packages in the packages.json satis created"
 
     - uses: easingthemes/ssh-deploy@v2.2.11
+      name: "Rsync over SSH"
       env:
         SSH_PRIVATE_KEY: ${{ secrets.SERVER_SSH_KEY }}
         REMOTE_HOST: ${{ secrets.REMOTE_HOST }}
