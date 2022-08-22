@@ -1,3 +1,5 @@
+[![Build & Deploy preview-mirror](https://github.com/mage-os/generate-mirror-repo-js/actions/workflows/build-preview-mirror.yml/badge.svg)](https://github.com/mage-os/generate-mirror-repo-js/actions/workflows/build-preview-mirror.yml)
+
 # Mage-OS Mirror Repository Generator - JS Edition
 
 This project was started not with the primary goal to go into production, but rather to explore and learn how to build Magento Open Source releases.  
