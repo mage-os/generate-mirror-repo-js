@@ -1,0 +1,72 @@
+name: "Checkout Magento"
+author: "danslo"
+description: "A Github action that does a composer checkout for Magento."
+
+inputs:
+  repository-url:
+    description: 'The repository URL.'
+    required: true
+    default: 'https://repo.magento.com'
+  install-directory:
+    description: 'The directory to install Magento in.'
+    required: true
+    default: ${{ github.workspace }}
+  magento-version:
+    description: 'The version of Magento to install.'
+    required: true
+    default: 'magento/project-community-edition:*'
+  composer-version:
+    description: 'The version of Composer to use.'
+    required: true
+    default: '1'
+  composer-auth:
+    description: 'Composer authentication object.'
+    required: false
+  php-version:
+    description: 'The version of PHP to use.'
+    required: true
+    default: '8.1'
+
+runs:
+  using: "composite"
+  steps:
+    - name: Set PHP version
+      uses: shivammathur/setup-php@v2
+      with:
+        php-version: ${{ inputs.php-version }}
+        tools: composer:v${{ inputs.composer-version }}
+        coverage: none
+
+    - name: Install composer plugin for parallel downloads
+      run: composer global require hirak/prestissimo
+      shell: bash
+      if: ${{ startsWith(inputs.composer-version, '1') }}
+
+    - name: Create ${{ inputs.magento-version }} project
+      run: composer create-project --repository-url="${{ inputs.repository-url }}" "${{ inputs.magento-version }}" ${{ inputs.install-directory }} --no-install
+      shell: bash
+      env:
+        COMPOSER_AUTH: ${{ inputs.composer-auth }}
+
+    - name: Fixup monolog (https://github.com/magento/magento2/pull/35596)
+      run: composer require monolog/monolog:"<2.7.0" --no-update
+      shell: bash
+      working-directory: ${{ inputs.install-directory }}
+      if: ${{ endsWith(inputs.magento-version, '2.4.4') }}
+
+    - name: Fixup composer plugins
+      run: |
+        composer config --no-interaction allow-plugins.dealerdirect/phpcodesniffer-composer-installer true
+        composer config --no-interaction allow-plugins.laminas/laminas-dependency-plugin true
+        composer config --no-interaction allow-plugins.magento/* true
+      shell: bash
+      working-directory: ${{ inputs.install-directory }}
+      if: ${{ !startsWith(inputs.composer-version, '1') }}
+
+    - name: Install dependencies
+      run: composer install
+      shell: bash
+      working-directory: ${{ inputs.install-directory }}
+      env:
+        COMPOSER_AUTH: ${{ inputs.composer-auth }}
+

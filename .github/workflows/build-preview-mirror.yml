@@ -1,0 +1,110 @@
+name: Build & Deploy preview-mirror
+
+on:
+  workflow_dispatch:
+    inputs:
+      repo:
+        description: 'Repository'
+        required: true
+        default: 'https://preview-mirror.mage-os.org/'
+        type: choice
+        options:
+          - https://preview-mirror.mage-os.org/
+          - https://mirror.mage-os.org/
+  push:
+    branches:
+    - main
+
+env:
+  remote_host: "preview-mirror.mage-os.org"
+  remote_dir: "/var/www/preview-mirror.mage-os.org/html/"
+  repo: ${{ inputs.repo || 'https://preview-mirror.mage-os.org/' }}
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    name: "Deploy to preview-mirror.mage-os.org"
+    steps:
+    - uses: actions/checkout@v3
+    - uses: shivammathur/setup-php@v2
+      with:
+        php-version: 8.1
+        tools: composer:v2
+    - uses: actions/setup-node@v3
+      with:
+        node-version: 16
+        cache: 'npm'
+    - run: curl -L https://github.com/mage-os/php-dependency-list/raw/main/php-classes.phar -o /usr/local/bin/php-classes.phar && chmod +x /usr/local/bin/php-classes.phar
+      name: "Install PHP source code dependency analyzer and make executable (used by nightly build script for base package)"
+
+    - run: composer create-project composer/satis --stability=dev
+    - run: npm ci
+    - run: node src/make/mirror.js --outputDir=build/packages --gitRepoDir=generate-repo/repositories --repoUrl="${{ secrets.REPOSITORY_URL }}"
+      name: "Generate the mirror packages"
+    - run: node bin/set-satis-homepage-url.js --satisConfig=satis.json --repoUrl="${{ secrets.REPOSITORY_URL }}" > /tmp/satis.json
+      name: "Configure satis repository URL so composer knows where to download packages from"
+    - run: cat <<< $(jq '."output-dir" = "build" | .repositories[0].url = "build/packages"' /tmp/satis.json) > /tmp/satis.json
+      name: "Tell satis where to find the generated packages"
+    - run: satis/bin/satis build /tmp/satis.json build
+    - run: node bin/set-satis-output-url-prefix.js --satisOutputDir=build --repoUrl="${{ secrets.REPOSITORY_URL }}"
+      name: "Fix path to packages in the packages.json satis created"
+
+    - uses: easingthemes/ssh-deploy@v2.2.11
+      name: "Rsync over SSH"
+      env:
+        SSH_PRIVATE_KEY: ${{ secrets.SERVER_SSH_KEY }}
+        REMOTE_HOST: ${{ env.remote_host }}
+        REMOTE_USER: ${{ secrets.REMOTE_USER }}
+        TARGET: ${{ env.remote_dir }}
+        ARGS: "-rltgoDzvO --delete"
+        SOURCE: "build/*"
+
+  compute-matrix:
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.supported-version.outputs.matrix }}
+    steps:
+      - uses: actions/checkout@v3
+      - uses: graycoreio/github-actions-magento2/supported-version@main
+        with:
+          kind: all
+        id: supported-version
+
+  integrity-check:
+    name: ${{ matrix.magento }}
+    needs: [compute-matrix, deploy]
+    runs-on: ubuntu-latest
+    strategy:
+      matrix: ${{ fromJSON(needs.compute-matrix.outputs.matrix) }}
+      fail-fast: false
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Create MageOS ${{ matrix.magento }} Project
+        uses: ./.github/actions/checkout-magento
+        with:
+          repository-url: ${{ env.repo }}
+          install-directory: ${{ github.workspace }}/mageos
+          magento-version: ${{ matrix.magento }}
+          composer-version: ${{ matrix.composer }}
+          composer-auth: ${{ secrets.composer_auth }}
+          php-version: ${{ matrix.php }}
+
+      - name: Create Magento ${{ matrix.magento }} Project
+        uses: ./.github/actions/checkout-magento
+        with:
+          repository-url: 'https://repo.magento.com/'
+          install-directory: ${{ github.workspace }}/magento
+          magento-version: ${{ matrix.magento }}
+          composer-version: ${{ matrix.composer }}
+          composer-auth: ${{ secrets.composer_auth }}
+          php-version: ${{ matrix.php }}
+      
+      # Integrity checks
+      - run: diff <(composer show -d ${{ github.workspace }}/magento | sort) <(composer show -d ${{ github.workspace }}/mageos | sort)
+        name: Version Integrity Check
+
+      - run: diff -rq -x "*composer*" -x "*autoload*" ${{ github.workspace }}/magento ${{ github.workspace }}/mageos
+        if: always()
+        name: Files Integrity Check
