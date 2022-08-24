@@ -1,4 +1,4 @@
-name: Build & Deploy preview-mirror
+name: Build, Deploy & check Integrity of preview-mirror
 
 on:
   workflow_dispatch:
