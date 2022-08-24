@@ -31,6 +31,10 @@ const branchBuildConfig = {
     repoUrl: 'https://github.com/mage-os/mirror-adobe-stock-integration.git',
     ref: 'develop',
   },
+  'magento-composer-installer': {
+    repoUrl: 'https://github.com/mage-os/mirror-magento-composer-installer.git',
+    ref: 'master',
+  },
   'composer-root-update-plugin': {
     repoUrl: 'https://github.com/mage-os/mirror-composer-root-update-plugin.git',
     ref: 'develop',

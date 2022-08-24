@@ -26,6 +26,7 @@ async function getPackagesForBuildInstruction(instructions) {
   
   // use the latest tag in branch ref
   const baseVersionsOnRef = await getLatestTag(repoUrl);
+  console.log(`Basing ${repoUrl} package versions on those from tag ${baseVersionsOnRef}`);
 
   for (const packageDir of (instructions.packageDirs || [])) {
     const {label, dir, excludes} = Object.assign({excludes: []}, packageDir);
@@ -60,7 +61,7 @@ async function getPackagesForBuildInstruction(instructions) {
     toBeBuilt = await determineMagentoCommunityEditionProject(repoUrl, baseVersionsOnRef);
     Object.assign(packages, toBeBuilt);
   }
-
+  
   repo.clearCache();
   return packages;
 }
@@ -79,24 +80,36 @@ async function getPackageVersionsForBuildInstructions(buildInstructions, suffix)
   return transformVersionsToNightlyBuildVersions(packages, suffix);
 }
 
-function transformVersionsToNightlyBuildVersions(packageToVersionMap, suffix) {
+function addSuffixToVersion(version, buildSuffix) {
+  const pos = version.indexOf('-');
+  if (pos !== -1) {
+    return `${version.slice(0, pos)}${version.slice(pos)}${buildSuffix}`
+  }
+  return `${version}-a${buildSuffix || 'lpha'}`
+}
+
+function transformVersionsToNightlyBuildVersions(packageToVersionMap, buildSuffix) {
   return Object.keys(packageToVersionMap).reduce((newMap, name) => {
-    newMap[name] = `${calcNightlyBuildPackageVersion(packageToVersionMap[name])}-a${suffix || 'lpha'}`;
+    const baseVersion = calcNightlyBuildPackageBaseVersion(packageToVersionMap[name]);
+    newMap[name] = addSuffixToVersion(baseVersion, buildSuffix);
     return newMap;
   }, {});
 }
 
-function calcNightlyBuildPackageVersion(version) {
-  if (! version.match(/^v?(?:\d+\.){0,3}\d+$/)) {
-    throw Error(`Unable to determine nightly release version for input version "${version}"`)
+function calcNightlyBuildPackageBaseVersion(version) {
+  if (! version.match(/^v?(?:\d+\.){0,3}\d+(?:-[a-z]\w*|)$/i)) {
+    throw Error(`Unable to determine branch release version for input version "${version}"`)
   }
-  const parts = version.split('.');
+  const suffix = version.includes('-') ? version.slice(version.indexOf('-')) : '';
+  const versions = version.includes('-') ? version.slice(0, version.indexOf('-')) : version;
+  const parts = versions.split('.');
   if (parts.length < 4) {
     parts.push('1')
   } else {
     parts[parts.length - 1]++;
   }
-  return parts.join('.');
+  
+  return `${parts.join('.')}${suffix}`;
 }
 
 /**
@@ -164,6 +177,6 @@ module.exports = {
   processBuildInstructions,
   getPackageVersionsForBuildInstructions,
   transformVersionsToNightlyBuildVersions,
-  calcNightlyBuildPackageVersion,
+  calcNightlyBuildPackageBaseVersion,
   getReleaseDateString,
 };
