@@ -134,6 +134,10 @@ module.exports = {
       throw (details || `Tag ${tag} already exists on repo ${url}`);
     }
   },
+  async pull(url, ref) {
+    const dir = await initRepo(url, ref);
+    await exec(`git pull --ff-only --quiet origin ${ref}`, {cwd: dir});
+  },
   clearCache() {
     // noop
   },

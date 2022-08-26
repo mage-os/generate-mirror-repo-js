@@ -175,6 +175,9 @@ module.exports = {
   async createTagForRef(url, ref, tag, details) {
     throw "createTagForRef() is not implemented for the pure-js git implementation";
   },
+  async pull(url, ref) {
+    throw "pull() is not implemented for the pure-js git implementation";
+  },
   clearCache() {
     cache = {};
   },
