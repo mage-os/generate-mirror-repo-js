@@ -123,10 +123,11 @@ async function processBuildInstruction(instruction, dependencyVersions) {
 
   const {repoUrl, ref, release} = instruction;
 
+  await repo.pull(repoUrl, ref);
+
   for (const packageDir of (instruction.packageDirs || [])) {
     const {label, dir, excludes} = Object.assign({excludes: []}, packageDir);
     console.log(`Packaging ${label}`);
-    await repo.pull(repoUrl, ref);
     built = await createPackagesForRef(repoUrl, dir, ref, {excludes, release, dependencyVersions});
     Object.assign(packages, built);
   }
