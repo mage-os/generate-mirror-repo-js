@@ -79,7 +79,7 @@ module.exports = {
       {
         label: 'Security Packages',
         dir: '',
-        excludes: ['.github/', '_metapackage/'],
+        excludes: ['.github/', '_metapackage/', 'dev/'],
       }
     ],
     packageIndividual: [],
