@@ -22,7 +22,7 @@ jobs:
         
   integrity-check:
     name: ${{ matrix.magento }}
-    needs: [compute-matrix, deploy]
+    needs: [compute-matrix]
     runs-on: ubuntu-latest
     strategy:
       matrix: ${{ fromJSON(needs.compute-matrix.outputs.matrix) }}
