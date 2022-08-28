@@ -28,6 +28,11 @@ on:
         required: true
         default: '/var/www/preview-mirror.mage-os.org/html/'
         type: string
+    secrets:
+      SERVER_SSH_KEY:
+        required: true
+      REMOTE_USER:
+        required: true
   push:
     branches:
     - main
