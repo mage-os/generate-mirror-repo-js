@@ -2,7 +2,7 @@ on:
   workflow_call:
     inputs:
       repo:
-        description: 'Repository'
+        description: 'The composer repository url'
         required: true
         type: string
     secrets:
