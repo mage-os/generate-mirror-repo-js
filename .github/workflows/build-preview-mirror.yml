@@ -1,4 +1,4 @@
-name: Build, Deploy & check Integrity of preview-mirror
+name: Build, Deploy & check Integrity
 
 on:
   workflow_dispatch:
@@ -46,7 +46,7 @@ env:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    name: "Deploy to preview-mirror.mage-os.org"
+    name: "Deploy to ${{ env.repo }}"
     steps:
     - uses: actions/checkout@v3
     - uses: shivammathur/setup-php@v2
@@ -81,53 +81,10 @@ jobs:
         TARGET: ${{ env.remote_dir }}
         ARGS: "-rltgoDzvO --delete"
         SOURCE: "build/*"
-
-  # compute-matrix:
-  #   runs-on: ubuntu-latest
-  #   outputs:
-  #     matrix: ${{ steps.supported-version.outputs.matrix }}
-  #   steps:
-  #     - uses: actions/checkout@v3
-  #     - uses: graycoreio/github-actions-magento2/supported-version@main
-  #       with:
-  #         kind: all
-  #       id: supported-version
-
-  # integrity-check:
-  #   name: ${{ matrix.magento }}
-  #   needs: [compute-matrix, deploy]
-  #   runs-on: ubuntu-latest
-  #   strategy:
-  #     matrix: ${{ fromJSON(needs.compute-matrix.outputs.matrix) }}
-  #     fail-fast: false
-  #   steps:
-  #     - name: Checkout
-  #       uses: actions/checkout@v3
-
-  #     - name: Create MageOS ${{ matrix.magento }} Project
-  #       uses: ./.github/actions/checkout-magento
-  #       with:
-  #         repository-url: ${{ env.repo }}
-  #         install-directory: ${{ github.workspace }}/mageos
-  #         magento-version: ${{ matrix.magento }}
-  #         composer-version: ${{ matrix.composer }}
-  #         composer-auth: ${{ secrets.composer_auth }}
-  #         php-version: ${{ matrix.php }}
-
-  #     - name: Create Magento ${{ matrix.magento }} Project
-  #       uses: ./.github/actions/checkout-magento
-  #       with:
-  #         repository-url: 'https://repo.magento.com/'
-  #         install-directory: ${{ github.workspace }}/magento
-  #         magento-version: ${{ matrix.magento }}
-  #         composer-version: ${{ matrix.composer }}
-  #         composer-auth: ${{ secrets.composer_auth }}
-  #         php-version: ${{ matrix.php }}
-      
-  #     # Integrity checks
-  #     - run: diff <(composer show -d ${{ github.workspace }}/magento | sort) <(composer show -d ${{ github.workspace }}/mageos | sort)
-  #       name: Version Integrity Check
-
-  #     - run: diff -rq -x "*composer*" -x "*autoload*" ${{ github.workspace }}/magento ${{ github.workspace }}/mageos
-  #       if: always()
-  #       name: Files Integrity Check
+  integrity-check:
+    if: env.repo == "https://preview-mirror.mage-os.org/" || env.repo == "https://mirror.mage-os.org/"
+    uses: ./.github/workflows/integrity-check.yml
+    with:
+      repo: ${{ env.repo }}
+    secrets: 
+      composer_auth: ${{ secrets.composer_auth }}
