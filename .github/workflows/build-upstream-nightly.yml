@@ -1,0 +1,19 @@
+name: Build Upstream Nightly Packages
+
+on:
+  schedule:
+    # * is a special character in YAML so you have to quote this string
+    - cron:  '20 10 * * *'
+  workflow_dispatch:
+    
+
+jobs:
+  deploy: 
+    uses: ./.github/workflows/build-preview-mirror.yml
+    with:
+      repo: https://upstream-nightly.mage-os.org
+      remote_dir: '/var/www/upstream-nightly.mage-os.org/html/'
+      entrypoint: 'src/make/upstream-nightly.js'
+    secrets:
+      SERVER_SSH_KEY: ${{ secrets.SERVER_SSH_KEY }}
+      REMOTE_USER: ${{ secrets.REMOTE_USER }}
