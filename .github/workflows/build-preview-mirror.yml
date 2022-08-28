@@ -82,6 +82,7 @@ jobs:
         ARGS: "-rltgoDzvO --delete"
         SOURCE: "build/*"
   integrity-check:
+    needs: [deploy]
     if: | 
       (inputs.repo || 'https://preview-mirror.mage-os.org/') == 'https://preview-mirror.mage-os.org/' || 
       inputs.repo == 'https://mirror.mage-os.org/'
