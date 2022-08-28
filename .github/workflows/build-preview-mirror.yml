@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       repo:
-        description: 'Repository'
+        description: 'The composer repository url'
         required: true
         default: 'https://preview-mirror.mage-os.org/'
         type: choice
@@ -14,7 +14,7 @@ on:
   workflow_call:
     inputs:
       repo:
-        description: 'Repository'
+        description: 'The composer repository url'
         required: true
         default: 'https://preview-mirror.mage-os.org/'
         type: string
@@ -24,14 +24,16 @@ on:
         default: 'src/make/mirror.js'
         type: string
       remote_dir: 
-        description: 'Remote where the packages are stored'
+        description: 'Remote folder where the packages are stored'
         required: true
         default: '/var/www/preview-mirror.mage-os.org/html/'
         type: string
     secrets:
       SERVER_SSH_KEY:
+        description: "SSH Key used to upload to the satis server."
         required: true
       REMOTE_USER:
+        description: "The system user used to upload to the satis server."
         required: true
   push:
     branches:
