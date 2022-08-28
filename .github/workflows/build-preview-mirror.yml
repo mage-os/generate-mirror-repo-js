@@ -46,7 +46,7 @@ env:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    name: "Deploy to ${{ env.repo }}"
+    name: "Deploy to ${{ inputs.repo || 'https://preview-mirror.mage-os.org/' }}"
     steps:
     - uses: actions/checkout@v3
     - uses: shivammathur/setup-php@v2
@@ -82,9 +82,11 @@ jobs:
         ARGS: "-rltgoDzvO --delete"
         SOURCE: "build/*"
   integrity-check:
-    if: env.repo == "https://preview-mirror.mage-os.org/" || env.repo == "https://mirror.mage-os.org/"
+    if: | 
+      (inputs.repo || 'https://preview-mirror.mage-os.org/') == 'https://preview-mirror.mage-os.org/' || 
+      inputs.repo == 'https://mirror.mage-os.org/'
     uses: ./.github/workflows/integrity-check.yml
     with:
-      repo: ${{ env.repo }}
+      repo: ${{ inputs.repo || 'https://preview-mirror.mage-os.org/' }}
     secrets: 
       composer_auth: ${{ secrets.composer_auth }}
