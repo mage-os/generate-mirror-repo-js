@@ -26,6 +26,10 @@ inputs:
     description: 'The version of PHP to use.'
     required: true
     default: '8.1'
+  sample-data:
+    description: 'Whether or not to install sample data.'
+    required: true
+    default: 'false'
 
 runs:
   using: "composite"
@@ -69,4 +73,10 @@ runs:
       working-directory: ${{ inputs.install-directory }}
       env:
         COMPOSER_AUTH: ${{ inputs.composer-auth }}
+
+    - name: Install sample data
+      run: bin/magento sampledata:deploy
+      shell: bash
+      working-directory: ${{ inputs.install-directory }}
+      if: ${{ inputs.sample-data == 'true' }}
 
