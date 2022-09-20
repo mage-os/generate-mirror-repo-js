@@ -57,6 +57,6 @@ jobs:
       - run: diff <(composer show -d ${{ github.workspace }}/magento | sort) <(composer show -d ${{ github.workspace }}/mageos | sort)
         name: Version Integrity Check
 
-      - run: diff -rq -x "*composer*" -x "*autoload*" ${{ github.workspace }}/magento ${{ github.workspace }}/mageos
+      - run: diff -rq -x "*composer*" -x "*autoload*" -x "*var/cache/*" ${{ github.workspace }}/magento ${{ github.workspace }}/mageos
         if: always()
         name: Files Integrity Check
