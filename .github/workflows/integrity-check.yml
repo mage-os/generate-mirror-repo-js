@@ -57,6 +57,7 @@ jobs:
       - run: diff <(composer show -d ${{ github.workspace }}/magento | sort) <(composer show -d ${{ github.workspace }}/mageos | sort)
         name: Version Integrity Check
 
-      - run: diff -rq -x "*composer*" -x "*autoload*" -x "*var/cache/*" ${{ github.workspace }}/magento ${{ github.workspace }}/mageos
+      # Ignore composer.json, composer.log, generated composer autoload files and files in var/cache that start with `mage---`
+      - run: diff -rq -x "*composer*" -x "*autoload*" -x "*mage---*" ${{ github.workspace }}/magento ${{ github.workspace }}/mageos
         if: always()
         name: Files Integrity Check
