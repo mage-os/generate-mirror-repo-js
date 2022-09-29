@@ -38,8 +38,12 @@ if (options.repoUrl) {
 
 
 (async () => {
-  for (const instruction of mirrorInstructions) {
-    await processMirrorInstruction(instruction);
+  try {
+    for (const instruction of mirrorInstructions) {
+      await processMirrorInstruction(instruction);
+    }
+    await copyAdditionalPackages(archiveDir);
+  } catch (exception) {
+    console.log(exception);
   }
-  await copyAdditionalPackages(archiveDir);
 })()
