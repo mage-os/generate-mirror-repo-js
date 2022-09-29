@@ -17,7 +17,7 @@ jobs:
     secrets:
       SERVER_SSH_KEY: ${{ secrets.SERVER_SSH_KEY }}
       REMOTE_USER: ${{ secrets.REMOTE_USER }}
-  compute-matrix:
+  compute-nightly-service-versions:
     runs-on: ubuntu-latest
     outputs:
       matrix: ${{ steps.supported-version.outputs.matrix }}
@@ -29,14 +29,13 @@ jobs:
           custom_versions: "magento/project-community-edition:next"
         id: supported-version
   integration-check:
-    needs: [deploy, compute-matrix]
-    if: (inputs.repo || '') == 'https://upstream-nightly.mage-os.org'
+    needs: [deploy, compute-nightly-service-versions]
     uses: graycoreio/github-actions-magento2/.github/workflows/integration.yaml@main
     with:
       package_name: mageos/demo-package
       source_folder: $GITHUB_WORKSPACE/_test/demo-package
-      matrix: ${{ needs.compute-matrix.outputs.matrix }}
+      matrix: ${{ needs.compute-nightly-service-versions.outputs.matrix }}
       test_command: ../../../vendor/bin/phpunit ../../../vendor/mageos/demo-package/Test/Integration
       fail-fast: false
-      magento_repository: ${{ inputs.repo || 'https://upstream-nightly.mage-os.org' }}
+      magento_repository: ${{ inputs.repo }}
       composer_cache_key: ${{ inputs.composer_cache_key || 'v1' }}
