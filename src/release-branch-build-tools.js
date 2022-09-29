@@ -119,6 +119,7 @@ function calcNightlyBuildPackageBaseVersion(version) {
  */
 async function processBuildInstruction(instruction, dependencyVersions) {
   const packages = {}
+  const fallbackVersion = '0.0.1'; // version to use for previously unreleased packages
   let built = {};
 
   const {repoUrl, ref, release} = instruction;
@@ -128,7 +129,7 @@ async function processBuildInstruction(instruction, dependencyVersions) {
   for (const packageDir of (instruction.packageDirs || [])) {
     const {label, dir, excludes} = Object.assign({excludes: []}, packageDir);
     console.log(`Packaging ${label}`);
-    built = await createPackagesForRef(repoUrl, dir, ref, {excludes, release, dependencyVersions});
+    built = await createPackagesForRef(repoUrl, dir, ref, {excludes, release, fallbackVersion, dependencyVersions});
     Object.assign(packages, built);
   }
 
@@ -136,7 +137,7 @@ async function processBuildInstruction(instruction, dependencyVersions) {
     const defaults = {excludes: [], composerJsonPath: '', emptyDirsToAdd: []};
     const {label, dir, excludes, composerJsonPath, emptyDirsToAdd} = Object.assign(defaults, individualPackage);
     console.log(`Packaging ${label}`);
-    built = await createPackageForRef(repoUrl, dir, ref, {excludes, composerJsonPath, emptyDirsToAdd, release, dependencyVersions});
+    built = await createPackageForRef(repoUrl, dir, ref, {excludes, composerJsonPath, emptyDirsToAdd, release, fallbackVersion, dependencyVersions});
     Object.assign(packages, built);
   }
 
