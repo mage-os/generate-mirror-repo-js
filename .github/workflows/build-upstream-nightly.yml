@@ -17,3 +17,25 @@ jobs:
     secrets:
       SERVER_SSH_KEY: ${{ secrets.SERVER_SSH_KEY }}
       REMOTE_USER: ${{ secrets.REMOTE_USER }}
+  compute-matrix:
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.supported-version.outputs.matrix }}
+    steps:
+      - uses: actions/checkout@v3
+      - uses: graycoreio/github-actions-magento2/supported-version@main
+        with:
+          kind: latest
+        id: supported-version
+  integrity-check:
+    needs: [compute-matrix]
+    if: (inputs.repo || '') == 'https://upstream-nightly.mage-os.org'
+    uses: graycoreio/github-actions-magento2/.github/workflows/integration.yaml@main
+    with:
+      package_name: mageos/demo-package
+      source_folder: $GITHUB_WORKSPACE/_test/demo-package
+      matrix: ${{ needs.compute-matrix.outputs.matrix }}
+      test_command: ../../../vendor/bin/phpunit ../../../vendor/mageos/demo-package/Test/Integration
+      fail-fast: false
+      magento_repository: ${{ inputs.repo || 'https://upstream-nightly.mage-os.org' }}
+      composer_cache_key: ${{ inputs.composer_cache_key || 'v1' }}
