@@ -23,12 +23,13 @@ jobs:
       matrix: ${{ steps.supported-version.outputs.matrix }}
     steps:
       - uses: actions/checkout@v3
-      - uses: graycoreio/github-actions-magento2/supported-version@main
+      - uses: graycoreio/github-actions-magento2/supported-version@allow_using_next_version
         with:
-          kind: latest
+          kind: custom
+          custom_versions: "magento/project-community-edition:next"
         id: supported-version
-  integrity-check:
-    needs: [compute-matrix]
+  integration-check:
+    needs: [deploy, compute-matrix]
     if: (inputs.repo || '') == 'https://upstream-nightly.mage-os.org'
     uses: graycoreio/github-actions-magento2/.github/workflows/integration.yaml@main
     with:
