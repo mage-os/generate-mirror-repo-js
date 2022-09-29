@@ -90,10 +90,13 @@ function addSuffixToVersion(version, buildSuffix) {
 
 function transformVersionsToNightlyBuildVersions(packageToVersionMap, buildSuffix) {
   return Object.keys(packageToVersionMap).reduce((newMap, name) => {
-    const baseVersion = calcNightlyBuildPackageBaseVersion(packageToVersionMap[name]);
-    newMap[name] = addSuffixToVersion(baseVersion, buildSuffix);
+    newMap[name] = transformVersionsToNightlyBuildVersion(packageToVersionMap[name], buildSuffix)
     return newMap;
   }, {});
+}
+
+function transformVersionsToNightlyBuildVersion(baseVersion, buildSuffix) {
+  return addSuffixToVersion(calcNightlyBuildPackageBaseVersion(baseVersion), buildSuffix);
 }
 
 function calcNightlyBuildPackageBaseVersion(version) {
@@ -115,11 +118,11 @@ function calcNightlyBuildPackageBaseVersion(version) {
 /**
  * @param {{}} instruction
  * @param {{}} dependencyVersions
+ * @param {String} fallbackVersion
  * @returns {Promise<{}>}
  */
-async function processBuildInstruction(instruction, dependencyVersions) {
+async function processBuildInstruction(instruction, dependencyVersions, fallbackVersion) {
   const packages = {}
-  const fallbackVersion = '0.0.1'; // version to use for previously unreleased packages
   let built = {};
 
   const {repoUrl, ref, release} = instruction;
@@ -170,9 +173,11 @@ async function processBuildInstruction(instruction, dependencyVersions) {
  * @returns {Promise<void>}
  */
 async function processBuildInstructions(instructions) {
-  const packageVersions = await getPackageVersionsForBuildInstructions(instructions, getReleaseDateString());
+  const releaseSuffix = getReleaseDateString();
+  const fallbackVersion = transformVersionsToNightlyBuildVersion('0.0.1', releaseSuffix); // version to use for previously unreleased packages
+  const packageVersions = await getPackageVersionsForBuildInstructions(instructions, releaseSuffix);
   for (const instruction of instructions) {
-    await processBuildInstruction(instruction, packageVersions);
+    await processBuildInstruction(instruction, packageVersions, fallbackVersion);
   }
 }
 
