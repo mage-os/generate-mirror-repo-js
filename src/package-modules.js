@@ -142,17 +142,16 @@ function setDependencyVersions(composerConfig, dependencyVersions) {
  *
  * Options:
  *   excludes: Array of path prefixes relative to repo root to exclude from the package
- *   release: Release version to use in composer.json version tag and in the package archive name. Defaults to ref
  *
  * @param {String} url The URL of the source git repository
  * @param {String} moduleDir The path to the module to package. Can be '' to use the full repo
  * @param {String} ref Git ref to check out (string of tag or branch)
- * @param {{excludes:Array|undefined, release:String|undefined}} options
+ * @param {{excludes:Array|undefined}} options
  * @returns {Promise<{}>}
  */
 async function determinePackageForRef(url, moduleDir, ref, options) {
-  const defaults = {composerJsonPath: undefined, emptyDirsToAdd: [], release: undefined};
-  const {composerJsonPath, release} = Object.assign(defaults, (options || {}));
+  const defaults = {composerJsonPath: undefined, emptyDirsToAdd: []};
+  const {composerJsonPath} = Object.assign(defaults, (options || {}));
   const magentoName = lastTwoDirs(moduleDir) || '';
 
   try {
@@ -161,17 +160,17 @@ async function determinePackageForRef(url, moduleDir, ref, options) {
     if (composerJson.trim() === '404: Not Found') {
       throw {message: `Unable to find composer.json for ${ref}, skipping ${magentoName}`}
     }
-    const {name, version} = chooseNameAndVersion(magentoName, composerJson, ref, release);
+    const {name, version} = chooseNameAndVersion(magentoName, composerJson, ref);
 
     return {[name]: version}
-  } catch (e) {
+  } catch (exception) {
     // This function is only used for nightly release branch builds.
     // Some refs do not have a version in the composer.json (e.g. the base package or the magento-composer-installer 0.4.0-beta1=
     // For those we use the ref as the version. This might be a problem, so for now we leave it as is.
-    if (e.kind === 'VERSION_UNKNOWN') {
-      return {[e.name]: e.ref}
+    if (exception.kind === 'VERSION_UNKNOWN') {
+      return {[exception.name]: exception.ref}
     }
-     console.log(`Unable to determine name and/or version for ${magentoName || url} in ${ref}: ${e.message || e}`);
+     console.log(`Unable to determine name and/or version for ${magentoName || url} in ${ref}: ${exception.message || exception}`);
      return {};
   }
 }
@@ -183,12 +182,11 @@ async function determinePackageForRef(url, moduleDir, ref, options) {
  * 
  * Options:
  *   excludes: Array of path prefixes relative to repo root to exclude from the package
- *   release: Release version to use in composer.json version tag and in the package archive name. Defaults to ref
  *
  * @param {String} url The URL of the source git repository
  * @param {String} modulesPath The path to the module to package. Can be '' to use the full repo
  * @param {String} ref Git ref to check out (string of tag or branch)
- * @param {{excludes:Array|undefined, release:String|undefined}} options
+ * @param {{excludes:Array|undefined}} options
  * @returns {Promise<{}>}
  */
 async function determinePackagesForRef(url, modulesPath, ref, options) {
@@ -235,6 +233,24 @@ async function createPackageForRef(url, moduleDir, ref, options) {
   
   let name, version;
   
+  /*
+   * Possible cases:
+   * 1. mirror package, without version fix:
+   *   dependencyVersions: undefined, composer.json version: set
+   *   => use composer.json version
+   *
+   * 2. mirror package, with version fix:
+   *   dependencyVersions: set, composer.json version: set
+   *   => use dependencyVersions
+   *
+   * 3. nightly build, previously released version:
+   *    dependencyVersions: set, composer.json version: undefined
+   *    => use dependencyVersions
+   *
+   * 4. nightly build, previously unreleased version:
+   *    dependencyVersions: undefined, composer.json version: undefined
+   *    => use fallbackVersion
+   */
   ({name, version} = chooseNameAndVersion(magentoName, composerJson, ref, (dependencyVersions[composerConfig.name] ?? fallbackVersion)));
   const packageWithVersion = {[name]: version};
 
