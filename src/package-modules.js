@@ -94,10 +94,10 @@ async function getComposerJson(url, moduleDir, ref, composerJsonPath) {
   return fs.readFileSync(composerJsonPath, 'utf8');
 }
 
-function chooseNameAndVersion(magentoName, composerJson, ref, release) {
+function chooseNameAndVersion(magentoName, composerJson, ref, givenVersion) {
   const composerConfig = JSON.parse(composerJson);
   let {version, name} = composerConfig;
-  version = release || version;
+  version = givenVersion || version;
   if (!name) {
     throw {
       kind: 'NAME_UNKNOWN',
@@ -214,12 +214,12 @@ async function determinePackagesForRef(url, modulesPath, ref, options) {
  * @param {String} url The URL of the source git repository
  * @param {String} moduleDir The path to the module to package. Can be '' to use the full repo
  * @param {String} ref Git ref to check out (string of tag or branch)
- * @param {{excludes:Array|undefined, composerJsonPath:String|undefined, emptyDirsToAdd:Array|undefined, release:String|undefined, dependencyVersions:{}|undefined}} options
+ * @param {{excludes:Array|undefined, composerJsonPath:String|undefined, emptyDirsToAdd:Array|undefined, dependencyVersions:{}|undefined}, fallbackVersion:String|undefined} options
  * @returns {Promise<{}>}
  */
 async function createPackageForRef(url, moduleDir, ref, options) {
-  const defaults = {excludes: [], composerJsonPath: undefined, emptyDirsToAdd: [], release: undefined, dependencyVersions: {}};
-  const {excludes, composerJsonPath, emptyDirsToAdd, release, dependencyVersions} = Object.assign(defaults, (options || {}));
+  const defaults = {excludes: [], composerJsonPath: undefined, emptyDirsToAdd: [], release: undefined, dependencyVersions: {}, fallbackVersion: undefined};
+  const {excludes, composerJsonPath, emptyDirsToAdd, dependencyVersions, fallbackVersion} = Object.assign(defaults, (options || {}));
 
   if (! excludes.includes('composer.json')) excludes.push('composer.json');
   if (! excludes.includes('.git/')) excludes.push('.git/');
@@ -234,7 +234,8 @@ async function createPackageForRef(url, moduleDir, ref, options) {
   const composerConfig = JSON.parse(composerJson);
   
   let name, version;
-  ({name, version} = chooseNameAndVersion(magentoName, composerJson, ref, (dependencyVersions[composerConfig.name] ?? release ?? '0.0.1')));
+  
+  ({name, version} = chooseNameAndVersion(magentoName, composerJson, ref, (dependencyVersions[composerConfig.name] ?? fallbackVersion)));
   const packageWithVersion = {[name]: version};
 
   // Use fixed date for stable package checksum generation
