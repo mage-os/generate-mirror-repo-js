@@ -234,7 +234,7 @@ async function createPackageForRef(url, moduleDir, ref, options) {
   const composerConfig = JSON.parse(composerJson);
   
   let name, version;
-  ({name, version} = chooseNameAndVersion(magentoName, composerJson, ref, (dependencyVersions[composerConfig.name] ?? release)));
+  ({name, version} = chooseNameAndVersion(magentoName, composerJson, ref, (dependencyVersions[composerConfig.name] ?? release ?? '0.0.1')));
   const packageWithVersion = {[name]: version};
 
   // Use fixed date for stable package checksum generation
