@@ -45,5 +45,6 @@ if (options.repoUrl) {
     await copyAdditionalPackages(archiveDir);
   } catch (exception) {
     console.log(exception);
+    throw exception
   }
 })()
