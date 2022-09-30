@@ -1,4 +1,4 @@
-name: Build, Deploy & check Integrity
+name: Build, deploy & check Mirror
 
 on:
   workflow_dispatch:
