@@ -1,3 +1,5 @@
+name: Check integrity of given Mirror repo
+
 on:
   workflow_call:
     inputs:

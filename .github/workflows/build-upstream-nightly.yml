@@ -1,4 +1,4 @@
-name: Build Upstream Nightly Packages
+name: Build & check Upstream Nightly
 
 on:
   schedule:

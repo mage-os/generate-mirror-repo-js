@@ -1,3 +1,5 @@
+name: Build & deploy given Mage-OS repo
+
 on:
   workflow_call:
     inputs:
