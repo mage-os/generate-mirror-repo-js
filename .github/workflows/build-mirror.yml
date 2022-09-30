@@ -1,0 +1,42 @@
+name: Build, Deploy & check Integrity
+
+on:
+  workflow_dispatch:
+    inputs:
+      repo:
+        description: 'The composer repository url'
+        required: true
+        default: 'https://preview-mirror.mage-os.org/'
+        type: choice
+        options:
+          - https://preview-mirror.mage-os.org/
+          - https://mirror.mage-os.org/
+      remote_dir:
+        description: 'The deploy target directory on the repo host'
+        required: true
+        default: '/var/www/preview-mirror.mage-os.org/html/'
+        type: choice
+        options:
+          - /var/www/preview-mirror.mage-os.org/html/
+          - /var/www/mirror.mage-os.org/html/
+  push:
+    branches:
+    - main
+
+jobs:
+  deploy:
+    uses: ./.github/workflows/deploy.yml
+    with:
+      repo: ${{ inputs.repo || 'https://preview-mirror.mage-os.org' }}
+      remote_dir: ${{ inputs.remote_dir || '/var/www/preview-mirror.mage-os.org/html/' }}
+      entrypoint: src/make/mirror.js
+    secrets:
+      SERVER_SSH_KEY: ${{ secrets.SERVER_SSH_KEY }}
+      REMOTE_USER: ${{ secrets.REMOTE_USER }}
+  integrity-check:
+    needs: [deploy]
+    uses: ./.github/workflows/integrity-check.yml
+    with:
+      repo: ${{ inputs.repo || 'https://preview-mirror.mage-os.org/' }}
+    secrets: 
+      composer_auth: ${{ secrets.composer_auth }}
