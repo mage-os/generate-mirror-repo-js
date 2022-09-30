@@ -29,8 +29,7 @@ jobs:
       - uses: actions/checkout@v3
       - uses: graycoreio/github-actions-magento2/supported-version@allow_using_next_version
         with:
-          kind: custom
-          custom_versions: 'magento/project-community-edition:next'
+          kind: nightly-now
         id: supported-version
   integration-check:
     needs: [deploy, compute-nightly-service-versions]
