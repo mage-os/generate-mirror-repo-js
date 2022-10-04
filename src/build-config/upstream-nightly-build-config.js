@@ -46,6 +46,10 @@ const branchBuildConfig = {
   'magento2-sample-data': {
     repoUrl: 'https://github.com/mage-os/mirror-magento2-sample-data.git',
     ref: '2.4-develop',
+  },
+  'commerce-data-export': {
+    repoUrl: 'https://github.com/mage-os/mirror-commerce-data-export.git',
+    ref: 'main'
   }
 };
 
