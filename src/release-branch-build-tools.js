@@ -96,7 +96,7 @@ function transformVersionsToNightlyBuildVersions(packageToVersionMap, buildSuffi
 }
 
 function transformVersionsToNightlyBuildVersion(baseVersion, buildSuffix) {
-  return addSuffixToVersion(calcNightlyBuildPackageBaseVersion(baseVersion), buildSuffix);
+  return addSuffixToVersion(calcNightlyBuildPackageBaseVersion(baseVersion !== '' ? baseVersion : '0.0.1' ), buildSuffix);
 }
 
 function calcNightlyBuildPackageBaseVersion(version) {
