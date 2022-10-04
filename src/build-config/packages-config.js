@@ -227,4 +227,22 @@ module.exports = {
     ],
     packageMetaFromDirs: [],
   },
+  'commerce-data-export': {
+    repoUrl: 'https://github.com/mage-os/mirror-commerce-data-export.git',
+
+    packageDirs: [
+      {
+        label: 'Commerce Data Export Packages',
+        dir: '',
+        excludes: ['.github/', '_metapackage/', 'dev/'],
+      }
+    ],
+    packageIndividual: [],
+    packageMetaFromDirs: [
+    {
+      label: 'Commerce Data Export Metapackage',
+      dir: '_metapackage',
+    }
+  ],
+}
 };
