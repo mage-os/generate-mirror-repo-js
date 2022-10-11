@@ -18,6 +18,11 @@ on:
         required: true
         default: '/var/www/preview-mirror.mage-os.org/html/'
         type: string
+      delete:
+        description: 'Remove remote files that do not exist in the build'
+        required: true
+        default: true
+        type: boolean
     secrets:
       SERVER_SSH_KEY:
         description: "SSH Key used to upload to the satis server."
@@ -31,6 +36,7 @@ env:
   remote_dir: ${{ inputs.remote_dir || '/var/www/preview-mirror.mage-os.org/html/' }}
   repo: ${{ inputs.repo || 'https://preview-mirror.mage-os.org/' }}
   entrypoint: ${{ inputs.entrypoint || 'src/make/mirror.js' }}
+  delete_arg: ${{ inputs.delete && '--delete' || '' }}
 
 jobs:
   deploy:
@@ -68,5 +74,5 @@ jobs:
           REMOTE_HOST: ${{ env.remote_host }}
           REMOTE_USER: ${{ secrets.REMOTE_USER }}
           TARGET: ${{ env.remote_dir }}
-          ARGS: "-rltgoDzvO --delete"
+          ARGS: "--verbose --compress --recursive --links --times --omit-dir-times ${{ env.delete_arg }}"
           SOURCE: "build/*"

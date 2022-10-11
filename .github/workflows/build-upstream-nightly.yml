@@ -18,6 +18,7 @@ jobs:
       repo: https://upstream-nightly.mage-os.org
       remote_dir: /var/www/upstream-nightly.mage-os.org/html/
       entrypoint: src/make/upstream-nightly.js
+      delete: false
     secrets:
       SERVER_SSH_KEY: ${{ secrets.SERVER_SSH_KEY }}
       REMOTE_USER: ${{ secrets.REMOTE_USER }}
