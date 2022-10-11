@@ -37,7 +37,7 @@ jobs:
     uses: graycoreio/github-actions-magento2/.github/workflows/integration.yaml@main
     with:
       package_name: mageos/demo-package
-      source_folder: $GITHUB_WORKSPACE
+      source_folder: ""
       matrix: ${{ needs.compute-nightly-service-versions.outputs.matrix }}
       test_command: ../../../vendor/bin/phpunit ../../../vendor/mageos/demo-package/Test/Integration
       fail-fast: false
