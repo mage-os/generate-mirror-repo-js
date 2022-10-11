@@ -39,7 +39,7 @@ jobs:
       package_name: mage-os/demo-package
       use_local_source: false
       matrix: ${{ needs.compute-nightly-service-versions.outputs.matrix }}
-      test_command: ../../../vendor/bin/phpunit ../../../vendor/mageos/demo-package/Test/Integration
+      test_command: ../../../vendor/bin/phpunit ../../../vendor/mage-os/demo-package/Test/Integration
       fail-fast: false
       magento_repository: https://upstream-nightly.mage-os.org
       composer_cache_key: ${{ inputs.composer_cache_key || 'v1' }}
