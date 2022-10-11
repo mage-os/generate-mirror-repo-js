@@ -34,9 +34,10 @@ jobs:
         id: supported-version
   integration-check:
     needs: [deploy, compute-nightly-service-versions]
-    uses: graycoreio/github-actions-magento2/.github/workflows/integration.yaml@main
+    uses: graycoreio/github-actions-magento2/.github/workflows/integration.yaml@allow_using_next_version
     with:
       package_name: mage-os/demo-package
+      use_local_source: false
       matrix: ${{ needs.compute-nightly-service-versions.outputs.matrix }}
       test_command: ../../../vendor/bin/phpunit ../../../vendor/mageos/demo-package/Test/Integration
       fail-fast: false
