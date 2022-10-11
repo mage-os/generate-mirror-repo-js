@@ -58,7 +58,7 @@ jobs:
       - run: composer create-project composer/satis --stability=dev
       - run: npm ci
       - run: node ${{ env.entrypoint }} --outputDir=build/packages --gitRepoDir=generate-repo/repositories --repoUrl="${{ env.repo }}"
-        name: "Generate the mirror packages"
+        name: "Generate the packages for the composer repo"
       - run: node bin/set-satis-homepage-url.js --satisConfig=satis.json --repoUrl="${{ env.repo }}" > /tmp/satis.json
         name: "Configure satis repository URL so composer knows where to download packages from"
       - run: cat <<< $(jq '."output-dir" = "build" | .repositories[0].url = "build/packages"' /tmp/satis.json) > /tmp/satis.json
