@@ -30,6 +30,7 @@ jobs:
       repo: ${{ inputs.repo || 'https://preview-mirror.mage-os.org' }}
       remote_dir: ${{ inputs.remote_dir || '/var/www/preview-mirror.mage-os.org/html/' }}
       entrypoint: src/make/mirror.js
+      delete: true
     secrets:
       SERVER_SSH_KEY: ${{ secrets.SERVER_SSH_KEY }}
       REMOTE_USER: ${{ secrets.REMOTE_USER }}
