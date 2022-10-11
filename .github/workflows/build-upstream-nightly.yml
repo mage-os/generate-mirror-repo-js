@@ -36,8 +36,7 @@ jobs:
     needs: [deploy, compute-nightly-service-versions]
     uses: graycoreio/github-actions-magento2/.github/workflows/integration.yaml@main
     with:
-      package_name: mageos/demo-package
-      source_folder: ""
+      package_name: mage-os/demo-package
       matrix: ${{ needs.compute-nightly-service-versions.outputs.matrix }}
       test_command: ../../../vendor/bin/phpunit ../../../vendor/mageos/demo-package/Test/Integration
       fail-fast: false
