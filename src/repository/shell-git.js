@@ -26,6 +26,21 @@ function trimDir(dir) {
   return dir.slice(-1) === '/' ? dir.slice(0, dir.length -1) : dir;
 }
 
+/**
+ * Ensure ref is secure to use as shell argument
+ *
+ * Escaping user supplied arguments is very hard, and since the ref names are based on what git repo branches exist,
+ * this method will throw an exception if it determines anything fishy.
+ *
+ * @param {String} ref
+ */
+function validateRefIsSecure(ref) {
+  if (ref.substring(0, 1) === '-' || ref.includes(' ') || ref.includes('`') || ref.includes('$')) {
+    throw new Error(`Rejecting the ref "${ref}" as potentially insecure`)
+  }
+  return ref;
+}
+
 async function exec(cmd, options) {
   return new Promise((resolve, reject) => {
     const bufferBytes = 4 * 1024 * 1024; // 4M
@@ -85,12 +100,14 @@ async function listFileNames(repoDir, path, excludes) {
 
 module.exports = {
   async listFolders(url, pathInRepo, ref) {
+    validateRefIsSecure(ref);
     const dir = await initRepo(url, ref);
     if (! fs.existsSync(path.join(dir, pathInRepo))) return [];
     const out = await exec(`ls -1 -d ${path.join(pathInRepo, '*/')}`, {cwd: dir});
     return out.trim().split("\n").map(trimDir);
   },
   async listFiles(url, pathInRepo, ref, excludes) {
+    validateRefIsSecure(ref);
     const dir = await initRepo(url, ref);
     if (! fs.existsSync(path.join(dir, pathInRepo))) return [];
     const excludeStrings = excludes.map(exclude => typeof exclude === 'function' ? exclude(ref) : exclude).filter(exclude => exclude.length > 0);
@@ -105,10 +122,12 @@ module.exports = {
     });
   },
   async readFile(url, filepath, ref) {
+    validateRefIsSecure(ref);
     const dir = await initRepo(url, ref);
     return fs.readFileSync(path.join(dir, filepath), 'utf8');
   },
   async lastCommitTimeForFile(url, filepath, ref) {
+    validateRefIsSecure(ref);
     const dir = await initRepo(url, ref);
     const timestamp = exec(`git log -1 --pretty="format:%at" ${filepath}`, {cwd: dir})
     return new Date(parseInt(timestamp) * 1000); // convert seconds to JS timestamp ms
@@ -119,9 +138,12 @@ module.exports = {
     return out.trim().split("\n");
   },
   async checkout(url, ref) {
+    validateRefIsSecure(ref);
     return initRepo(url, ref);
   },
   async createTagForRef(url, ref, tag, details) {
+    validateRefIsSecure(ref);
+    validateRefIsSecure(tag);
     const dir = await initRepo(url);
     const msg = await exec(`git tag -n ${tag}`, {cwd: dir});
     if (msg.trim().length === 0) {
@@ -135,6 +157,7 @@ module.exports = {
     }
   },
   async pull(url, ref) {
+    validateRefIsSecure(ref);
     const dir = await initRepo(url, ref);
     await exec(`git pull --ff-only --quiet origin ${ref}`, {cwd: dir});
   },
