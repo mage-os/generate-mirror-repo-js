@@ -61,7 +61,7 @@ jobs:
         name: "Generate the packages for the composer repo"
       - run: node bin/set-satis-homepage-url.js --satisConfig=satis.json --repoUrl="${{ env.repo }}" > /tmp/satis.json
         name: "Configure satis repository URL so composer knows where to download packages from"
-      - run: cat <<< $(jq '."output-dir" = "build" | .repositories[0].url = "build/packages"' /tmp/satis.json) > /tmp/satis.json
+      - run: cat <<< $(jq '."output-dir" = "../build" | .repositories[0].url = "../build/packages"' /tmp/satis.json) > /tmp/satis.json
         name: "Tell satis where to find the generated packages"
       - run: cd satis && bin/satis build /tmp/satis.json ../build && cd -
       - run: node bin/set-satis-output-url-prefix.js --satisOutputDir=build --repoUrl="${{ env.repo }}"
