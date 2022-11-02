@@ -1,0 +1,45 @@
+name: Build & check Mage-OS Nightly
+
+on:
+  schedule:
+    # * is a special character in YAML so you have to quote this string
+    - cron:  '20 11 * * *'
+  workflow_dispatch:
+    inputs:
+      composer_cache_dir:
+        description: A key to version the composer cache. Can be incremented if you need to bust the cache.
+        required: false
+        default: ''
+
+jobs:
+  deploy: 
+    uses: ./.github/workflows/deploy.yml
+    with:
+      repo: https://nightly.mage-os.org
+      remote_dir: /var/www/nightly.mage-os.org/html/
+      entrypoint: src/make/mageos-nightly.js
+      delete: false
+    secrets:
+      SERVER_SSH_KEY: ${{ secrets.SERVER_SSH_KEY }}
+      REMOTE_USER: ${{ secrets.REMOTE_USER }}
+  compute-nightly-service-versions:
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.supported-version.outputs.matrix }}
+    steps:
+      - uses: actions/checkout@v3
+      - uses: graycoreio/github-actions-magento2/supported-version@main
+        with:
+          kind: nightly
+        id: supported-version
+  integration-check:
+    needs: [deploy, compute-nightly-service-versions]
+    uses: graycoreio/github-actions-magento2/.github/workflows/integration.yaml@main
+    with:
+      package_name: mage-os/demo-package
+      use_local_source: false
+      matrix: ${{ needs.compute-nightly-service-versions.outputs.matrix }}
+      test_command: ../../../vendor/bin/phpunit ../../../vendor/mage-os/demo-package/Test/Integration
+      fail-fast: false
+      magento_repository: https://nightly.mage-os.org
+      composer_cache_key: ${{ inputs.composer_cache_key || 'v1' }}
