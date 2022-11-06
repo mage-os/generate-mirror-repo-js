@@ -68,6 +68,10 @@ echo "$TARGET" | grep -q "upstream-nightly" && {
   node src/make/upstream-nightly.js --outputDir="$OUT_DIR" --gitRepoDir="$GIT_REPO_DIR" --repoUrl="$REPO_BASE_URL"
 }
 
+echo "$TARGET" | grep -q "mageos-nightly" && {
+  node src/make/mageos-nightly.js --outputDir="$OUT_DIR" --gitRepoDir="$GIT_REPO_DIR" --repoUrl="$REPO_BASE_URL"
+}
+
 echo Running satis...
 
 cd /satis

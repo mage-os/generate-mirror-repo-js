@@ -2,7 +2,7 @@ const repo = require('./../repository');
 const parseOptions = require('parse-options');
 const {setArchiveBaseDir, setMageosPackageRepoUrl} = require('./../package-modules');
 const {processBuildInstructions} = require('./../release-branch-build-tools');
-const {buildConfig: branchBuildInstructions} = require('./../build-config/upstream-nightly-build-config');
+const {buildConfig: branchBuildInstructions} = require('./../build-config/mageos-nightly-build-config');
 
 const options = parseOptions(
   `$outputDir $gitRepoDir $repoUrl @help|h`,
@@ -11,10 +11,10 @@ const options = parseOptions(
 
 
 if (options.help) {
-  console.log(`Build Mage-OS release packages from github.com/mage-os/mirror-* git repositories.
+  console.log(`Build Mage-OS release packages from github.com/mage-os/mageos-* git repositories.
 
 Usage:
-  node src/make/upstream-nightly.js [OPTIONS]
+  node src/make/mageos-nightly.js [OPTIONS]
   
 Options:
   --outputDir=   Dir to contain the built packages (default: packages)
