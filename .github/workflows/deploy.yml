@@ -55,7 +55,7 @@ jobs:
       - run: curl -L https://github.com/mage-os/php-dependency-list/raw/main/php-classes.phar -o /usr/local/bin/php-classes.phar && chmod +x /usr/local/bin/php-classes.phar
         name: "Install PHP source code dependency analyzer and make executable (used by nightly build script for base package)"
 
-      - run: composer create-project composer/satis:dev-main
+      - run: composer create-project composer/satis:dev-main#fafc1c2eca6394235f12f8a3ee4da7fc7c9fc874
       - run: npm ci
       - run: node ${{ env.entrypoint }} --outputDir=build/packages --gitRepoDir=generate-repo/repositories --repoUrl="${{ env.repo }}"
         name: "Generate the packages for the composer repo"
