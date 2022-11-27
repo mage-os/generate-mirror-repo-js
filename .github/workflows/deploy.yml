@@ -47,15 +47,24 @@ jobs:
       - uses: shivammathur/setup-php@v2
         with:
           php-version: 8.1
-          tools: composer:v2
+          tools: composer:2.2
       - uses: actions/setup-node@v3
         with:
           node-version: 16
           cache: 'npm'
       - run: curl -L https://github.com/mage-os/php-dependency-list/raw/main/php-classes.phar -o /usr/local/bin/php-classes.phar && chmod +x /usr/local/bin/php-classes.phar
         name: "Install PHP source code dependency analyzer and make executable (used by nightly build script for base package)"
+      
+      # Composer create-project and composer require have limited support for commit hashes, they check composer-plugin-api constraints
+      # of the specified branch HEAD instead of the specified commit hash. 
+      #- run: composer create-project "composer/satis:dev-main#fafc1c2eca6394235f12f8a3ee4da7fc7c9fc874"
+      # To work around the limitation, we use: git clone && git install.
+      #
+      # The fafc1c2eca6394235f12f8a3ee4da7fc7c9fc874 hash is the last satis commit that supports composer 2.2.x, which is currently required by the
+      # Magento core dependency laminas/laminas-dependency-plugin
+      - run: git clone https://github.com/composer/satis.git satis && cd satis && git checkout fafc1c2eca6394235f12f8a3ee4da7fc7c9fc874 && composer install && cd -
+        name: "Install satis"
 
-      - run: composer create-project composer/satis:dev-main
       - run: npm ci
       - run: node ${{ env.entrypoint }} --outputDir=build/packages --gitRepoDir=generate-repo/repositories --repoUrl="${{ env.repo }}"
         name: "Generate the packages for the composer repo"
