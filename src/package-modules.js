@@ -212,12 +212,12 @@ async function determinePackagesForRef(url, modulesPath, ref, options) {
  * @param {String} url The URL of the source git repository
  * @param {String} moduleDir The path to the module to package. Can be '' to use the full repo
  * @param {String} ref Git ref to check out (string of tag or branch)
- * @param {{excludes:Array|undefined, composerJsonPath:String|undefined, emptyDirsToAdd:Array|undefined, dependencyVersions:{}|undefined}, fallbackVersion:String|undefined} options
+ * @param {{excludes:Array|undefined, composerJsonPath:String|undefined, emptyDirsToAdd:Array|undefined, dependencyVersions:{}|undefined}, fallbackVersion:String|undefined, transform:Function[]|undefined} options
  * @returns {Promise<{}>}
  */
 async function createPackageForRef(url, moduleDir, ref, options) {
   const defaults = {excludes: [], composerJsonPath: undefined, emptyDirsToAdd: [], release: undefined, dependencyVersions: {}, fallbackVersion: undefined};
-  const {excludes, composerJsonPath, emptyDirsToAdd, dependencyVersions, fallbackVersion} = Object.assign(defaults, (options || {}));
+  const {excludes, composerJsonPath, emptyDirsToAdd, dependencyVersions, fallbackVersion, transform} = Object.assign(defaults, (options || {}));
 
   if (! excludes.includes('composer.json')) excludes.push('composer.json');
   if (! excludes.includes('.git/')) excludes.push('.git/');
@@ -284,13 +284,15 @@ async function createPackageForRef(url, moduleDir, ref, options) {
   }
   setDependencyVersions(composerConfig, dependencyVersions);
 
+  const finalComposerConfig = (transform && transform[name] || []).reduce((config, transformFn) => transformFn(config), composerConfig);
+
   const filesInZip = files.map(file => {
     file.mtime = mtime;
     file.filepath = file.filepath.slice(moduleDir ? moduleDir.length + 1 : 0);
     return file;
   });
   
-  filesInZip.push({filepath: 'composer.json', contentBuffer: Buffer.from(JSON.stringify(composerConfig, null, 2), 'utf8'), mtime, isExecutable: false});
+  filesInZip.push({filepath: 'composer.json', contentBuffer: Buffer.from(JSON.stringify(finalComposerConfig, null, 2), 'utf8'), mtime, isExecutable: false});
   for (const d of (emptyDirsToAdd || [])) {
     filesInZip.push({filepath: d, contentBuffer: false, mtime, isExecutable: false});
   }
@@ -413,11 +415,11 @@ async function determineMagentoCommunityEditionMetapackage(repoUrl, ref, release
  *
  * @param {String} url The URL of the source git repository
  * @param {String} ref Git ref to check out (string of tag or branch)
- * @param {{release:String|undefined, dependencyVersions:{}}} options
+ * @param {{release:String|undefined, dependencyVersions:{}, transform:Function[]|undefined}} options
  * @returns {Promise<{}>}
  */
 async function createMagentoCommunityEditionMetapackage(url, ref, options) {
-  const {release, dependencyVersions} = Object.assign({release: undefined, dependencyVersions: {}}, (options || {}))
+  const {release, dependencyVersions, transform} = Object.assign({release: undefined, dependencyVersions: {}}, (options || {}))
   const name = 'magento/product-community-edition';
   const version = release || dependencyVersions[name] || ref;
   const {packageFilepath, files} = await createComposerJsonOnlyPackage(url, ref, name, async (refComposerConfig) => {
@@ -437,7 +439,7 @@ async function createMagentoCommunityEditionMetapackage(url, ref, options) {
     }
     setDependencyVersions(composerConfig, dependencyVersions);
 
-    return composerConfig;
+    return (transform && transform[name] || []).reduce((config, transformFn) => transformFn(config), composerConfig);
   }, release || version);
   
   await writePackage(packageFilepath, files);
@@ -457,12 +459,12 @@ async function determineMagentoCommunityEditionProject(url, ref, release) {
  *
  * @param {String} url The URL of the source git repository
  * @param {String} ref Git ref to check out (string of tag or branch)
- * @param {{release:String|undefined, dependencyVersions:{}, minimumStability:String|undefined}} options
+ * @param {{release:String|undefined, dependencyVersions:{}, minimumStability:String|undefined, transform:Function[]|undefined}} options
  * @returns {Promise<{}>}
  */
 async function createMagentoCommunityEditionProject(url, ref, options) {
   const defaults = {release: undefined, dependencyVersions: {}, minimumStability: 'stable'};
-  const {release, dependencyVersions, minimumStability} = Object.assign(defaults, (options || {}))
+  const {release, dependencyVersions, minimumStability, transform} = Object.assign(defaults, (options || {}))
   const name = 'magento/project-community-edition';
   const version = release || dependencyVersions[name] || ref;
   const {packageFilepath, files} = await createComposerJsonOnlyPackage(url, ref, name, async (refComposerConfig) => {
@@ -483,8 +485,8 @@ async function createMagentoCommunityEditionProject(url, ref, options) {
       delete composerConfig[k];
     }
     setDependencyVersions(composerConfig, dependencyVersions);
-    
-    return composerConfig;
+
+    return (transform && transform[name] || []).reduce((config, transformFn) => transformFn(config), composerConfig)
   }, version);
   
   // Special case - in these releases the base package also contained a .gitignore file in addition to the composer.json file.
@@ -531,11 +533,11 @@ async function determineMetaPackageFromRepoDir(url, dir, ref, release) {
  * @param {String} url The URL of the source git repository
  * @param {String} dir The directory path to the git repository
  * @param {String} ref Git ref to check out (string of tag or branch)
- * @param {{release:String|undefined, dependencyVersions:{}}} options
+ * @param {{release:String|undefined, dependencyVersions:{}, transform:Function[]|undefined}} options
  * @returns {Promise<{}>}
  */
 async function createMetaPackageFromRepoDir(url, dir, ref, options) {
-  const {release, dependencyVersions} = Object.assign({release: undefined, dependencyVersions: {}}, (options || {}));
+  const {release, dependencyVersions, transform} = Object.assign({release: undefined, dependencyVersions: {}}, (options || {}));
   const composerConfig = JSON.parse(await readComposerJson(url, dir, ref));
   let {version, name} = composerConfig;
   if (!name) {
@@ -548,10 +550,12 @@ async function createMetaPackageFromRepoDir(url, dir, ref, options) {
   composerConfig.version = version;
   setDependencyVersions(composerConfig, dependencyVersions);
 
+  const finalComposerConfig = (transform && transform[name] || []).reduce((config, transformFn) => transformFn(config), composerConfig);
+
   const files = [{
     filepath: 'composer.json',
     mtime: new Date(stableMtime),
-    contentBuffer: Buffer.from(JSON.stringify(composerConfig, null, 2), 'utf8'),
+    contentBuffer: Buffer.from(JSON.stringify(finalComposerConfig, null, 2), 'utf8'),
     isExecutable: false,
   }];
 
