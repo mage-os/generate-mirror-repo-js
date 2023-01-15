@@ -125,14 +125,14 @@ async function processBuildInstruction(instruction, dependencyVersions, fallback
   const packages = {}
   let built = {};
 
-  const {repoUrl, ref, release} = instruction;
+  const {repoUrl, ref, release, transform} = instruction;
 
   await repo.pull(repoUrl, ref);
 
   for (const packageDir of (instruction.packageDirs || [])) {
     const {label, dir, excludes} = Object.assign({excludes: []}, packageDir);
     console.log(`Packaging ${label}`);
-    built = await createPackagesForRef(repoUrl, dir, ref, {excludes, release, fallbackVersion, dependencyVersions});
+    built = await createPackagesForRef(repoUrl, dir, ref, {excludes, release, fallbackVersion, dependencyVersions, transform});
     Object.assign(packages, built);
   }
 
@@ -140,27 +140,27 @@ async function processBuildInstruction(instruction, dependencyVersions, fallback
     const defaults = {excludes: [], composerJsonPath: '', emptyDirsToAdd: []};
     const {label, dir, excludes, composerJsonPath, emptyDirsToAdd} = Object.assign(defaults, individualPackage);
     console.log(`Packaging ${label}`);
-    built = await createPackageForRef(repoUrl, dir, ref, {excludes, composerJsonPath, emptyDirsToAdd, release, fallbackVersion, dependencyVersions});
+    built = await createPackageForRef(repoUrl, dir, ref, {excludes, composerJsonPath, emptyDirsToAdd, release, fallbackVersion, dependencyVersions, transform});
     Object.assign(packages, built);
   }
 
   for (const packageMeta of (instruction.packageMetaFromDirs || [])) {
     const {label, dir} = packageMeta;
     console.log(`Packaging ${label}`);
-    built = await createMetaPackageFromRepoDir(repoUrl, dir, ref, {release, dependencyVersions});
+    built = await createMetaPackageFromRepoDir(repoUrl, dir, ref, {release, dependencyVersions, transform});
     Object.assign(packages, built);
   }
 
   if (instruction.magentoCommunityEditionMetapackage) {
     console.log('Packaging Magento Community Edition Product Metapackage');
-    built = await createMagentoCommunityEditionMetapackage(repoUrl, ref, {release, dependencyVersions});
+    built = await createMagentoCommunityEditionMetapackage(repoUrl, ref, {release, dependencyVersions, transform});
     Object.assign(packages, built);
   }
 
   if (instruction.magentoCommunityEditionProject) {
     console.log('Packaging Magento Community Edition Project');
     const minimumStability = 'alpha';
-    built = await createMagentoCommunityEditionProject(repoUrl, ref, {release, dependencyVersions, minimumStability});
+    built = await createMagentoCommunityEditionProject(repoUrl, ref, {release, dependencyVersions, minimumStability, transform});
     Object.assign(packages, built);
   }
 
