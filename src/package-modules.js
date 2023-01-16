@@ -229,7 +229,7 @@ async function createPackageForRef(url, moduleDir, ref, options) {
     throw {message: `Unable to find composer.json for ${ref}, skipping ${magentoName}`}
   }
   
-  const composerConfig = JSON.parse(composerJson);
+  let composerConfig = JSON.parse(composerJson);
   
   let name, version;
   
@@ -284,7 +284,7 @@ async function createPackageForRef(url, moduleDir, ref, options) {
   }
   setDependencyVersions(composerConfig, dependencyVersions);
 
-  const finalComposerConfig = (transform && transform[name] || []).reduce((config, transformFn) => transformFn(config), composerConfig);
+  composerConfig = (transform && transform[name] || []).reduce((config, transformFn) => transformFn(config), composerConfig);
 
   const filesInZip = files.map(file => {
     file.mtime = mtime;
@@ -292,7 +292,7 @@ async function createPackageForRef(url, moduleDir, ref, options) {
     return file;
   });
   
-  filesInZip.push({filepath: 'composer.json', contentBuffer: Buffer.from(JSON.stringify(finalComposerConfig, null, 2), 'utf8'), mtime, isExecutable: false});
+  filesInZip.push({filepath: 'composer.json', contentBuffer: Buffer.from(JSON.stringify(composerConfig, null, 2), 'utf8'), mtime, isExecutable: false});
   for (const d of (emptyDirsToAdd || [])) {
     filesInZip.push({filepath: d, contentBuffer: false, mtime, isExecutable: false});
   }
@@ -538,7 +538,7 @@ async function determineMetaPackageFromRepoDir(url, dir, ref, release) {
  */
 async function createMetaPackageFromRepoDir(url, dir, ref, options) {
   const {release, dependencyVersions, transform} = Object.assign({release: undefined, dependencyVersions: {}}, (options || {}));
-  const composerConfig = JSON.parse(await readComposerJson(url, dir, ref));
+  let composerConfig = JSON.parse(await readComposerJson(url, dir, ref));
   let {version, name} = composerConfig;
   if (!name) {
     throw {message: `Unable find package name and in composer.json for metapackage ${ref} in ${dir}`}
@@ -550,12 +550,12 @@ async function createMetaPackageFromRepoDir(url, dir, ref, options) {
   composerConfig.version = version;
   setDependencyVersions(composerConfig, dependencyVersions);
 
-  const finalComposerConfig = (transform && transform[name] || []).reduce((config, transformFn) => transformFn(config), composerConfig);
+  composerConfig = (transform && transform[name] || []).reduce((config, transformFn) => transformFn(config), composerConfig);
 
   const files = [{
     filepath: 'composer.json',
     mtime: new Date(stableMtime),
-    contentBuffer: Buffer.from(JSON.stringify(finalComposerConfig, null, 2), 'utf8'),
+    contentBuffer: Buffer.from(JSON.stringify(composerConfig, null, 2), 'utf8'),
     isExecutable: false,
   }];
 
