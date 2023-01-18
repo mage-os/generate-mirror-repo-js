@@ -55,7 +55,7 @@
             "blueimp/jquery-file-upload": "lib/web/jquery/fileUploader",
             "components/jquery": [
                 "lib/web/jquery.js",
-                "lib/web/jquery/jquery.min.js",
+                "lib/web/jquery/jquery.min.js"
             ],
             "components/jqueryui": "lib/web/jquery/jquery-ui.js",
             "tinymce/tinymce": "lib/web/tiny_mce_5",
