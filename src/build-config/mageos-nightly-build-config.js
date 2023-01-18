@@ -5,6 +5,18 @@ const branchBuildConfig = {
   'magento2': {
     repoUrl: 'https://github.com/mage-os/mageos-magento2.git',
     ref: '2.4-develop',
+    transform: {
+      // For magento/elasticsearch-8, remove the elasticsearch/elasticsearch dependency.
+      // See https://github.com/magento/magento2/issues/36687
+      'magento/module-elasticsearch-8': [
+        composerJson => {
+          if (composerJson?.require['elasticsearch/elasticsearch']) {
+            delete composerJson.require['elasticsearch/elasticsearch'];
+          }
+          return composerJson;
+        }
+      ]
+    }
   },
   'security-package': {
     repoUrl: 'https://github.com/mage-os/mageos-security-package.git',
