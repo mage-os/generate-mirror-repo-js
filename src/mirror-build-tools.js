@@ -12,8 +12,11 @@ const {
 } = require('./package-modules');
 
 
-async function listTagsFrom(url, from) {
-  return (await repo.listTags(url)).filter(tag => isVersionGreaterOrEqual(tag, from));
+async function listTagsFrom(url, tagSpec) {
+  const {fromTag, skipTags} = tagSpec;
+  return (await repo.listTags(url))
+    .filter(tag => isVersionGreaterOrEqual(tag, fromTag))
+    .filter(tag => skipTags[tag] ? skipTags[tag]() : true);
 }
 
 async function copyAdditionalPackages(archiveDir) {
@@ -39,8 +42,8 @@ async function copyAdditionalPackages(archiveDir) {
   }
 }
 
-async function createMagentoCommunityEditionMetapackagesSinceTag(url, from, fixVersions) {
-  const tags = await listTagsFrom(url, from);
+async function createMagentoCommunityEditionMetapackagesSinceTag(url, tagsSpec, fixVersions) {
+  const tags = await listTagsFrom(url, tagsSpec);
   console.log(`Versions to process: ${tags.join(', ')}`);
   for (const tag of tags) {
     console.log(`Processing ${tag}`);
@@ -49,8 +52,8 @@ async function createMagentoCommunityEditionMetapackagesSinceTag(url, from, fixV
   return tags;
 }
 
-async function createProjectPackagesSinceTag(url, from, fixVersions) {
-  const tags = await listTagsFrom(url, from);
+async function createProjectPackagesSinceTag(url, tagsSpec, fixVersions) {
+  const tags = await listTagsFrom(url, tagsSpec);
   console.log(`Versions to process: ${tags.join(', ')}`);
   for (const tag of tags) {
     console.log(`Processing ${tag}`);
@@ -59,8 +62,8 @@ async function createProjectPackagesSinceTag(url, from, fixVersions) {
   return tags;
 }
 
-async function createMetaPackagesFromRepoDir(url, from, path, fixVersions) {
-  const tags = await listTagsFrom(url, from);
+async function createMetaPackagesFromRepoDir(url, tagSpec, path, fixVersions) {
+  const tags = await listTagsFrom(url, tagSpec);
   console.log(`Versions to process: ${tags.join(', ')}`);
   const built = [];
   for (const tag of tags) {
@@ -75,8 +78,8 @@ async function createMetaPackagesFromRepoDir(url, from, path, fixVersions) {
   return built;
 }
 
-async function createPackagesSinceTag(url, from, modulesPath, excludes, fixVersions) {
-  const tags = await listTagsFrom(url, from);
+async function createPackagesSinceTag(url, tagsSpec, modulesPath, excludes, fixVersions) {
+  const tags = await listTagsFrom(url, tagsSpec);
   console.log(`Versions to process: ${tags.join(', ')}`);
   const built = [];
   for (const tag of tags) {
@@ -91,8 +94,8 @@ async function createPackagesSinceTag(url, from, modulesPath, excludes, fixVersi
   return built;
 }
 
-async function createPackageSinceTag(url, from, modulesPath, excludes, composerJsonPath, emptyDirsToAdd, fixVersions) {
-  const tags = await listTagsFrom(url, from);
+async function createPackageSinceTag(url, tagsSpec, modulesPath, excludes, composerJsonPath, emptyDirsToAdd, fixVersions) {
+  const tags = await listTagsFrom(url, tagsSpec);
   console.log(`Versions to process: ${tags.join(', ')}`);
   const built = [];
   for (const tag of tags) {
@@ -138,13 +141,14 @@ async function replacePackageFiles(name, version, files) {
 }
 
 /**
- * @param {{repoUrl:String, fromTag:String}} instructions Array with build instructions
+ * @param {{repoUrl:String, fromTag:String, skipTags:{Object}}} instructions Array with build instructions
  * @returns {Promise<void>}
  */
 async function processMirrorInstruction(instructions) {
   let tags = [];
 
-  const {repoUrl, fromTag, extraRefToRelease, fixVersions} = instructions;
+  const {repoUrl, fromTag, skipTags, extraRefToRelease, fixVersions} = instructions;
+  const tagsSpec = {fromTag, skipTags}
 
   await Promise.all(
     (extraRefToRelease || []).map(extra => repo.createTagForRef(repoUrl, extra.ref, extra.release, extra.details))
@@ -153,7 +157,7 @@ async function processMirrorInstruction(instructions) {
   for (const packageDir of (instructions.packageDirs || [])) {
     const {label, dir, excludes} = Object.assign({excludes: []}, packageDir);
     console.log(`Packaging ${label}`);
-    tags = await createPackagesSinceTag(repoUrl, fromTag, dir, excludes, fixVersions)
+    tags = await createPackagesSinceTag(repoUrl, tagsSpec, dir, excludes, fixVersions)
     console.log(label, tags);
   }
 
@@ -161,14 +165,14 @@ async function processMirrorInstruction(instructions) {
     const defaults = {excludes: [], composerJsonPath: '', emptyDirsToAdd: []};
     const {label, dir, excludes, composerJsonPath, emptyDirsToAdd} = Object.assign(defaults, individualPackage);
     console.log(`Packaging ${label}`);
-    tags = await createPackageSinceTag(repoUrl, fromTag, dir, excludes, composerJsonPath, emptyDirsToAdd, fixVersions);
+    tags = await createPackageSinceTag(repoUrl, tagsSpec, dir, excludes, composerJsonPath, emptyDirsToAdd, fixVersions);
     console.log(label, tags);
   }
 
   for (const packageMeta of (instructions.packageMetaFromDirs || [])) {
     const {label, dir} = packageMeta;
     console.log(`Packaging ${label}`);
-    tags = await createMetaPackagesFromRepoDir(repoUrl, fromTag, dir, fixVersions);
+    tags = await createMetaPackagesFromRepoDir(repoUrl, tagsSpec, dir, fixVersions);
     console.log(label, tags);
   }
 
@@ -178,13 +182,13 @@ async function processMirrorInstruction(instructions) {
 
   if (instructions.magentoCommunityEditionMetapackage) {
     console.log('Packaging Magento Community Edition Product Metapackage');
-    tags = await createMagentoCommunityEditionMetapackagesSinceTag(repoUrl, fromTag, fixVersions);
+    tags = await createMagentoCommunityEditionMetapackagesSinceTag(repoUrl, tagsSpec, fixVersions);
     console.log('Magento Community Edition Product Metapackage', tags);
   }
 
   if (instructions.magentoCommunityEditionProject) {
     console.log('Packaging Magento Community Edition Project');
-    tags = await createProjectPackagesSinceTag(repoUrl, fromTag, fixVersions);
+    tags = await createProjectPackagesSinceTag(repoUrl, tagsSpec, fixVersions);
     console.log('Magento Community Edition Project', tags);
   }
   
