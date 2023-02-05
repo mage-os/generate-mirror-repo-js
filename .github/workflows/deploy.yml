@@ -76,7 +76,7 @@ jobs:
       - run: cd satis && node ../bin/set-satis-output-url-prefix.js --satisOutputDir=../build --repoUrl="${{ env.repo }}" && cd -
         name: "Fix path to packages in the packages.json satis created"
 
-      - uses: easingthemes/ssh-deploy@v4.0.5
+      - uses: easingthemes/ssh-deploy@v4
         name: "Rsync over SSH"
         env:
           SSH_PRIVATE_KEY: ${{ secrets.SERVER_SSH_KEY }}
