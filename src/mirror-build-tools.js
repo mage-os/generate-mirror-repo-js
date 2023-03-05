@@ -16,7 +16,7 @@ async function listTagsFrom(url, tagSpec) {
   const {fromTag, skipTags} = tagSpec;
   return (await repo.listTags(url))
     .filter(tag => isVersionGreaterOrEqual(tag, fromTag))
-    .filter(tag => skipTags[tag] ? skipTags[tag]() : true);
+    .filter(tag => skipTags && skipTags[tag] ? skipTags[tag]() : true);
 }
 
 async function copyAdditionalPackages(archiveDir) {
