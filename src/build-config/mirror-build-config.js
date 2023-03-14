@@ -120,7 +120,7 @@ const mirrorBuildConfig = {
     fromTag: '1.0.0',
     // Skip tag 2.0.3 until the expected release date of 2.4.6 because it probably was tagged by accident in upstream
     // See issue https://github.com/magento/composer-root-update-plugin/issues/37
-    skipTags: {'2.0.3': () => (new Date('2023-03-14')).getTime() < Date.now()},
+    //skipTags: {'2.0.3': () => (new Date('2023-03-14')).getTime() < Date.now()},
   },
   'composer-dependency-version-audit-plugin': {
     repoUrl: 'https://github.com/mage-os/mirror-composer-dependency-version-audit-plugin.git',
