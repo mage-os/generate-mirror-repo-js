@@ -69,6 +69,10 @@
                 ".editorconfig"
             ],
             [
+                ".gitignore",
+                ".gitignore"
+            ],
+            [
                 ".htaccess",
                 ".htaccess"
             ],
