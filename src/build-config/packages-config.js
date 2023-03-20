@@ -145,7 +145,7 @@ module.exports = {
       {
         label: 'Adobe IMS Packages',
         dir: '',
-        excludes: ['_metapackage/', '.github/'],
+        excludes: ['_metapackage/', '.github/', 'i18n', 'dev'],
       }
     ],
     packageIndividual: [],
