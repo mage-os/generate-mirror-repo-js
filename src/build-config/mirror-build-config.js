@@ -77,14 +77,14 @@ const mirrorBuildConfig = {
         details: 'Remove extraRefToRelease from mirror build config if https://github.com/magento/adobe-ims/issues/16 is resolved'
       }
     ],
-    fixVersions: {
-      '2.2.0': {
-        'magento/module-admin-adobe-ims': '100.5.0',
-        'magento/module-admin-adobe-ims-two-factor-auth': '1.0.0',
-        'magento/module-adobe-ims': '2.2.0',
-        'magento/module-adobe-ims-api': '2.2.0'
-      }
-    }
+    // fixVersions: {
+    //   '2.2.0': {
+    //     'magento/module-admin-adobe-ims': '100.5.0',
+    //     'magento/module-admin-adobe-ims-two-factor-auth': '1.0.0',
+    //     'magento/module-adobe-ims': '2.2.0',
+    //     'magento/module-adobe-ims-api': '2.2.0'
+    //   }
+    // }
   },
   'adobe-stock-integration': {
     repoUrl: 'https://github.com/mage-os/mirror-adobe-stock-integration.git',
