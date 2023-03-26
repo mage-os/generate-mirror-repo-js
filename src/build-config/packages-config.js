@@ -25,7 +25,7 @@ module.exports = {
           }
           return !ref.startsWith('2.4.0') && (file === '.github' || file.startsWith('.github/'));
         }, (ref, file) => {
-          const releasesWithoutGitIgnore = ['2.4.1', '2.4.1-p1', '2.4.2', '2.4.3-p3', '2.4.4-p3', '2.4.5-p2', '2.4.6'];
+          const releasesWithoutGitIgnore = ['2.4.1', '2.4.1-p1', '2.4.2', '2.4.4-p3', '2.4.5-p2', '2.4.6'];
           if (typeof file === "undefined") {
             return releasesWithoutGitIgnore.includes(ref) ? '.gitignore' : '';
           }
