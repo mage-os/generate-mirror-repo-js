@@ -25,12 +25,14 @@ test('It updates every version in the input package->version map', () => {
   })
   expect(sut.transformVersionsToNightlyBuildVersions({
     'foo/bar': '103.0.2',
-    'baz/moo': '103.0.2',
+    'baz/moo': '103.0.1.2',
     'moo/qux': '0.3.4-beta1',
+    'moo/foo': '0.3.4-p2',
   }, '20220704')).toEqual({
     'foo/bar': '103.0.2.1-a20220704',
-    'baz/moo': '103.0.2.1-a20220704',
+    'baz/moo': '103.0.1.3-a20220704',
     'moo/qux': '0.3.4.1-beta120220704',
+    'moo/foo': '0.3.4.1-p220220704',
   })
 });
 
