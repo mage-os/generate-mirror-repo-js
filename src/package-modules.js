@@ -580,6 +580,7 @@ module.exports = {
 
   getLatestTag,
   archiveFilePath,
+  readComposerJson,
   
   determinePackageForRef,
   determinePackagesForRef,

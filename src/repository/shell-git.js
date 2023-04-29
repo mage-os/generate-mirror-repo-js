@@ -74,8 +74,12 @@ async function initRepo(url, ref) {
     await cloneRepo(url, dir, ref);
   }
   if (ref) {
-    const current = (await exec(`git describe --tags --always`, {cwd: dir})).trim();
-    if (current !== ref) {
+    // todo: if ref is a branch name, check if the working copy is at the branch HEAD
+    // otherwise, if ref is a tag, this works:
+    const currentTag = (await exec(`git describe --tags --always`, {cwd: dir})).trim();
+    const currentBranch = (await exec(`git branch --show-current`, {cwd: dir})).trim();
+    if (currentTag !== ref && currentBranch !== ref) {
+      console.log(`checking out ${ref}`)
       await exec(`git checkout --force --quiet ${ref}`, {cwd: dir})
     }
   }

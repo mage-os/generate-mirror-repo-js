@@ -2,9 +2,11 @@ const childProcess = require('child_process');
 const {createHash} = require("crypto");
 const {tmpdir} = require("os");
 const {cwd, chdir} = require("process");
+const repo = require("./repository");
 const {accessSync, constants} = require("fs");
 const fs = require("fs/promises");
 const path = require("path");
+const {readComposerJson} = require('./package-modules');
 
 
 function fsExists(dirOrFile) {
@@ -76,9 +78,42 @@ function validateVersionString(version, name) {
 
 module.exports = {
   validateVersionString,
-  async determineUpstreamPackageVersions(upstreamRelease) {
-    const dir = await composerCreateMagentoProject(upstreamRelease)
+  async getPackageVersionMap(releaseVersion) {
+    const dir = await composerCreateMagentoProject(releaseVersion)
+    // todo: install sample data
+    // todo: look at all suggested packages that end with -sample-data
+    // todo: parse version constraint from value "Sample Data version: 100.4.*"
+    // todo: composer require all sample packages with the version constraints
     return getInstalledPackageMap(dir)
   },
-  processReleaseInstructions() {}
+  async prepRelease(releaseVersion, instruction, options) {
+    const {replaceVersionMap} = options
+    const {ref, repoUrl} = instruction
+    
+    const workingCopyPath = await repo.checkout(repoUrl, ref)
+    
+    // todo: check out work-in-progress branch (temporary, can be deleted again after commit and tag)
+    
+    // iterate over build instructions
+    for (const individualInstruction of (instruction.packageIndividual || [])) {
+      const {label, dir} = individualInstruction;
+      console.log(`Preparing ${label}`);
+
+      const composerJson = JSON.parse(await readComposerJson(repoUrl, dir, ref))
+      composerJson.version = releaseVersion
+      if (replaceVersionMap[composerJson.name]) {
+        composerJson.replace = {[composerJson.name]: replaceVersionMap[composerJson.name]}
+      }
+      composerJson.name = composerJson.name.replace(/^magento\//, 'mageos/')
+      // todo: replace magento in package vendor names with mageos in require, require-dev and suggest
+      // todo: replace version of magento package dependency with build version in require, require-dev and suggest
+      
+      // write composerJson to file in repo
+      const file = path.join(workingCopyPath, dir, 'composer.json');
+      await fs.writeFile(file, JSON.stringify(composerJson, null, 4), 'utf8')
+    }
+    
+    // todo: commit all changes
+    // todo: tag release version
+  }
 }

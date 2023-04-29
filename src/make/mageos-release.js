@@ -1,7 +1,7 @@
 const repo = require('./../repository');
 const parseOptions = require('parse-options');
 const {setArchiveBaseDir, setMageosPackageRepoUrl} = require('./../package-modules');
-const {determineUpstreamPackageVersions, processReleaseInstructions, validateVersionString} = require('./../release-build-tools');
+const {getPackageVersionMap, prepRelease, validateVersionString} = require('./../release-build-tools');
 const {buildConfig: releaseInstructions} = require('./../build-config/mageos-release-build-config');
 
 const options = parseOptions(
@@ -46,13 +46,14 @@ upstreamRelease && validateVersionString(upstreamRelease, 'upstreamRelease');
 (async () => {
   try {
     const upstreamVersionMap = upstreamRelease
-      ? await determineUpstreamPackageVersions(upstreamRelease)
+      ? await getPackageVersionMap(upstreamRelease)
       : {}
-    console.log(upstreamVersionMap)
+    for (const instruction of releaseInstructions) {
+      await prepRelease(mageosRelease, instruction, {replaceVersionMap: upstreamVersionMap});
+    }
     
-    // for (const instruction of releaseInstructions) {
-    //   await processReleaseInstructions(instruction);
-    // }
+    // todo: build release from tag mageosRelease in every repo, just as if it where a mirror build
+    // @see createPackagesForRef(url, modulesPath, tag, {excludes});
   } catch (exception) {
     console.log(exception);
     throw exception
