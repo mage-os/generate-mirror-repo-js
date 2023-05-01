@@ -49,7 +49,7 @@ upstreamRelease && validateVersionString(upstreamRelease, 'upstreamRelease');
       ? await getPackageVersionMap(upstreamRelease)
       : {}
     for (const instruction of releaseInstructions) {
-      await prepRelease(mageosRelease, instruction, {replaceVersionMap: upstreamVersionMap});
+      //await prepRelease(mageosRelease, instruction, {replaceVersionMap: upstreamVersionMap});
     }
     
     // todo: build release from tag mageosRelease in every repo, just as if it where a mirror build

@@ -45,6 +45,45 @@ async function composerCreateMagentoProject(version) {
   })
 }
 
+async function installSampleData(dir) {
+  console.log(`Installing sample data packages`)
+  return; // tmp disable
+  // todo: look at all suggested packages that end with -sample-data
+  const listCommand = `composer suggests --all | grep 'Sample Data version:'`
+  console.log(`Running ${listCommand}`)
+  const bufferBytes = 4 * 1024 * 1024; // 4M
+  const output = await (new Promise((resolve, reject) => {
+    childProcess.exec(listCommand, {maxBuffer: bufferBytes, cwd: dir}, (error, stdout, stderr) => {
+      if (stderr && stderr.includes('Generating autoload files')) stderr = '';
+      if (error) {
+        reject(`Error executing command: ${error.message}`)
+      }
+      if (stderr) {
+        reject(`[error] ${stderr}`)
+      }
+      resolve(stdout.trim())
+    })
+  }))
+  const packages = output.split("\n").map(line => {
+    // A line looks like (without the quotes):
+    // " - magento/module-bundle-sample-data: Sample Data version: 100.4.*"
+    return line.replace(/^.+(?<package>magento\/[^:]+): Sample Data version.*?(?<version>\d.*)$/, '$<package>:$<version>')
+  })
+  return new Promise((resolve, reject) => {
+    const installCommand = `composer require "${packages.join('" "')}"`
+    childProcess.exec(installCommand, {maxBuffer: bufferBytes, cwd: dir}, (error, stdout, stderr) => {
+      if (stderr && stderr.includes('Generating autoload files')) stderr = '';
+      if (error) {
+        reject(`Error executing command: ${error.message}`)
+      }
+      if (stderr) {
+        reject(`[error] ${stderr}`)
+      }
+      resolve(stdout.trim())
+    })
+  })
+}
+
 async function getInstalledPackageMap(dir) {
   const command = `composer show --format=json`
   console.log(`Running ${command}`)
@@ -76,14 +115,29 @@ function validateVersionString(version, name) {
   }
 }
 
+async function prepPackageForRelease({label, dir}, repoUrl, ref, releaseVersion, replaceVersionMap, workingCopyPath) {
+  console.log(`Preparing ${label}`);
+
+  const composerJson = JSON.parse(await readComposerJson(repoUrl, dir, ref))
+  composerJson.version = releaseVersion
+  if (replaceVersionMap[composerJson.name]) {
+    composerJson.replace = {[composerJson.name]: replaceVersionMap[composerJson.name]}
+  }
+  composerJson.name = composerJson.name.replace(/^magento\//, 'mageos/')
+  // todo: replace magento in package vendor names with mageos in require, require-dev and suggest
+  // todo: replace version of magento package dependency with build version in require, require-dev and suggest
+
+  // write composerJson to file in repo
+  const file = path.join(workingCopyPath, dir, 'composer.json');
+  await fs.writeFile(file, JSON.stringify(composerJson, null, 4), 'utf8')
+}
+
+
 module.exports = {
   validateVersionString,
   async getPackageVersionMap(releaseVersion) {
     const dir = await composerCreateMagentoProject(releaseVersion)
-    // todo: install sample data
-    // todo: look at all suggested packages that end with -sample-data
-    // todo: parse version constraint from value "Sample Data version: 100.4.*"
-    // todo: composer require all sample packages with the version constraints
+    await installSampleData(dir)
     return getInstalledPackageMap(dir)
   },
   async prepRelease(releaseVersion, instruction, options) {
@@ -95,22 +149,24 @@ module.exports = {
     // todo: check out work-in-progress branch (temporary, can be deleted again after commit and tag)
     
     // iterate over build instructions
-    for (const individualInstruction of (instruction.packageIndividual || [])) {
-      const {label, dir} = individualInstruction;
-      console.log(`Preparing ${label}`);
+    for (const packageDirInstruction of (instruction.packageDirs || [])) {
+      // todo: prep each dir of the packageDir instruction
+    }
 
-      const composerJson = JSON.parse(await readComposerJson(repoUrl, dir, ref))
-      composerJson.version = releaseVersion
-      if (replaceVersionMap[composerJson.name]) {
-        composerJson.replace = {[composerJson.name]: replaceVersionMap[composerJson.name]}
-      }
-      composerJson.name = composerJson.name.replace(/^magento\//, 'mageos/')
-      // todo: replace magento in package vendor names with mageos in require, require-dev and suggest
-      // todo: replace version of magento package dependency with build version in require, require-dev and suggest
-      
-      // write composerJson to file in repo
-      const file = path.join(workingCopyPath, dir, 'composer.json');
-      await fs.writeFile(file, JSON.stringify(composerJson, null, 4), 'utf8')
+    for (const individualInstruction of (instruction.packageIndividual || [])) {
+      await prepPackageForRelease(individualInstruction, repoUrl, ref, releaseVersion, replaceVersionMap, workingCopyPath);
+    }
+
+    for (const packageDirInstruction of (instruction.packageMetaFromDirs || [])) {
+      // todo: prep meta package from dir
+    }
+    
+    if (instruction.magentoCommunityEditionProject) {
+      // todo: prep project meta package
+    }
+    
+    if (instruction.magentoCommunityEditionMetapackage) {
+      // todo: prep product meta package
     }
     
     // todo: commit all changes

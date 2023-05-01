@@ -67,6 +67,18 @@ async function cloneRepo(url, dir, ref) {
   return exec(`git clone --depth 15 --quiet --no-single-branch ${url} ${dir}`);
 }
 
+async function currentTag(dir) {
+  return (await exec(`git describe --tags --always`, {cwd: dir})).trim()
+}
+
+async function currentBranch(dir) {
+  return (await exec(`git branch --show-current`, {cwd: dir})).trim()
+}
+
+async function currentCommit(dir) {
+  return (await exec(`git log -1 --pretty=%H`, {cwd: dir})).trim();
+}
+
 async function initRepo(url, ref) {
   const dir = fullRepoPath(url);
 
@@ -74,11 +86,7 @@ async function initRepo(url, ref) {
     await cloneRepo(url, dir, ref);
   }
   if (ref) {
-    // todo: if ref is a branch name, check if the working copy is at the branch HEAD
-    // otherwise, if ref is a tag, this works:
-    const currentTag = (await exec(`git describe --tags --always`, {cwd: dir})).trim();
-    const currentBranch = (await exec(`git branch --show-current`, {cwd: dir})).trim();
-    if (currentTag !== ref && currentBranch !== ref) {
+    if (await currentTag(dir) !== ref && await currentBranch(dir) !== ref && await currentCommit(dir) !== ref) {
       console.log(`checking out ${ref}`)
       await exec(`git checkout --force --quiet ${ref}`, {cwd: dir})
     }
