@@ -46,15 +46,12 @@ async function composerCreateMagentoProject(version) {
 }
 
 async function installSampleData(dir) {
-  console.log(`Installing sample data packages`)
-  return; // tmp disable
-  // todo: look at all suggested packages that end with -sample-data
-  const listCommand = `composer suggests --all | grep 'Sample Data version:'`
-  console.log(`Running ${listCommand}`)
+  // @see \Magento\SampleData\Model\Dependency::SAMPLE_DATA_SUGGEST
+  const SAMPLE_DATA_SUGGEST = 'Sample Data version:';
+  const listCommand = `composer suggests --all`
   const bufferBytes = 4 * 1024 * 1024; // 4M
   const output = await (new Promise((resolve, reject) => {
     childProcess.exec(listCommand, {maxBuffer: bufferBytes, cwd: dir}, (error, stdout, stderr) => {
-      if (stderr && stderr.includes('Generating autoload files')) stderr = '';
       if (error) {
         reject(`Error executing command: ${error.message}`)
       }
@@ -64,29 +61,32 @@ async function installSampleData(dir) {
       resolve(stdout.trim())
     })
   }))
-  const packages = output.split("\n").map(line => {
+  const packages = output.split("\n").filter(line => line.includes(SAMPLE_DATA_SUGGEST)).map(line => {
     // A line looks like (without the quotes):
     // " - magento/module-bundle-sample-data: Sample Data version: 100.4.*"
-    return line.replace(/^.+(?<package>magento\/[^:]+): Sample Data version.*?(?<version>\d.*)$/, '$<package>:$<version>')
+    const re = new RegExp(`^.+(?<package>magento\\/[^:]+): ${SAMPLE_DATA_SUGGEST}.*?(?<version>\\d.*)$`)
+    return line.replace(re, '$<package>:$<version>')
   })
-  return new Promise((resolve, reject) => {
-    const installCommand = `composer require "${packages.join('" "')}"`
-    childProcess.exec(installCommand, {maxBuffer: bufferBytes, cwd: dir}, (error, stdout, stderr) => {
-      if (stderr && stderr.includes('Generating autoload files')) stderr = '';
-      if (error) {
-        reject(`Error executing command: ${error.message}`)
-      }
-      if (stderr) {
-        reject(`[error] ${stderr}`)
-      }
-      resolve(stdout.trim())
+  return packages.length === 0
+    ? true
+    : new Promise((resolve, reject) => {
+      const installCommand = `composer require "${packages.join('" "')}"`
+      console.log(`Installing sample data packages`)
+      childProcess.exec(installCommand, {maxBuffer: bufferBytes, cwd: dir}, (error, stdout, stderr) => {
+        if (stderr && stderr.includes('Generating autoload files')) stderr = '';
+        if (error) {
+          reject(`Error executing command: ${error.message}`)
+        }
+        if (stderr) {
+          reject(`[error] ${stderr}`)
+        }
+        resolve(true)
+      })
     })
-  })
 }
 
 async function getInstalledPackageMap(dir) {
   const command = `composer show --format=json`
-  console.log(`Running ${command}`)
   const bufferBytes = 4 * 1024 * 1024; // 4M
   const output = await (new Promise((resolve, reject) => {
     childProcess.exec(command, {maxBuffer: bufferBytes, cwd: dir}, (error, stdout, stderr) => {
