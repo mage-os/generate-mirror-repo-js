@@ -79,7 +79,7 @@ module.exports = {
       {
         label: 'Security Packages',
         dir: '',
-        excludes: ['.github/', '_metapackage/', 'dev/'],
+        excludes: ['.github/', '_metapackage/', 'dev/', '.git/'],
       }
     ],
     packageIndividual: [],
@@ -97,7 +97,7 @@ module.exports = {
       {
         label: 'Inventory Packages',
         dir: '',
-        excludes: ['.github/', '_metapackage/', 'dev/'],
+        excludes: ['.github/', '_metapackage/', 'dev/', '.git/'],
       }
     ],
     packageIndividual: [],
@@ -127,7 +127,7 @@ module.exports = {
       {
         label: 'PageBuilder Packages',
         dir: 'app/code/Magento',
-        excludes: ['app/code/Magento/_metapackage/'],
+        excludes: ['app/code/Magento/_metapackage/', '.git/'],
       }
     ],
     packageIndividual: [],
@@ -145,7 +145,7 @@ module.exports = {
       {
         label: 'Adobe IMS Packages',
         dir: '',
-        excludes: ['_metapackage/', '.github/', 'i18n', 'dev'],
+        excludes: ['_metapackage/', '.github/', 'i18n', 'dev', '.git/'],
       }
     ],
     packageIndividual: [],
@@ -163,7 +163,7 @@ module.exports = {
       {
         label: 'Stock Integration Packages',
         dir: '',
-        excludes: ['_metapackage/', '.github/', 'dev/'],
+        excludes: ['_metapackage/', '.github/', 'dev/', '.git/'],
       }
     ],
     packageIndividual: [],
@@ -234,7 +234,7 @@ module.exports = {
       {
         label: 'Commerce Data Export Packages',
         dir: '',
-        excludes: ['.github/', '_metapackage/', 'dev/'],
+        excludes: ['.github/', '_metapackage/', 'dev/', '.git/'],
       }
     ],
     packageIndividual: [],
