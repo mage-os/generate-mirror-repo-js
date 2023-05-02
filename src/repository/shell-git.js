@@ -95,6 +95,7 @@ async function initRepo(url, ref) {
   return dir;
 }
 
+
 async function listFileNames(repoDir, path, excludes) {
   const excludeGit = `-not -path '.git' -not -path '.git/*'`;
   const excludeArgs = excludes.map(excludePath => {
@@ -108,6 +109,25 @@ async function listFileNames(repoDir, path, excludes) {
     ? files.map(file => file.slice(2)) // cut off leading ./ if path is empty
     : files;
   
+}
+
+async function createBranch(url, ref) {
+  const dir = fullRepoPath(url);
+
+  if (ref) {
+    if (await currentTag(dir) !== ref && await currentBranch(dir) !== ref && await currentCommit(dir) !== ref) {
+      if((await exec(`git branch -l ${ref}`, {cwd: dir})).includes(ref)) {
+        console.log(`checking out ${ref} (branch already existed)`)
+        await exec(`git checkout --force --quiet ${ref}`, {cwd: dir})
+        return dir;
+      }
+
+      console.log(`checking out ${ref} (creating new branch)`)
+      await exec(`git checkout --force --quiet -b ${ref}`, {cwd: dir})
+    }
+  }
+  
+  return dir;
 }
 
 module.exports = {
@@ -152,6 +172,10 @@ module.exports = {
   async checkout(url, ref) {
     validateRefIsSecure(ref);
     return initRepo(url, ref);
+  },
+  async createBranch(url, ref) {
+    validateRefIsSecure(ref);
+    return createBranch(url, ref);
   },
   async createTagForRef(url, ref, tag, details) {
     validateRefIsSecure(ref);

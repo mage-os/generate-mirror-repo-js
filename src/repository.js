@@ -33,6 +33,9 @@ module.exports = {
   async createTagForRef(url, ref, tag, details) {
     return git.createTagForRef(url, ref, tag, details)
   },
+  async createBranch(url, ref) {
+    return git.createBranch(url, ref)
+  },
   clearCache() {
     git.clearCache()
   },

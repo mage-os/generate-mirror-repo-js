@@ -27,7 +27,7 @@ async function composerCreateMagentoProject(version) {
       console.log(`Found existing installation at ${workDir}`)
       resolve(workDir)
     } else {
-      const command = `composer create-project --repository-url https://mirror.mage-os.org magento/project-community-edition ${workDir} ${version}`
+      const command = `composer create-project --repository-url https://mirror.mage-os.org magento/project-community-edition ${workDir} ${version} --ignore-platform-reqs`
       console.log(`Running ${command}`)
       const bufferBytes = 4 * 1024 * 1024; // 4M
       childProcess.exec(command, {maxBuffer: bufferBytes}, (error, stdout, stderr) => {
@@ -70,7 +70,7 @@ async function installSampleData(dir) {
   return packages.length === 0
     ? true
     : new Promise((resolve, reject) => {
-      const installCommand = `composer require "${packages.join('" "')}"`
+      const installCommand = `composer require "${packages.join('" "')}" --ignore-platform-reqs`
       console.log(`Installing sample data packages`)
       childProcess.exec(installCommand, {maxBuffer: bufferBytes, cwd: dir}, (error, stdout, stderr) => {
         if (stderr && stderr.includes('Generating autoload files')) stderr = '';
@@ -147,10 +147,40 @@ module.exports = {
     const workingCopyPath = await repo.checkout(repoUrl, ref)
     
     // todo: check out work-in-progress branch (temporary, can be deleted again after commit and tag)
+    // this needs more work:
+    await repo.createBranch(repoUrl, 'work-in-progress');
     
-    // iterate over build instructions
     for (const packageDirInstruction of (instruction.packageDirs || [])) {
-      // todo: prep each dir of the packageDir instruction
+      const childPackageDirs = await fs.readdir(path.join(workingCopyPath, packageDirInstruction.dir));
+
+      for (let childPackageDir of childPackageDirs) {
+        // Add trailing slash to our dir, so it matches excludes strings.
+        if((packageDirInstruction.excludes || []).includes(childPackageDir+path.sep)) {
+          // Skip directory
+          continue;
+        }
+
+        const workingChildPackagePath = path.join(workingCopyPath, packageDirInstruction.dir, childPackageDir);
+
+        if(!(await fs.lstat(workingChildPackagePath)).isDirectory()) {
+          // Not a directory, skip
+          continue;
+        }
+
+        const childPackageFiles = await fs.readdir(workingChildPackagePath);
+        if(!childPackageFiles.includes('composer.json')) {
+          throw new Error(`Error: ${workingChildPackagePath} doesn\'t contain a composer.json! Please add to excludes in config.`);
+        }
+
+        childPackageDir = path.join(packageDirInstruction.dir, childPackageDir);
+        const composerJson = JSON.parse(await readComposerJson(repoUrl, childPackageDir, ref));
+
+        const instruction = {
+          'label': `${composerJson.name} (part of ${packageDirInstruction.label})`,
+          'dir': childPackageDir
+        }
+        await prepPackageForRelease(instruction, repoUrl, ref, releaseVersion, replaceVersionMap, workingCopyPath);
+      }
     }
 
     for (const individualInstruction of (instruction.packageIndividual || [])) {
