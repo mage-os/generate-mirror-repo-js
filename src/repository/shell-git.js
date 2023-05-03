@@ -122,7 +122,7 @@ async function createBranch(url, branch) {
   const dir = fullRepoPath(url);
 
   if (branch) {
-    if((await exec(`git branch -l ${branch}`, {cwd: dir})).includes(branch)) {
+    if ((await exec(`git branch -l ${branch}`, {cwd: dir})).includes(branch)) {
       console.log(`checking out ${branch} (branch already existed)`)
       await exec(`git checkout --force --quiet ${branch}`, {cwd: dir})
       return dir;

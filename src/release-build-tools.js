@@ -155,20 +155,20 @@ module.exports = {
 
       for (let childPackageDir of childPackageDirs) {
         // Add trailing slash to our dir, so it matches excludes strings.
-        if((packageDirInstruction.excludes || []).includes(childPackageDir+path.sep)) {
+        if ((packageDirInstruction.excludes || []).includes(childPackageDir+path.sep)) {
           // Skip directory
           continue;
         }
 
         const workingChildPackagePath = path.join(workingCopyPath, packageDirInstruction.dir, childPackageDir);
 
-        if(!(await fs.lstat(workingChildPackagePath)).isDirectory()) {
+        if (!(await fs.lstat(workingChildPackagePath)).isDirectory()) {
           // Not a directory, skip
           continue;
         }
 
         const childPackageFiles = await fs.readdir(workingChildPackagePath);
-        if(!childPackageFiles.includes('composer.json')) {
+        if (!childPackageFiles.includes('composer.json')) {
           throw new Error(`Error: ${workingChildPackagePath} doesn\'t contain a composer.json! Please add to excludes in config.`);
         }
 
