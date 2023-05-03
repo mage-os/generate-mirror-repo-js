@@ -155,7 +155,8 @@ module.exports = {
 
       for (let childPackageDir of childPackageDirs) {
         // Add trailing slash to our dir, so it matches excludes strings.
-        if ((packageDirInstruction.excludes || []).includes(childPackageDir+path.sep)) {
+
+        if ((packageDirInstruction.excludes || []).includes(childPackageDir + path.sep)) {
           // Skip directory
           continue;
         }
