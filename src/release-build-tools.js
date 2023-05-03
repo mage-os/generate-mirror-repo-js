@@ -27,7 +27,7 @@ async function composerCreateMagentoProject(version) {
       console.log(`Found existing installation at ${workDir}`)
       resolve(workDir)
     } else {
-      const command = `composer create-project --repository-url https://mirror.mage-os.org magento/project-community-edition ${workDir} ${version} --ignore-platform-reqs`
+      const command = `composer create-project --ignore-platform-reqs --repository-url https://mirror.mage-os.org magento/project-community-edition ${workDir} ${version}`
       console.log(`Running ${command}`)
       const bufferBytes = 4 * 1024 * 1024; // 4M
       childProcess.exec(command, {maxBuffer: bufferBytes}, (error, stdout, stderr) => {
@@ -70,7 +70,7 @@ async function installSampleData(dir) {
   return packages.length === 0
     ? true
     : new Promise((resolve, reject) => {
-      const installCommand = `composer require "${packages.join('" "')}" --ignore-platform-reqs`
+      const installCommand = `composer require --ignore-platform-reqs "${packages.join('" "')}"`
       console.log(`Installing sample data packages`)
       childProcess.exec(installCommand, {maxBuffer: bufferBytes, cwd: dir}, (error, stdout, stderr) => {
         if (stderr && stderr.includes('Generating autoload files')) stderr = '';

@@ -41,6 +41,13 @@ function validateRefIsSecure(ref) {
   return ref;
 }
 
+function validateBranchIsSecure(branch) {
+  if (branch.substring(0, 1) === '-' || branch.includes(' ') || branch.includes('`') || branch.includes('$')) {
+    throw new Error(`Rejecting the branch "${branch}" as potentially insecure`)
+  }
+  return branch;
+}
+
 async function exec(cmd, options) {
   return new Promise((resolve, reject) => {
     const bufferBytes = 4 * 1024 * 1024; // 4M
@@ -111,20 +118,18 @@ async function listFileNames(repoDir, path, excludes) {
   
 }
 
-async function createBranch(url, ref) {
+async function createBranch(url, branch) {
   const dir = fullRepoPath(url);
 
-  if (ref) {
-    if (await currentTag(dir) !== ref && await currentBranch(dir) !== ref && await currentCommit(dir) !== ref) {
-      if((await exec(`git branch -l ${ref}`, {cwd: dir})).includes(ref)) {
-        console.log(`checking out ${ref} (branch already existed)`)
-        await exec(`git checkout --force --quiet ${ref}`, {cwd: dir})
-        return dir;
-      }
-
-      console.log(`checking out ${ref} (creating new branch)`)
-      await exec(`git checkout --force --quiet -b ${ref}`, {cwd: dir})
+  if (branch) {
+    if((await exec(`git branch -l ${branch}`, {cwd: dir})).includes(branch)) {
+      console.log(`checking out ${branch} (branch already existed)`)
+      await exec(`git checkout --force --quiet ${branch}`, {cwd: dir})
+      return dir;
     }
+
+    console.log(`checking out ${branch} (creating new branch)`)
+    await exec(`git checkout --force --quiet -b ${branch}`, {cwd: dir})
   }
   
   return dir;
@@ -173,9 +178,9 @@ module.exports = {
     validateRefIsSecure(ref);
     return initRepo(url, ref);
   },
-  async createBranch(url, ref) {
-    validateRefIsSecure(ref);
-    return createBranch(url, ref);
+  async createBranch(url, branch) {
+    validateBranchIsSecure(branch);
+    return createBranch(url, branch);
   },
   async createTagForRef(url, ref, tag, details) {
     validateRefIsSecure(ref);
