@@ -6,7 +6,7 @@ const repo = require("./repository");
 const {accessSync, constants} = require("fs");
 const fs = require("fs/promises");
 const path = require("path");
-const {readComposerJson} = require('./package-modules');
+const {readComposerJson, createMagentoCommunityEditionMetapackage} = require('./package-modules');
 
 
 function fsExists(dirOrFile) {
@@ -115,6 +115,22 @@ function validateVersionString(version, name) {
   }
 }
 
+function setMageOsVendor(packageName) {
+  return packageName.replace(/^magento\//, 'mage-os/')
+}
+
+function updateMapFromMagentoToMageOs(obj) {
+  const packageNames = Object.keys(obj)
+  return packageNames.reduce((out, pkg) => Object.assign(obj, {[setMageOsVendor(pkg)]: out[pkg]}), obj)
+}
+
+function updateComposerDepsFromMagentoToMageOs(composerJson) {
+  composerJson.name = setMageOsVendor(composerJson.name)
+  for (const section in ['require', 'require-dev', 'suggest']) {
+    composerJson[section] && (composerJson[section] = updateMapFromMagentoToMageOs(composerJson[section]))
+  }
+}
+
 async function prepPackageForRelease({label, dir}, repoUrl, ref, releaseVersion, replaceVersionMap, workingCopyPath) {
   console.log(`Preparing ${label}`);
 
@@ -123,8 +139,8 @@ async function prepPackageForRelease({label, dir}, repoUrl, ref, releaseVersion,
   if (replaceVersionMap[composerJson.name]) {
     composerJson.replace = {[composerJson.name]: replaceVersionMap[composerJson.name]}
   }
-  composerJson.name = composerJson.name.replace(/^magento\//, 'mageos/')
-  // todo: replace magento in package vendor names with mageos in require, require-dev and suggest
+  composerJson.name = setMageOsVendor(composerJson.name)
+  updateComposerDepsFromMagentoToMageOs(composerJson)
   // todo: replace version of magento package dependency with build version in require, require-dev and suggest
 
   // write composerJson to file in repo
@@ -143,19 +159,18 @@ module.exports = {
   async prepRelease(releaseVersion, instruction, options) {
     const {replaceVersionMap} = options
     const {ref, repoUrl} = instruction
-    
+
     const workingCopyPath = await repo.checkout(repoUrl, ref)
-    
+
     // todo: check out work-in-progress branch (temporary, can be deleted again after commit and tag)
     // this needs more work:
-    await repo.createBranch(repoUrl, 'work-in-progress');
-    
+    await repo.createBranch(repoUrl, `work-in-progress-release-prep-${releaseVersion}`);
+
     for (const packageDirInstruction of (instruction.packageDirs || [])) {
       const childPackageDirs = await fs.readdir(path.join(workingCopyPath, packageDirInstruction.dir));
 
       for (let childPackageDir of childPackageDirs) {
         // Add trailing slash to our dir, so it matches excludes strings.
-
         if ((packageDirInstruction.excludes || []).includes(childPackageDir + path.sep)) {
           // Skip directory
           continue;
@@ -191,15 +206,22 @@ module.exports = {
     for (const packageDirInstruction of (instruction.packageMetaFromDirs || [])) {
       // todo: prep meta package from dir
     }
-    
+
     if (instruction.magentoCommunityEditionProject) {
       // todo: prep project meta package
     }
-    
+
     if (instruction.magentoCommunityEditionMetapackage) {
-      // todo: prep product meta package
+      // todo: build map of every module that the mage-os/product-community-edition depends on to the releaseVersion
+      // todo: alternatively, maybe introduce `*` as a wildcard-key, that matches all packages?
+      const dependencyVersions = {}
+      const built = createMagentoCommunityEditionMetapackage(repoUrl, ref, {
+        release: releaseVersion,
+        vendor: 'mage-os',
+        dependencyVersions
+      })
     }
-    
+
     // todo: commit all changes
     // todo: tag release version
   }

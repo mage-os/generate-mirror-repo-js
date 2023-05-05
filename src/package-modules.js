@@ -34,7 +34,7 @@ function addFileToZip(zip, {filepath, mtime, contentBuffer, isExecutable}) {
   }
   contentBuffer
     ? zip.file(filepath, contentBuffer, {date: mtime, unixPermissions: isExecutable ? '755' : '644'})
-    : zip.file(filepath, '', {dir: true, date: mtime, unixPermissions: '755'}); // contentBuffer is false -> add as dir 
+    : zip.file(filepath, '', {dir: true, date: mtime, unixPermissions: '755'}); // contentBuffer is false -> add as dir
 }
 
 function zipFileWith(files) {
@@ -137,7 +137,7 @@ function setDependencyVersions(composerConfig, dependencyVersions) {
 
 /**
  * Return {package-name: version} that would be built by createPackageForRef with the same params.
- * 
+ *
  * Only used for release-branch builds (not mirror builds).
  *
  * Options:
@@ -179,7 +179,7 @@ async function determinePackageForRef(url, moduleDir, ref, options) {
  * Return map of {package-name: version} that would be built by createPackagesForRef with the same params.
  *
  * Only used for release-branch builds (not mirror builds).
- * 
+ *
  * Options:
  *   excludes: Array of path prefixes relative to repo root to exclude from the package
  *
@@ -228,11 +228,11 @@ async function createPackageForRef(url, moduleDir, ref, options) {
   if (composerJson.trim() === '404: Not Found') {
     throw {message: `Unable to find composer.json for ${ref}, skipping ${magentoName}`}
   }
-  
+
   let composerConfig = JSON.parse(composerJson);
-  
+
   let name, version;
-  
+
   /*
    * Possible cases:
    * 1. mirror package, without version fix:
@@ -271,11 +271,11 @@ async function createPackageForRef(url, moduleDir, ref, options) {
       })
       return ! isExcluded;
     });
-  
+
   // Ensure version is set in config because some repos (e.g. page-builder and inventory) do not provide the version
   // in tagged composer.json files. The version is required for satis to be able to use the artifact repository type.
   composerConfig.version = version;
-  
+
   if ((composerJsonPath || '').endsWith('template.json')) {
     const dir = await(repo.checkout(url, ref));
     const deps = await determineSourceDependencies(dir, files);
@@ -291,7 +291,7 @@ async function createPackageForRef(url, moduleDir, ref, options) {
     file.filepath = file.filepath.slice(moduleDir ? moduleDir.length + 1 : 0);
     return file;
   });
-  
+
   filesInZip.push({filepath: 'composer.json', contentBuffer: Buffer.from(JSON.stringify(composerConfig, null, 2), 'utf8'), mtime, isExecutable: false});
   for (const d of (emptyDirsToAdd || [])) {
     filesInZip.push({filepath: d, contentBuffer: false, mtime, isExecutable: false});
@@ -299,7 +299,7 @@ async function createPackageForRef(url, moduleDir, ref, options) {
   filesInZip.sort((a, b) => ('' + a.filepath).localeCompare('' + b.filepath));
 
   await writePackage(packageFilepath, filesInZip)
-  
+
   return packageWithVersion;
 }
 
@@ -415,12 +415,12 @@ async function determineMagentoCommunityEditionMetapackage(repoUrl, ref, release
  *
  * @param {String} url The URL of the source git repository
  * @param {String} ref Git ref to check out (string of tag or branch)
- * @param {{release:String|undefined, dependencyVersions:{}, transform:Function[]|undefined}} options
+ * @param {{release:String|undefined, dependencyVersions:{}, transform:Function[]|undefined, vendor:String}} options
  * @returns {Promise<{}>}
  */
 async function createMagentoCommunityEditionMetapackage(url, ref, options) {
-  const {release, dependencyVersions, transform} = Object.assign({release: undefined, dependencyVersions: {}}, (options || {}))
-  const name = 'magento/product-community-edition';
+  const {release, dependencyVersions, transform, vendor} = Object.assign({release: undefined, dependencyVersions: {}, vendor: 'magento'}, (options || {}))
+  const name = `${vendor}/product-community-edition`
   const version = release || dependencyVersions[name] || ref;
   const {packageFilepath, files} = await createComposerJsonOnlyPackage(url, ref, name, async (refComposerConfig) => {
 
@@ -430,7 +430,7 @@ async function createMagentoCommunityEditionMetapackage(url, ref, options) {
       name: name,
       description: 'eCommerce Platform for Growth (Community Edition)',
       type: 'metapackage',
-      require: Object.assign({}, refComposerConfig.require, refComposerConfig.replace, additionalDependencies, {'magento/magento2-base': version}),
+      require: Object.assign({}, refComposerConfig.require, refComposerConfig.replace, additionalDependencies, {[`${vendor}/magento2-base`]: version}),
       version
     });
 
@@ -441,9 +441,9 @@ async function createMagentoCommunityEditionMetapackage(url, ref, options) {
 
     return (transform && transform[name] || []).reduce((config, transformFn) => transformFn(config), composerConfig);
   }, release || version);
-  
+
   await writePackage(packageFilepath, files);
-  
+
   return {[name]: version};
 }
 
@@ -488,7 +488,7 @@ async function createMagentoCommunityEditionProject(url, ref, options) {
 
     return (transform && transform[name] || []).reduce((config, transformFn) => transformFn(config), composerConfig)
   }, version);
-  
+
   // Special case - in these releases the base package also contained a .gitignore file in addition to the composer.json file.
   // The .gitignore file is identical for those two releases. However, it is not the same as the .gitignore file in the tagged release,
   // so we copy it from resource/history/magento/project-community-edition/2.4.0-gitignore
@@ -500,7 +500,7 @@ async function createMagentoCommunityEditionProject(url, ref, options) {
       isExecutable: false,
     })
   }
-  
+
   await writePackage(packageFilepath, files)
 
   return {[name]: version}
@@ -581,7 +581,7 @@ module.exports = {
   getLatestTag,
   archiveFilePath,
   readComposerJson,
-  
+
   determinePackageForRef,
   determinePackagesForRef,
   determineMagentoCommunityEditionMetapackage,
