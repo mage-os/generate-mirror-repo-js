@@ -348,7 +348,7 @@ async function getAdditionalDependencies(packageName, ref) {
   const file = `${dir}/${ref}.json`;
   return fs.existsSync(file)
     ? JSON.parse(fs.readFileSync(file, 'utf8')).require
-    : await getLatestDependencies(dir);
+    : await getLatestDependencies(`${__dirname}/../resource/composer-templates/${packageName}`);
 }
 
 async function findModulesToBuild(url, modulesPath, ref, excludes) {
@@ -420,14 +420,14 @@ async function determineMagentoCommunityEditionMetapackage(repoUrl, ref, release
  */
 async function createMagentoCommunityEditionMetapackage(url, ref, options) {
   const {release, dependencyVersions, transform, vendor} = Object.assign({release: undefined, dependencyVersions: {}, vendor: 'magento'}, (options || {}))
-  const name = `${vendor}/product-community-edition`
-  const version = release || dependencyVersions[name] || ref;
-  const {packageFilepath, files} = await createComposerJsonOnlyPackage(url, ref, name, async (refComposerConfig) => {
+  const packageName = `${vendor}/product-community-edition`
+  const version = release || dependencyVersions[packageName] || ref;
+  const {packageFilepath, files} = await createComposerJsonOnlyPackage(url, ref, packageName, async (refComposerConfig) => {
 
-    const additionalDependencies = await getAdditionalDependencies(name, ref);
+    const additionalDependencies = await getAdditionalDependencies(packageName, ref);
 
     const composerConfig = Object.assign({}, refComposerConfig, {
-      name: name,
+      name: packageName,
       description: 'eCommerce Platform for Growth (Community Edition)',
       type: 'metapackage',
       require: Object.assign({}, refComposerConfig.require, refComposerConfig.replace, additionalDependencies, {[`${vendor}/magento2-base`]: version}),
@@ -439,12 +439,12 @@ async function createMagentoCommunityEditionMetapackage(url, ref, options) {
     }
     setDependencyVersions(composerConfig, dependencyVersions);
 
-    return (transform && transform[name] || []).reduce((config, transformFn) => transformFn(config), composerConfig);
+    return (transform && transform[packageName] || []).reduce((config, transformFn) => transformFn(config), composerConfig);
   }, release || version);
 
   await writePackage(packageFilepath, files);
 
-  return {[name]: version};
+  return {[packageName]: version};
 }
 
 async function determineMagentoCommunityEditionProject(url, ref, release) {

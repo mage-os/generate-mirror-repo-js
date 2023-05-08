@@ -111,7 +111,7 @@ function validateVersionString(version, name) {
     /^[0-9]+\.[0-9]+\.[0-9]+(-[a-z][a-z0-9.]*)?$/ // e.g. 1.0.0, 1.2.1-alpha, 1.2.2-patch2
   ]
   if (options.map(re => version.match(re)).filter(v => v !== null).length === 0) {
-    throw new Error(`${name||'Version'} "${version}" is not a valid version (X.Y.Z[-suffix]).`)
+    throw new Error(`${name || 'Version'} "${version}" is not a valid version (X.Y.Z[-suffix]).`)
   }
 }
 
@@ -121,31 +121,37 @@ function setMageOsVendor(packageName) {
 
 function updateMapFromMagentoToMageOs(obj) {
   const packageNames = Object.keys(obj)
-  return packageNames.reduce((out, pkg) => Object.assign(obj, {[setMageOsVendor(pkg)]: out[pkg]}), obj)
+  return packageNames.reduce((acc, pkg) => Object.assign(acc, {[setMageOsVendor(pkg)]: obj[pkg]}), {})
 }
 
 function updateComposerDepsFromMagentoToMageOs(composerJson) {
+
   composerJson.name = setMageOsVendor(composerJson.name)
-  for (const section in ['require', 'require-dev', 'suggest']) {
+  for (const section of ['require', 'require-dev', 'suggest']) {
     composerJson[section] && (composerJson[section] = updateMapFromMagentoToMageOs(composerJson[section]))
   }
+}
+
+function updateComposerConfigFromMagentoToMageOs(composerConfig, releaseVersion, replaceVersionMap) {
+  composerConfig.version = releaseVersion
+  if (replaceVersionMap[composerConfig.name]) {
+    composerConfig.replace = {[composerConfig.name]: replaceVersionMap[composerConfig.name]}
+  }
+  composerConfig.name = setMageOsVendor(composerConfig.name)
+  updateComposerDepsFromMagentoToMageOs(composerConfig)
+  // todo: replace version of magento package dependency with build version in require, require-dev and suggest
+
 }
 
 async function prepPackageForRelease({label, dir}, repoUrl, ref, releaseVersion, replaceVersionMap, workingCopyPath) {
   console.log(`Preparing ${label}`);
 
-  const composerJson = JSON.parse(await readComposerJson(repoUrl, dir, ref))
-  composerJson.version = releaseVersion
-  if (replaceVersionMap[composerJson.name]) {
-    composerJson.replace = {[composerJson.name]: replaceVersionMap[composerJson.name]}
-  }
-  composerJson.name = setMageOsVendor(composerJson.name)
-  updateComposerDepsFromMagentoToMageOs(composerJson)
-  // todo: replace version of magento package dependency with build version in require, require-dev and suggest
+  const composerConfig = JSON.parse(await readComposerJson(repoUrl, dir, ref))
+  updateComposerConfigFromMagentoToMageOs(composerConfig)
 
   // write composerJson to file in repo
   const file = path.join(workingCopyPath, dir, 'composer.json');
-  await fs.writeFile(file, JSON.stringify(composerJson, null, 4), 'utf8')
+  await fs.writeFile(file, JSON.stringify(composerConfig, null, 2), 'utf8')
 }
 
 
@@ -162,9 +168,8 @@ module.exports = {
 
     const workingCopyPath = await repo.checkout(repoUrl, ref)
 
-    // todo: check out work-in-progress branch (temporary, can be deleted again after commit and tag)
-    // this needs more work:
-    await repo.createBranch(repoUrl, `work-in-progress-release-prep-${releaseVersion}`);
+    const workBranch = `work-in-progress-release-prep-${releaseVersion}`;
+    await repo.createBranch(repoUrl, workBranch, ref);
 
     for (const packageDirInstruction of (instruction.packageDirs || [])) {
       const childPackageDirs = await fs.readdir(path.join(workingCopyPath, packageDirInstruction.dir));
@@ -189,18 +194,18 @@ module.exports = {
         }
 
         childPackageDir = path.join(packageDirInstruction.dir, childPackageDir);
-        const composerJson = JSON.parse(await readComposerJson(repoUrl, childPackageDir, ref));
+        const composerJson = JSON.parse(await readComposerJson(repoUrl, childPackageDir, workBranch));
 
         const instruction = {
           'label': `${composerJson.name} (part of ${packageDirInstruction.label})`,
           'dir': childPackageDir
         }
-        await prepPackageForRelease(instruction, repoUrl, ref, releaseVersion, replaceVersionMap, workingCopyPath);
+        await prepPackageForRelease(instruction, repoUrl, workBranch, releaseVersion, replaceVersionMap, workingCopyPath);
       }
     }
 
     for (const individualInstruction of (instruction.packageIndividual || [])) {
-      await prepPackageForRelease(individualInstruction, repoUrl, ref, releaseVersion, replaceVersionMap, workingCopyPath);
+      await prepPackageForRelease(individualInstruction, repoUrl, workBranch, releaseVersion, replaceVersionMap, workingCopyPath);
     }
 
     for (const packageDirInstruction of (instruction.packageMetaFromDirs || [])) {
@@ -212,13 +217,18 @@ module.exports = {
     }
 
     if (instruction.magentoCommunityEditionMetapackage) {
-      // todo: build map of every module that the mage-os/product-community-edition depends on to the releaseVersion
-      // todo: alternatively, maybe introduce `*` as a wildcard-key, that matches all packages?
-      const dependencyVersions = {}
-      const built = createMagentoCommunityEditionMetapackage(repoUrl, ref, {
+      await createMagentoCommunityEditionMetapackage(repoUrl, workBranch, {
         release: releaseVersion,
         vendor: 'mage-os',
-        dependencyVersions
+        dependencyVersions: {'*': releaseVersion},
+        transform: {
+          'mage-os/product-community-edition': [
+            (composerConfig) => {
+              updateComposerConfigFromMagentoToMageOs(composerConfig, releaseVersion, replaceVersionMap)
+              return composerConfig
+            }
+          ]
+        }
       })
     }
 
