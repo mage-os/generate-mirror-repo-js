@@ -124,11 +124,29 @@ function updateMapFromMagentoToMageOs(obj) {
   return packageNames.reduce((acc, pkg) => Object.assign(acc, {[setMageOsVendor(pkg)]: obj[pkg]}), {})
 }
 
-function updateComposerDepsFromMagentoToMageOs(composerJson) {
+function updateComposerDepsFromMagentoToMageOs(composerConfig) {
+  composerConfig.name = setMageOsVendor(composerConfig.name)
+  for (const dependencyType of ['require', 'require-dev', 'suggest']) {
+    composerConfig[dependencyType] && (composerConfig[dependencyType] = updateMapFromMagentoToMageOs(composerConfig[dependencyType]))
+  }
+}
 
-  composerJson.name = setMageOsVendor(composerJson.name)
-  for (const section of ['require', 'require-dev', 'suggest']) {
-    composerJson[section] && (composerJson[section] = updateMapFromMagentoToMageOs(composerJson[section]))
+function setMageOsDependencyVersion(obj, dependencyType, releaseVersion) {
+  const mageOsPackage = /^mage-os\//
+  const packageNames = Object.keys(obj)
+  packageNames.forEach(packageName => {
+    if (packageName.match(mageOsPackage)) {
+      obj[packageName] = dependencyType === 'suggest' && packageName.endsWith('-sample-data')
+        ? `Sample Data version: ${releaseVersion}`
+        : releaseVersion;
+    }
+  })
+  return obj
+}
+
+function updateComposerDepsVersionForMageOs(composerConfig, releaseVersion) {
+  for (const dependencyType of ['require', 'require-dev', 'suggest']) {
+    composerConfig[dependencyType] && (composerConfig[dependencyType] = setMageOsDependencyVersion(composerConfig[dependencyType], dependencyType, releaseVersion))
   }
 }
 
@@ -139,15 +157,14 @@ function updateComposerConfigFromMagentoToMageOs(composerConfig, releaseVersion,
   }
   composerConfig.name = setMageOsVendor(composerConfig.name)
   updateComposerDepsFromMagentoToMageOs(composerConfig)
-  // todo: replace version of magento package dependency with build version in require, require-dev and suggest
-
+  updateComposerDepsVersionForMageOs(composerConfig, releaseVersion)
 }
 
 async function prepPackageForRelease({label, dir}, repoUrl, ref, releaseVersion, replaceVersionMap, workingCopyPath) {
   console.log(`Preparing ${label}`);
 
   const composerConfig = JSON.parse(await readComposerJson(repoUrl, dir, ref))
-  updateComposerConfigFromMagentoToMageOs(composerConfig)
+  updateComposerConfigFromMagentoToMageOs(composerConfig, releaseVersion, replaceVersionMap)
 
   // write composerJson to file in repo
   const file = path.join(workingCopyPath, dir, 'composer.json');
@@ -217,6 +234,7 @@ module.exports = {
     }
 
     if (instruction.magentoCommunityEditionMetapackage) {
+
       await createMagentoCommunityEditionMetapackage(repoUrl, workBranch, {
         release: releaseVersion,
         vendor: 'mage-os',
