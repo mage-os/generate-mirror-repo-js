@@ -1,7 +1,19 @@
 const repo = require('./../repository');
 const parseOptions = require('parse-options');
-const {setArchiveBaseDir, setMageosPackageRepoUrl} = require('./../package-modules');
-const {getPackageVersionMap, prepRelease, validateVersionString} = require('./../release-build-tools');
+const {
+  getPackageVersionMap,
+  prepRelease,
+  processBuildInstructions,
+  validateVersionString,
+  buildMageOsProductCommunityEditionMetapackage
+} = require('./../release-build-tools');
+const {
+  setArchiveBaseDir,
+  setMageosPackageRepoUrl,
+  createPackagesForRef,
+  createPackageForRef,
+  createMetaPackageFromRepoDir
+} = require("../package-modules");
 const {buildConfig: releaseInstructions} = require('./../build-config/mageos-release-build-config');
 
 const options = parseOptions(
@@ -15,7 +27,7 @@ if (options.help) {
 
 Usage:
   node src/make/mageos-release.js [OPTIONS]
-  
+
 Options:
   --outputDir=       Dir to contain the built packages (default: packages)
   --gitRepoDir=      Dir to clone repositories into (default: repositories)
@@ -45,15 +57,22 @@ upstreamRelease && validateVersionString(upstreamRelease, 'upstreamRelease');
 
 (async () => {
   try {
+
     const upstreamVersionMap = upstreamRelease
       ? await getPackageVersionMap(upstreamRelease)
       : {}
+
     for (const instruction of releaseInstructions) {
-      await prepRelease(mageosRelease, instruction, {replaceVersionMap: upstreamVersionMap});
+
+      const workBranch = await prepRelease(mageosRelease, instruction, upstreamVersionMap)
+
+      // TODO: commit prepped branch and tag as mageosRelease
+
+      const releaseInstructions = {...instruction, ref: workBranch}
+      await processBuildInstructions(mageosRelease, releaseInstructions, upstreamVersionMap)
+
+      // TODO: push commit and tag to repoUrl
     }
-    
-    // todo: build release from tag mageosRelease in every repo, just as if it where a mirror build
-    // @see createPackagesForRef(url, modulesPath, tag, {excludes});
   } catch (exception) {
     console.log(exception);
     throw exception

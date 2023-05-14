@@ -1,12 +1,14 @@
 const childProcess = require('child_process');
-const {createHash} = require("crypto");
 const {tmpdir} = require("os");
-const {cwd, chdir} = require("process");
 const repo = require("./repository");
 const {accessSync, constants} = require("fs");
 const fs = require("fs/promises");
 const path = require("path");
-const {readComposerJson, createMagentoCommunityEditionMetapackage} = require('./package-modules');
+const {readComposerJson, createMagentoCommunityEditionMetapackage,
+  createPackagesForRef,
+  createPackageForRef,
+  createMetaPackageFromRepoDir, createMagentoCommunityEditionProject
+} = require('./package-modules');
 
 
 function fsExists(dirOrFile) {
@@ -172,6 +174,27 @@ async function prepPackageForRelease({label, dir}, repoUrl, ref, releaseVersion,
 }
 
 
+async function buildMageOsProductCommunityEditionMetapackage(releaseVersion, instruction, replaceVersionMap) {
+  const {ref, repoUrl} = instruction
+
+  console.log('Packaging Mage-OS Community Edition Product Metapackage');
+
+  await createMagentoCommunityEditionMetapackage(repoUrl, ref, {
+    release: releaseVersion,
+    vendor: 'mage-os',
+    dependencyVersions: {'*': releaseVersion},
+    transform: {
+      'mage-os/product-community-edition': [
+        (composerConfig) => {
+          updateComposerConfigFromMagentoToMageOs(composerConfig, releaseVersion, replaceVersionMap)
+          return composerConfig
+        }
+      ]
+    }
+  })
+}
+
+
 module.exports = {
   validateVersionString,
   async getPackageVersionMap(releaseVersion) {
@@ -179,13 +202,12 @@ module.exports = {
     await installSampleData(dir)
     return getInstalledPackageMap(dir)
   },
-  async prepRelease(releaseVersion, instruction, options) {
-    const {replaceVersionMap} = options
+  async prepRelease(releaseVersion, instruction, replaceVersionMap) {
     const {ref, repoUrl} = instruction
 
-    const workingCopyPath = await repo.checkout(repoUrl, ref)
-
     const workBranch = `work-in-progress-release-prep-${releaseVersion}`;
+
+    const workingCopyPath = await repo.pull(repoUrl, ref);
     await repo.createBranch(repoUrl, workBranch, ref);
 
     for (const packageDirInstruction of (instruction.packageDirs || [])) {
@@ -195,14 +217,14 @@ module.exports = {
         // Add trailing slash to our dir, so it matches excludes strings.
         if ((packageDirInstruction.excludes || []).includes(childPackageDir + path.sep)) {
           // Skip directory
-          continue;
+          continue
         }
 
         const workingChildPackagePath = path.join(workingCopyPath, packageDirInstruction.dir, childPackageDir);
 
         if (!(await fs.lstat(workingChildPackagePath)).isDirectory()) {
           // Not a directory, skip
-          continue;
+          continue
         }
 
         const childPackageFiles = await fs.readdir(workingChildPackagePath);
@@ -234,23 +256,69 @@ module.exports = {
     }
 
     if (instruction.magentoCommunityEditionMetapackage) {
-
-      await createMagentoCommunityEditionMetapackage(repoUrl, workBranch, {
-        release: releaseVersion,
-        vendor: 'mage-os',
-        dependencyVersions: {'*': releaseVersion},
-        transform: {
-          'mage-os/product-community-edition': [
-            (composerConfig) => {
-              updateComposerConfigFromMagentoToMageOs(composerConfig, releaseVersion, replaceVersionMap)
-              return composerConfig
-            }
-          ]
-        }
-      })
+      const repoAndRef = {ref: workBranch, repoUrl: instruction.repoUrl}
+      await buildMageOsProductCommunityEditionMetapackage(releaseVersion, repoAndRef, replaceVersionMap)
     }
 
-    // todo: commit all changes
-    // todo: tag release version
+    return workBranch
+  },
+
+  async processBuildInstructions(mageosRelease, instruction, upstreamVersionMap) {
+    const dependencyVersions = {'*': mageosRelease}
+    const fallbackVersion = mageosRelease
+
+    const packages = {} // record generated packages with versions
+
+    const {repoUrl, transform, ref} = instruction
+
+    for (const packageDir of (instruction.packageDirs || [])) {
+      const {label, dir, excludes} = Object.assign({excludes: []}, packageDir)
+      console.log(`Packaging ${label}`)
+      const built = await createPackagesForRef(repoUrl, dir, ref, {
+        excludes,
+        mageosRelease,
+        fallbackVersion,
+        dependencyVersions,
+        transform
+      })
+      Object.assign(packages, built)
+    }
+
+    for (const individualPackage of (instruction.packageIndividual || [])) {
+      const defaults = {excludes: [], composerJsonPath: '', emptyDirsToAdd: []}
+      const {label, dir, excludes, composerJsonPath, emptyDirsToAdd} = Object.assign(defaults, individualPackage)
+      console.log(`Packaging ${label}`)
+      const built = await createPackageForRef(repoUrl, dir, ref, {
+        excludes,
+        composerJsonPath,
+        emptyDirsToAdd,
+        mageosRelease,
+        fallbackVersion,
+        dependencyVersions,
+        transform
+      })
+      Object.assign(packages, built)
+    }
+
+    for (const packageMeta of (instruction.packageMetaFromDirs || [])) {
+      const {label, dir} = packageMeta
+      console.log(`Packaging ${label}`)
+      const built = await createMetaPackageFromRepoDir(repoUrl, dir, ref, {mageosRelease, dependencyVersions, transform});
+      Object.assign(packages, built)
+    }
+
+    if (instruction.magentoCommunityEditionMetapackage) {
+      const built = await buildMageOsProductCommunityEditionMetapackage(mageosRelease, instruction, {replaceVersionMap: upstreamVersionMap})
+      Object.assign(packages, built)
+    }
+
+    if (instruction.magentoCommunityEditionProject) {
+      console.log('Packaging Mage-OS Community Edition Project');
+      // TODO: package mage-os/project-community-edition metapackage with min stability: stable
+      // TODO: remember to add package to packages object
+      //Object.assign(packages, built);
+    }
+
+    return packages
   }
 }
