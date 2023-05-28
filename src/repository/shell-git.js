@@ -5,6 +5,17 @@ const childProcess = require('child_process');
 let repoBaseDir;
 let report = console.log;
 
+const memoizedWorkingCopyStats = {}
+async function memoizeWorkingCopyStat(dir, type, cmd) {
+  if (memoizedWorkingCopyStats[dir] === undefined) memoizedWorkingCopyStats[dir] = {}
+  if (memoizedWorkingCopyStats[dir][type] === undefined) memoizedWorkingCopyStats[dir][type] = await cmd()
+  return memoizedWorkingCopyStats[dir][type];
+}
+
+function clearWorkingCopyStat(dir) {
+  delete memoizedWorkingCopyStats[dir]
+}
+
 function dirForRepoUrl(url) {
   // todo: add vendor namespace directory inside of repoBaseDir to path?
   if (url.slice(-4).toLowerCase() === '.git') {
@@ -71,19 +82,24 @@ async function cloneRepo(url, dir, ref) {
     fs.mkdirSync(path.dirname(dir), {recursive: true})
   }
 
+  clearWorkingCopyStat(dir)
+
   return exec(`git clone --depth 15 --quiet --no-single-branch ${url} ${dir}`);
 }
 
 async function currentTag(dir) {
-  return (await exec(`git describe --tags --always`, {cwd: dir})).trim()
+  const cmd = async () => (await exec(`git describe --tags --always`, {cwd: dir})).trim();
+  return memoizeWorkingCopyStat(dir, 'tag', cmd)
 }
 
 async function currentBranch(dir) {
-  return (await exec(`git branch --show-current`, {cwd: dir})).trim()
+  const cmd = async () => (await exec(`git branch --show-current`, {cwd: dir})).trim()
+  return memoizeWorkingCopyStat(dir, 'branch', cmd)
 }
 
 async function currentCommit(dir) {
-  return (await exec(`git log -1 --pretty=%H`, {cwd: dir})).trim();
+  const cmd = async () => (await exec(`git log -1 --pretty=%H`, {cwd: dir})).trim()
+  return memoizeWorkingCopyStat(dir, 'commit', cmd)
 }
 
 async function initRepo(url, ref) {
@@ -95,10 +111,11 @@ async function initRepo(url, ref) {
   if (ref) {
     if (await currentTag(dir) !== ref && await currentBranch(dir) !== ref && await currentCommit(dir) !== ref) {
       console.log(`checking out ${ref}`)
+      clearWorkingCopyStat(dir)
       await exec(`git checkout --force --quiet ${ref}`, {cwd: dir})
     }
   }
-  
+
   return dir;
 }
 
@@ -115,7 +132,7 @@ async function listFileNames(repoDir, path, excludes) {
   return path === ''
     ? files.map(file => file.slice(2)) // cut off leading ./ if path is empty
     : files;
-  
+
 }
 
 async function createBranch(url, branch) {
@@ -124,14 +141,16 @@ async function createBranch(url, branch) {
   if (branch) {
     if ((await exec(`git branch -l ${branch}`, {cwd: dir})).includes(branch)) {
       console.log(`checking out ${branch} (branch already existed)`)
+      clearWorkingCopyStat(dir)
       await exec(`git checkout --force --quiet ${branch}`, {cwd: dir})
       return dir;
     }
 
     console.log(`checking out ${branch} (creating new branch)`)
+    clearWorkingCopyStat(dir)
     await exec(`git checkout --force --quiet -b ${branch}`, {cwd: dir})
   }
-  
+
   return dir;
 }
 
@@ -198,15 +217,16 @@ module.exports = {
     }
   },
   async pull(url, ref) {
-    validateRefIsSecure(ref);
-    const dir = await initRepo(url, ref);
-    await exec(`git pull --ff-only --quiet origin ${ref}`, {cwd: dir});
+    validateRefIsSecure(ref)
+    const dir = await initRepo(url, ref)
+    await exec(`git pull --ff-only --quiet origin ${ref}`, {cwd: dir})
+    return dir
   },
   clearCache() {
     // noop
   },
   setStorageDir(dir) {
-    repoBaseDir = dir;
+    repoBaseDir = dir
   },
   testing: {
     dirForRepoUrl,
