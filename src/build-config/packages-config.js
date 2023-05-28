@@ -1,4 +1,3 @@
-
 module.exports = {
   'magento2': {
     repoUrl: 'https://github.com/mage-os/mirror-magento2.git',
@@ -69,7 +68,11 @@ module.exports = {
 
     // After package generation, the files for these specific module versions will be replaced.
     packageReplacements: [
-      {name: 'magento/module-catalog', version: '103.0.7-p3', files: ['Test/Mftf/ActionGroup/CustomOptionsActionGroup.xml']}
+      {
+        name: 'magento/module-catalog',
+        version: '103.0.7-p3',
+        files: ['Test/Mftf/ActionGroup/CustomOptionsActionGroup.xml']
+      }
     ],
   },
   'security-package': {
@@ -239,10 +242,10 @@ module.exports = {
     ],
     packageIndividual: [],
     packageMetaFromDirs: [
-    {
-      label: 'Commerce Data Export Metapackage',
-      dir: '_metapackage',
-    }
-  ],
-}
+      {
+        label: 'Commerce Data Export Metapackage',
+        dir: '_metapackage',
+      }
+    ],
+  }
 };

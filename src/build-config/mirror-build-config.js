@@ -1,5 +1,6 @@
 
 const packagesConfig = require('./packages-config');
+const {mergeBuildConfigs} = require('../utils');
 
 const mirrorBuildConfig = {
   'magento2': {
@@ -30,7 +31,7 @@ const mirrorBuildConfig = {
     fromTag: '1.1.5',
     extraRefToRelease: [
       // This is a workaround for a missing upstream release tag, see https://github.com/magento/inventory/issues/3354
-      // This commit ref is the head for the 1.2-p1-alpha branch (at the time of writing)  
+      // This commit ref is the head for the 1.2-p1-alpha branch (at the time of writing)
       {
         ref: '2a6fdb4e08dc307cd92ca4a7a0958128611be757',
         release: '1.2.0-p1',
@@ -67,25 +68,6 @@ const mirrorBuildConfig = {
   'adobe-ims': {
     repoUrl: 'https://github.com/mage-os/mirror-adobe-ims.git',
     fromTag: '2.1.0',
-    // Keep the following around for reference until 2.4.6, 2.4.5-p2 and 2.4.4-p3 are done 
-    // extraRefToRelease: [
-    //   // This is a workaround for a wrong upstream release tag, see https://github.com/magento/adobe-ims/issues/16
-    //   // This commit ref is the head for the develop branch (at the time of writing)  
-    //   // An alternative might be 75e4cc4673f117bf70ddbfe6bb4902575a3bb294 (the head for the future-develop branch at the time of writing))  
-    //   {
-    //     ref: 'c04d9360b4e03fc61f9fef447814a40091792b51',
-    //     release: '2.2.0',
-    //     details: 'Remove extraRefToRelease from mirror build config if https://github.com/magento/adobe-ims/issues/16 is resolved'
-    //   }
-    // ],
-    // fixVersions: {
-    //   '2.2.0': {
-    //     'magento/module-admin-adobe-ims': '100.5.0',
-    //     'magento/module-admin-adobe-ims-two-factor-auth': '1.0.0',
-    //     'magento/module-adobe-ims': '2.2.0',
-    //     'magento/module-adobe-ims-api': '2.2.0'
-    //   }
-    // }
   },
   'adobe-stock-integration': {
     repoUrl: 'https://github.com/mage-os/mirror-adobe-stock-integration.git',
@@ -155,8 +137,4 @@ const mirrorBuildConfig = {
 }
 
 module.exports = {
-  buildConfig: Object.keys(mirrorBuildConfig).reduce((acc, key) => {
-    acc.push(Object.assign({}, (packagesConfig[key] || {}), mirrorBuildConfig[key]));
-    return acc;
-  }, [])
-};
+  buildConfig: mergeBuildConfigs(packagesConfig, mirrorBuildConfig)};

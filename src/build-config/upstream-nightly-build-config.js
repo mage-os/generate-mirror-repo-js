@@ -1,5 +1,6 @@
 
 const packagesConfig = require('./packages-config');
+const {mergeBuildConfigs} = require('../utils');
 
 const branchBuildConfig = {
   'magento2': {
@@ -66,8 +67,5 @@ const branchBuildConfig = {
 };
 
 module.exports = {
-  buildConfig: Object.keys(branchBuildConfig).reduce((acc, key) => {
-    acc.push(Object.assign({}, (packagesConfig[key] || {}), branchBuildConfig[key]));
-    return acc;
-  }, [])
+  buildConfig: mergeBuildConfigs(packagesConfig, branchBuildConfig)
 };

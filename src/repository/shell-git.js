@@ -138,16 +138,15 @@ async function listFileNames(repoDir, path, excludes) {
 async function createBranch(url, branch) {
   const dir = fullRepoPath(url);
 
+  clearWorkingCopyStat(dir)
   if (branch) {
     if ((await exec(`git branch -l ${branch}`, {cwd: dir})).includes(branch)) {
       console.log(`checking out ${branch} (branch already existed)`)
-      clearWorkingCopyStat(dir)
       await exec(`git checkout --force --quiet ${branch}`, {cwd: dir})
       return dir;
     }
 
     console.log(`checking out ${branch} (creating new branch)`)
-    clearWorkingCopyStat(dir)
     await exec(`git checkout --force --quiet -b ${branch}`, {cwd: dir})
   }
 
