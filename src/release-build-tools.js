@@ -248,7 +248,7 @@ module.exports = {
     }
 
     for (const packageDirInstruction of (instruction.packageMetaFromDirs || [])) {
-      // todo: prep meta package from dir
+      await prepPackageForRelease(packageDirInstruction, repoUrl, workBranch, releaseVersion, replaceVersionMap, workingCopyPath)
     }
 
     if (instruction.magentoCommunityEditionProject) {
