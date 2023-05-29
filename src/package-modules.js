@@ -453,7 +453,7 @@ async function createMagentoCommunityEditionMetapackage(url, ref, options) {
     files
   } = await createComposerJsonOnlyPackage(url, ref, packageName, async (refComposerConfig) => {
 
-    const additionalDependencies = await getAdditionalDependencies(packageName, ref);
+    const additionalDependencies = await getAdditionalDependencies(packageName, ref) // read release-history or dependencies-template for product metapackage
 
     const composerConfig = Object.assign({}, refComposerConfig, {
       name: packageName,
@@ -488,7 +488,7 @@ async function determineMagentoCommunityEditionProject(url, ref, release) {
  *
  * @param {String} url The URL of the source git repository
  * @param {String} ref Git ref to check out (string of tag or branch)
- * @param {{release:String|undefined, dependencyVersions:{}, minimumStability:String|undefined, transform:Function[]|undefined}} options
+ * @param {{release:String|undefined, dependencyVersions:{}, minimumStability:String|undefined, transform:Function[]|undefined, vendor:String|undefined, description:String|undefined}} options
  * @returns {Promise<{}>}
  */
 async function createMagentoCommunityEditionProject(url, ref, options) {
@@ -497,14 +497,14 @@ async function createMagentoCommunityEditionProject(url, ref, options) {
     dependencyVersions: {},
     minimumStability: 'stable',
     vendor: 'magento',
-    description: 'eCommerce Platform for Growth (Community Edition)'
+    description: 'eCommerce Platform for Growth (Community Edition)',
   };
   const {release, dependencyVersions, minimumStability, transform, vendor, description} = Object.assign(defaults, (options || {}))
   const name = `${vendor}/project-community-edition`;
   const version = release || dependencyVersions[name] || ref;
   const {packageFilepath, files} = await createComposerJsonOnlyPackage(url, ref, name, async (refComposerConfig) => {
 
-    const additionalDependencies = await getAdditionalDependencies(name, ref);
+    const additionalDependencies = await getAdditionalDependencies(name, ref) // read release history or dependencies-template for project metapackage
 
     const composerConfig = Object.assign(refComposerConfig, {
       name: name,
