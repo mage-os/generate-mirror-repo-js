@@ -66,12 +66,12 @@ upstreamRelease && validateVersionString(upstreamRelease, 'upstreamRelease');
 
       const workBranch = await prepRelease(mageosRelease, instruction, upstreamVersionMap)
 
-      // TODO: commit prepped branch and tag as mageosRelease
+      // TODO: maybe commit prepped branch and tag as mageosRelease?
 
       const releaseInstructions = {...instruction, ref: workBranch}
       await processBuildInstructions(mageosRelease, releaseInstructions, upstreamVersionMap)
 
-      // TODO: push commit and tag to repoUrl
+      // TODO: maybe push commit and tag to repoUrl? Maybe leave that as a manual step?
     }
   } catch (exception) {
     console.log(exception);

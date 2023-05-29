@@ -7,7 +7,8 @@ const path = require("path");
 const {readComposerJson, createMagentoCommunityEditionMetapackage,
   createPackagesForRef,
   createPackageForRef,
-  createMetaPackageFromRepoDir, createMagentoCommunityEditionProject
+  createMetaPackageFromRepoDir,
+  createMagentoCommunityEditionProject
 } = require('./package-modules');
 
 
@@ -117,24 +118,24 @@ function validateVersionString(version, name) {
   }
 }
 
-function setMageOsVendor(packageName) {
-  return packageName.replace(/^magento\//, 'mage-os/')
+function setMageOsVendor(packageName, vendor) {
+  return packageName.replace(/^magento\//, `${vendor}/`)
 }
 
-function updateMapFromMagentoToMageOs(obj) {
+function updateMapFromMagentoToMageOs(obj, vendor) {
   const packageNames = Object.keys(obj)
-  return packageNames.reduce((acc, pkg) => Object.assign(acc, {[setMageOsVendor(pkg)]: obj[pkg]}), {})
+  return packageNames.reduce((acc, pkg) => Object.assign(acc, {[setMageOsVendor(pkg, vendor)]: obj[pkg]}), {})
 }
 
-function updateComposerDepsFromMagentoToMageOs(composerConfig) {
-  composerConfig.name = setMageOsVendor(composerConfig.name)
+function updateComposerDepsFromMagentoToMageOs(composerConfig, vendor) {
+  composerConfig.name = setMageOsVendor(composerConfig.name, vendor)
   for (const dependencyType of ['require', 'require-dev', 'suggest']) {
-    composerConfig[dependencyType] && (composerConfig[dependencyType] = updateMapFromMagentoToMageOs(composerConfig[dependencyType]))
+    composerConfig[dependencyType] && (composerConfig[dependencyType] = updateMapFromMagentoToMageOs(composerConfig[dependencyType], vendor))
   }
 }
 
-function setMageOsDependencyVersion(obj, dependencyType, releaseVersion) {
-  const mageOsPackage = /^mage-os\//
+function setMageOsDependencyVersion(obj, dependencyType, releaseVersion, vendor) {
+  const mageOsPackage = new RegExp(`^${vendor}/`)
   const packageNames = Object.keys(obj)
   packageNames.forEach(packageName => {
     if (packageName.match(mageOsPackage)) {
@@ -146,27 +147,41 @@ function setMageOsDependencyVersion(obj, dependencyType, releaseVersion) {
   return obj
 }
 
-function updateComposerDepsVersionForMageOs(composerConfig, releaseVersion) {
+function updateComposerDepsVersionForMageOs(composerConfig, releaseVersion, vendor) {
   for (const dependencyType of ['require', 'require-dev', 'suggest']) {
-    composerConfig[dependencyType] && (composerConfig[dependencyType] = setMageOsDependencyVersion(composerConfig[dependencyType], dependencyType, releaseVersion))
+    composerConfig[dependencyType] && (composerConfig[dependencyType] = setMageOsDependencyVersion(composerConfig[dependencyType], dependencyType, releaseVersion, vendor))
   }
 }
 
-function updateComposerConfigFromMagentoToMageOs(composerConfig, releaseVersion, replaceVersionMap) {
+function updateComposerPluginConfigForMageOs(composerConfig, vendor) {
+  if (composerConfig?.['config']?.['allow-plugins']) {
+    Object.keys(composerConfig['config']['allow-plugins']).forEach(plugin => {
+      const val = composerConfig['config']['allow-plugins'][plugin]
+      delete composerConfig['config']['allow-plugins'][plugin]
+      composerConfig['config']['allow-plugins'][setMageOsVendor(plugin, vendor)] = val
+    })
+  }
+}
+
+function updateComposerConfigFromMagentoToMageOs(composerConfig, releaseVersion, replaceVersionMap, vendor) {
   composerConfig.version = releaseVersion
   if (replaceVersionMap[composerConfig.name]) {
     composerConfig.replace = {[composerConfig.name]: replaceVersionMap[composerConfig.name]}
   }
-  composerConfig.name = setMageOsVendor(composerConfig.name)
-  updateComposerDepsFromMagentoToMageOs(composerConfig)
-  updateComposerDepsVersionForMageOs(composerConfig, releaseVersion)
+  composerConfig.name = setMageOsVendor(composerConfig.name, vendor)
+  updateComposerDepsFromMagentoToMageOs(composerConfig, vendor)
+  updateComposerDepsVersionForMageOs(composerConfig, releaseVersion, vendor)
+  updateComposerPluginConfigForMageOs(composerConfig, vendor)
 }
 
 async function prepPackageForRelease({label, dir}, repoUrl, ref, releaseVersion, replaceVersionMap, workingCopyPath) {
   console.log(`Preparing ${label}`);
 
+  // todo: pass vendor as argument
+  const vendor = 'mage-os';
+
   const composerConfig = JSON.parse(await readComposerJson(repoUrl, dir, ref))
-  updateComposerConfigFromMagentoToMageOs(composerConfig, releaseVersion, replaceVersionMap)
+  updateComposerConfigFromMagentoToMageOs(composerConfig, releaseVersion, replaceVersionMap, vendor)
 
   // write composerJson to file in repo
   const file = path.join(workingCopyPath, dir, 'composer.json');
@@ -252,12 +267,17 @@ module.exports = {
     }
 
     if (instruction.magentoCommunityEditionProject) {
-      // todo: prep project meta package
+      const instruction = {
+        'label': 'Mage-OS Community Edition Product Metapackage',
+        'dir': ''
+      }
+      await prepPackageForRelease(instruction, repoUrl, workBranch, releaseVersion, replaceVersionMap, workingCopyPath)
     }
 
     if (instruction.magentoCommunityEditionMetapackage) {
-      const repoAndRef = {ref: workBranch, repoUrl: instruction.repoUrl}
-      await buildMageOsProductCommunityEditionMetapackage(releaseVersion, repoAndRef, replaceVersionMap)
+      // nothing to prep - all handled in the build step
+      // const repoAndRef = {ref: workBranch, repoUrl: instruction.repoUrl}
+      // await buildMageOsProductCommunityEditionMetapackage(releaseVersion, repoAndRef, replaceVersionMap)
     }
 
     return workBranch
@@ -314,9 +334,15 @@ module.exports = {
 
     if (instruction.magentoCommunityEditionProject) {
       console.log('Packaging Mage-OS Community Edition Project');
-      // TODO: package mage-os/project-community-edition metapackage with min stability: stable
-      // TODO: remember to add package to packages object
-      //Object.assign(packages, built);
+      const built = await createMagentoCommunityEditionProject(repoUrl, ref, {
+        release: mageosRelease,
+        dependencyVersions,
+        minimumStability: 'stable',
+        transform,
+        vendor: 'mage-os',
+        description: 'Community built eCommerce Platform for Growth'
+      });
+      Object.assign(packages, built);
     }
 
     return packages
