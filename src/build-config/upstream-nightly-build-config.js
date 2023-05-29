@@ -47,6 +47,10 @@ const branchBuildConfig = {
     repoUrl: 'https://github.com/mage-os/mirror-magento-composer-installer.git',
     ref: 'master',
   },
+  'composer': {
+    repoUrl: 'https://github.com/mage-os/mirror-composer.git',
+    ref: 'develop',
+  },
   'composer-root-update-plugin': {
     repoUrl: 'https://github.com/mage-os/mirror-composer-root-update-plugin.git',
     ref: 'develop',
@@ -62,7 +66,16 @@ const branchBuildConfig = {
   'commerce-data-export': {
     repoUrl: 'https://github.com/mage-os/mirror-commerce-data-export.git',
     ref: 'main'
-  }
+  },
+  // Keep disabled until repos exist and are integrated into the upstream synchronization process
+  // 'magento-coding-standard': {
+  //   repoUrl: 'https://github.com/mage-os/mirror-magento-coding-standard.git',
+  //   ref: 'develop'
+  // },
+  // 'magento2-functional-testing-framework': {
+  //   repoUrl: 'https://github.com/mage-os/mirror-magento2-functional-testing-framework.git',
+  //   ref: 'develop'
+  // },
 };
 
 module.exports = {
