@@ -95,7 +95,7 @@ const mirrorBuildConfig = {
         // Upstream release wrongly pins module-adobe-stock-image-api and magento/module-adobe-stock-client-api at 1.0.2,
         // even though in that release module-adobe-stock-image-admin-ui requires 1.0.2-p1
         "magento/module-adobe-stock-image-api": "1.0.2-p1",
-        "magento/module-adobe-stock-client-api": "1.0.2-p1"
+        "magento/module-adobe-stock-client-api": "1.0.2-p1",
       },
       '1.0.3-p2': {
         // Upstream release ships with these deps, but in the tagged release * dependencies are used in the metapackage
