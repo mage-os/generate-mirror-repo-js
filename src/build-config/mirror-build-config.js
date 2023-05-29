@@ -92,9 +92,10 @@ const mirrorBuildConfig = {
     fromTag: '1.0.0',
     fixVersions: {
       '1.0.3-p3': {
-        // Upstream release wrongly pins module-adobe-stock-image-api 1.0.2, even though in that release
-        // module-adobe-stock-image-admin-ui requires 1.0.2-p1
+        // Upstream release wrongly pins module-adobe-stock-image-api and magento/module-adobe-stock-client-api at 1.0.2,
+        // even though in that release module-adobe-stock-image-admin-ui requires 1.0.2-p1
         "magento/module-adobe-stock-image-api": "1.0.2-p1",
+        "magento/module-adobe-stock-client-api": "1.0.2-p1",
       },
       '1.0.3-p2': {
         // Upstream release ships with these deps, but in the tagged release * dependencies are used in the metapackage
@@ -138,11 +139,33 @@ const mirrorBuildConfig = {
   'magento-composer-installer': {
     repoUrl: 'https://github.com/mage-os/mirror-magento-composer-installer.git',
     fromTag: '0.1.4',
+    // The composer.json is missing the version in all tagged releases
+    fixVersions: {
+      '0.1.10': {'magento/magento-composer-installer': '0.1.10'},
+      '0.1.11': {'magento/magento-composer-installer': '0.1.11'},
+      '0.1.12': {'magento/magento-composer-installer': '0.1.12'},
+      '0.1.13': {'magento/magento-composer-installer': '0.1.13'},
+      '0.1.4': {'magento/magento-composer-installer': '0.1.4'},
+      '0.1.5': {'magento/magento-composer-installer': '0.1.5'},
+      '0.1.6': {'magento/magento-composer-installer': '0.1.6'},
+      '0.1.7': {'magento/magento-composer-installer': '0.1.7'},
+      '0.1.8': {'magento/magento-composer-installer': '0.1.8'},
+      '0.1.9': {'magento/magento-composer-installer': '0.1.9'},
+      '0.2.0': {'magento/magento-composer-installer': '0.2.0'},
+      '0.2.1': {'magento/magento-composer-installer': '0.2.1'},
+      '0.2.1-beta1': {'magento/magento-composer-installer': '0.2.1-beta1'},
+      '0.3.0': {'magento/magento-composer-installer': '0.3.0'},
+      '0.3.0-beta.1': {'magento/magento-composer-installer': '0.3.0-beta.1'},
+      '0.4.0': {'magento/magento-composer-installer': '0.4.0'},
+      '0.4.0-beta1': {'magento/magento-composer-installer': '0.4.0-beta1'},
+      '0.4.0-beta2': {'magento/magento-composer-installer': '0.4.0-beta2'},
+    }
   },
-  'composer': {
-    repoUrl: 'https://github.com/mage-os/mirror-composer.git',
-    fromTag: '1.0.0',
-  },
+  // Disable temporarily since it seems to cause a lot of breakage
+  // 'composer': {
+  //   repoUrl: 'https://github.com/mage-os/mirror-composer.git',
+  //   fromTag: '1.0.0',
+  // },
   'composer-root-update-plugin': {
     repoUrl: 'https://github.com/mage-os/mirror-composer-root-update-plugin.git',
     fromTag: '1.0.0',
