@@ -134,6 +134,10 @@ const mirrorBuildConfig = {
     repoUrl: 'https://github.com/mage-os/mirror-magento-composer-installer.git',
     fromTag: '0.1.4',
   },
+  'composer': {
+    repoUrl: 'https://github.com/mage-os/mirror-composer.git',
+    fromTag: '1.0.0',
+  },
   'composer-root-update-plugin': {
     repoUrl: 'https://github.com/mage-os/mirror-composer-root-update-plugin.git',
     fromTag: '1.0.0',
@@ -151,7 +155,16 @@ const mirrorBuildConfig = {
   'magento2-sample-data': {
     repoUrl: 'https://github.com/mage-os/mirror-magento2-sample-data.git',
     fromTag: '2.3.7-p3',
-  }
+  },
+  // Keep disabled until the mirror repos exist and are integrated into the upstream synchronization process
+  // 'magento-coding-standard': {
+  //   repoUrl: 'https://github.com/mage-os/mirror-magento-coding-standard.git',
+  //   fromTag: '1.0.0'
+  // },
+  // 'magento2-functional-testing-framework': {
+  //   repoUrl: 'https://github.com/mage-os/mirror-magento2-functional-testing-framework.git',
+  //   fromTag: '1.0.0'
+  // },
 }
 
 module.exports = {

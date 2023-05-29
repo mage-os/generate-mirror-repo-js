@@ -186,6 +186,18 @@ module.exports = {
     ],
     packageMetaFromDirs: [],
   },
+  'composer': {
+    repoUrl: 'https://github.com/mage-os/mirror-composer.git',
+
+    packageDirs: [],
+    packageIndividual: [
+      {
+        label: 'Magento Composer',
+        dir: '',
+      }
+    ],
+    packageMetaFromDirs: [],
+  },
   'composer-root-update-plugin': {
     repoUrl: 'https://github.com/mage-os/mirror-composer-root-update-plugin.git',
 
@@ -239,10 +251,34 @@ module.exports = {
     ],
     packageIndividual: [],
     packageMetaFromDirs: [
-    {
-      label: 'Commerce Data Export Metapackage',
-      dir: '_metapackage',
-    }
-  ],
-}
+      {
+        label: 'Commerce Data Export Metapackage',
+        dir: '_metapackage',
+      }
+    ],
+  },
+  'magento-coding-standard': {
+    repoUrl: 'https://github.com/mage-os/mirror-magento-coding-standard.git',
+
+    packageDirs: [],
+    packageIndividual: [
+      {
+        label: 'Magento Coding Standard',
+        dir: ''
+      }
+    ],
+    packageMetaFromDirs: [],
+  },
+  'magento2-functional-testing-framework': {
+    repoUrl: 'https://github.com/mage-os/mirror-magento2-functional-testing-framework.git',
+
+    packageDirs: [],
+    packageIndividual: [
+      {
+        label: 'Magento2 Functional Testing Framework',
+        dir: ''
+      }
+    ],
+    packageMetaFromDirs: [],
+  },
 };
