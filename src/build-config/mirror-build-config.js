@@ -93,14 +93,14 @@ const mirrorBuildConfig = {
     fixVersions: {
       '1.0.3-p2': {
         // Upstream release ships with these deps, but in the tagged release * dependencies are used in the metapackage
-        'magento/module-adobe-ims':                  '1.0.2-p1',
-        'magento/module-adobe-ims-api':              '1.0.2-p1',
-        'magento/module-adobe-stock-admin-ui':       '1.0.2-p1',
-        'magento/module-adobe-stock-asset':          '1.0.2-p1',
-        'magento/module-adobe-stock-asset-api':      '1.0.2-p1',
-        'magento/module-adobe-stock-client':         '1.0.2-p1',
-        'magento/module-adobe-stock-client-api':     '1.0.2-p1',
-        'magento/module-adobe-stock-image-api':      '1.0.2-p1',
+        'magento/module-adobe-ims':                  '1.0.2',
+        'magento/module-adobe-ims-api':              '1.0.2',
+        'magento/module-adobe-stock-admin-ui':       '1.0.2',
+        'magento/module-adobe-stock-asset':          '1.0.2',
+        'magento/module-adobe-stock-asset-api':      '1.0.2',
+        'magento/module-adobe-stock-client':         '1.0.2',
+        'magento/module-adobe-stock-client-api':     '1.0.2',
+        'magento/module-adobe-stock-image-api':      '1.0.2',
         'magento/module-adobe-stock-image':          '1.0.2-p2',
         'magento/module-adobe-stock-image-admin-ui': '1.0.3-p2',
       },
