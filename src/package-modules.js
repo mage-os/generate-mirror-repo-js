@@ -258,9 +258,11 @@ async function createPackageForRef(url, moduleDir, ref, options) {
   const mtime = new Date(stableMtime);
   const packageFilepath = archiveFilePath(name, version);
 
-  if (fs.existsSync(packageFilepath)) {
-    return packageWithVersion;
-  }
+  // build the package even if it already exists - this is important as a workaround against inconsistencies in upstream
+  // release tagging of adobe-ims
+  // if (fs.existsSync(packageFilepath)) {
+  //   return packageWithVersion;
+  // }
 
   const files = (await repo.listFiles(url, moduleDir, ref, excludes))
     .filter(file => {
