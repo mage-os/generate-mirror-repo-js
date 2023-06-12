@@ -1,4 +1,3 @@
-
 const packagesConfig = require('./packages-config');
 
 const mirrorBuildConfig = {
@@ -96,22 +95,95 @@ const mirrorBuildConfig = {
         composerJson => {
           const patch = composerJson.version === '1.0.3-p2'
             ? {
-              "magento/module-adobe-stock-asset": "1.0.*",
-              "magento/module-adobe-stock-asset-api": "1.0.*",
-              "magento/module-adobe-stock-image": "1.0.*",
-              "magento/module-adobe-stock-image-admin-ui": "1.0.*",
-              "magento/module-adobe-stock-image-api": "1.0.*",
-              "magento/module-adobe-stock-client": "1.0.*",
-              "magento/module-adobe-stock-client-api": "1.0.*",
-              "magento/module-adobe-stock-admin-ui": "1.0.*",
-              "magento/module-adobe-ims": "1.0.*",
-              "magento/module-adobe-ims-api": "1.0.*"
+              'magento/module-adobe-stock-asset':          '1.0.*',
+              'magento/module-adobe-stock-asset-api':      '1.0.*',
+              'magento/module-adobe-stock-image':          '1.0.*',
+              'magento/module-adobe-stock-image-admin-ui': '1.0.*',
+              'magento/module-adobe-stock-image-api':      '1.0.*',
+              'magento/module-adobe-stock-client':         '1.0.*',
+              'magento/module-adobe-stock-client-api':     '1.0.*',
+              'magento/module-adobe-stock-admin-ui':       '1.0.*',
+              'magento/module-adobe-ims':                  '1.0.*',
+              'magento/module-adobe-ims-api':              '1.0.*'
             }
             : {}
           composerJson.require = {...composerJson.require, ...patch}
           return composerJson;
         }
-      ]
+      ],
+      'magento/module-adobe-ims': [
+        composerJson => {
+          const patch = composerJson.version === '1.0.2-p1'
+            ? {'magento/module-adobe-ims-api': '1.0.*',}
+            : {}
+          composerJson.require = {...composerJson.require, ...patch}
+          return composerJson;
+        }
+      ],
+      'magento/module-adobe-stock-admin-ui': [
+        composerJson => {
+          const patch = composerJson.version === '1.0.2-p1'
+            ? {
+               'magento/module-adobe-ims-api':           '1.0.*',
+                'magento/module-adobe-stock-client-api': '1.0.*'
+              }
+            : {}
+          composerJson.require = {...composerJson.require, ...patch}
+          return composerJson;
+        }
+      ],
+      'magento/module-adobe-stock-asset': [
+        composerJson => {
+          const patch = composerJson.version === '1.0.2-p1'
+            ? {
+              'magento/module-adobe-stock-asset-api':  '1.0.*',
+              'magento/module-adobe-stock-client-api': '1.0.*',
+            }
+            : {}
+          composerJson.require = {...composerJson.require, ...patch}
+          return composerJson;
+        }
+      ],
+      'magento/module-adobe-stock-client': [
+        composerJson => {
+          const patch = composerJson.version === '1.0.2-p1'
+            ? {
+              'magento/module-adobe-ims-api':          '1.0.*',
+              'magento/module-adobe-stock-client-api': '1.0.*',
+            }
+            : {}
+          composerJson.require = {...composerJson.require, ...patch}
+          return composerJson;
+        }
+      ],
+      'magento/module-adobe-stock-image': [
+        composerJson => {
+          const patch = composerJson.version === '1.0.2-p2'
+            ? {
+              'magento/module-adobe-stock-client-api': '1.0.*',
+              'magento/module-adobe-stock-asset-api':  '1.0.*',
+              'magento/module-adobe-stock-image-api':  '1.0.*',
+            }
+            : {}
+          composerJson.require = {...composerJson.require, ...patch}
+          return composerJson;
+        }
+      ],
+      'magento/module-adobe-stock-image-admin-ui': [
+        composerJson => {
+          const patch = composerJson.version === '1.0.2-p1'
+            ? {
+              'magento/module-adobe-ims':              '1.0.*',
+              'magento/module-adobe-ims-api':          '1.0.*',
+              'magento/module-adobe-stock-asset-api':  '1.0.*',
+              'magento/module-adobe-stock-image-api':  '1.0.*',
+              'magento/module-adobe-stock-client-api': '1.0.*',
+            }
+            : {}
+          composerJson.require = {...composerJson.require, ...patch}
+          return composerJson;
+        }
+      ],
     },
     fixVersions: {
       '1.0.3-p2': {
@@ -153,11 +225,11 @@ const mirrorBuildConfig = {
       },
       '2.1.2-p1': {
         // Metapackage missing pinned versions.
-        'magento/module-adobe-stock-admin-ui':       '1.3.0-p1',
-        'magento/module-adobe-stock-asset':          '1.3.0-p1',
-        'magento/module-adobe-stock-asset-api':      '2.0.0-p1',
-        'magento/module-adobe-stock-client-api':     '2.1.0-p1',
-        'magento/module-adobe-stock-image-api':      '1.3.0-p1',
+        'magento/module-adobe-stock-admin-ui':   '1.3.0-p1',
+        'magento/module-adobe-stock-asset':      '1.3.0-p1',
+        'magento/module-adobe-stock-asset-api':  '2.0.0-p1',
+        'magento/module-adobe-stock-client-api': '2.1.0-p1',
+        'magento/module-adobe-stock-image-api':  '1.3.0-p1',
 
         // Files are different in version control.
         'magento/module-adobe-stock-client':         '1.3.1-p1',
