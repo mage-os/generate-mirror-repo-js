@@ -90,6 +90,29 @@ const mirrorBuildConfig = {
   'adobe-stock-integration': {
     repoUrl: 'https://github.com/mage-os/mirror-adobe-stock-integration.git',
     fromTag: '1.0.0',
+    transform: {
+      // require wildcard versions to match upstream release
+      'magento/adobe-stock-integration': [
+        composerJson => {
+          const patch = composerJson.version === '1.0.3-p2'
+            ? {
+              "magento/module-adobe-stock-asset": "1.0.*",
+              "magento/module-adobe-stock-asset-api": "1.0.*",
+              "magento/module-adobe-stock-image": "1.0.*",
+              "magento/module-adobe-stock-image-admin-ui": "1.0.*",
+              "magento/module-adobe-stock-image-api": "1.0.*",
+              "magento/module-adobe-stock-client": "1.0.*",
+              "magento/module-adobe-stock-client-api": "1.0.*",
+              "magento/module-adobe-stock-admin-ui": "1.0.*",
+              "magento/module-adobe-ims": "1.0.*",
+              "magento/module-adobe-ims-api": "1.0.*"
+            }
+            : {}
+          composerJson.require = {...composerJson.require, ...patch}
+          return composerJson;
+        }
+      ]
+    },
     fixVersions: {
       '1.0.3-p2': {
         // Upstream release ships with these deps, but in the tagged release * dependencies are used in the metapackage
