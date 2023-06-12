@@ -78,14 +78,14 @@ async function createMetaPackagesFromRepoDir(url, tagSpec, path, fixVersions) {
   return built;
 }
 
-async function createPackagesSinceTag(url, tagsSpec, modulesPath, excludes, fixVersions) {
+async function createPackagesSinceTag(url, tagsSpec, modulesPath, excludes, fixVersions, transform) {
   const tags = await listTagsFrom(url, tagsSpec);
   console.log(`Versions to process: ${tags.join(', ')}`);
   const built = [];
   for (const tag of tags) {
     console.log(`Processing ${tag}`);
     try {
-      await createPackagesForRef(url, modulesPath, tag, {excludes, dependencyVersions: (fixVersions?.[tag] ?? {})});
+      await createPackagesForRef(url, modulesPath, tag, {excludes, dependencyVersions: (fixVersions?.[tag] ?? {}), transform});
       built.push(tag)
     } catch (exception) {
       console.log(exception.message || exception);
@@ -94,7 +94,7 @@ async function createPackagesSinceTag(url, tagsSpec, modulesPath, excludes, fixV
   return built;
 }
 
-async function createPackageSinceTag(url, tagsSpec, modulesPath, excludes, composerJsonPath, emptyDirsToAdd, fixVersions) {
+async function createPackageSinceTag(url, tagsSpec, modulesPath, excludes, composerJsonPath, emptyDirsToAdd, fixVersions, transform) {
   const tags = await listTagsFrom(url, tagsSpec);
   console.log(`Versions to process: ${tags.join(', ')}`);
   const built = [];
@@ -110,7 +110,7 @@ async function createPackageSinceTag(url, tagsSpec, modulesPath, excludes, compo
         : composerJsonPath;
     }
     try {
-      await createPackageForRef(url, modulesPath, tag, {excludes, composerJsonPath: composerJsonFile, emptyDirsToAdd, dependencyVersions: (fixVersions?.[tag] ?? {})});
+      await createPackageForRef(url, modulesPath, tag, {excludes, composerJsonPath: composerJsonFile, emptyDirsToAdd, dependencyVersions: (fixVersions?.[tag] ?? {}), transform});
       built.push(tag);
     } catch (exception) {
       console.log(exception.message || exception);
@@ -147,7 +147,7 @@ async function replacePackageFiles(name, version, files) {
 async function processMirrorInstruction(instructions) {
   let tags = [];
 
-  const {repoUrl, fromTag, skipTags, extraRefToRelease, fixVersions} = instructions;
+  const {repoUrl, fromTag, skipTags, extraRefToRelease, fixVersions, transform = null} = instructions;
   const tagsSpec = {fromTag, skipTags}
 
   await Promise.all(
@@ -157,7 +157,7 @@ async function processMirrorInstruction(instructions) {
   for (const packageDir of (instructions.packageDirs || [])) {
     const {label, dir, excludes} = Object.assign({excludes: []}, packageDir);
     console.log(`Packaging ${label}`);
-    tags = await createPackagesSinceTag(repoUrl, tagsSpec, dir, excludes, fixVersions)
+    tags = await createPackagesSinceTag(repoUrl, tagsSpec, dir, excludes, fixVersions, transform)
     console.log(label, tags);
   }
 
@@ -165,7 +165,7 @@ async function processMirrorInstruction(instructions) {
     const defaults = {excludes: [], composerJsonPath: '', emptyDirsToAdd: []};
     const {label, dir, excludes, composerJsonPath, emptyDirsToAdd} = Object.assign(defaults, individualPackage);
     console.log(`Packaging ${label}`);
-    tags = await createPackageSinceTag(repoUrl, tagsSpec, dir, excludes, composerJsonPath, emptyDirsToAdd, fixVersions);
+    tags = await createPackageSinceTag(repoUrl, tagsSpec, dir, excludes, composerJsonPath, emptyDirsToAdd, fixVersions, transform);
     console.log(label, tags);
   }
 
