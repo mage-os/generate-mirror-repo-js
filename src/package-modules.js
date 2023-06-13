@@ -74,10 +74,6 @@ function archiveFilePath(name, version) {
 }
 
 async function writePackage(packageFilepath, files) {
-  if (fs.existsSync(packageFilepath)) {
-    return;
-  }
-
   ensureArchiveDirectoryExists(packageFilepath);
   const zip = zipFileWith(files);
   const stream = await zip.generateNodeStream({streamFiles: false, platform: 'UNIX'});
@@ -260,9 +256,10 @@ async function createPackageForRef(url, moduleDir, ref, options) {
 
   // build the package even if it already exists - this is important as a workaround against inconsistencies in upstream
   // release tagging of adobe-ims
-  // if (fs.existsSync(packageFilepath)) {
-  //   return packageWithVersion;
-  // }
+  if (fs.existsSync(packageFilepath)) {
+    //fs.unlinkSync(packageFilepath)
+    //return packageWithVersion;
+  }
 
   const files = (await repo.listFiles(url, moduleDir, ref, excludes))
     .filter(file => {
