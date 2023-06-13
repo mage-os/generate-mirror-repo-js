@@ -171,7 +171,7 @@ const mirrorBuildConfig = {
       ],
       'magento/module-adobe-stock-image-admin-ui': [
         composerJson => {
-          const patch = composerJson.version === '1.0.2-p1'
+          const patch = composerJson.version === '1.0.3-p2'
             ? {
               'magento/module-adobe-ims':              '1.0.*',
               'magento/module-adobe-ims-api':          '1.0.*',
