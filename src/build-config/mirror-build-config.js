@@ -5,19 +5,24 @@ const mirrorBuildConfig = {
     repoUrl: 'https://github.com/mage-os/mirror-magento2.git',
     fromTag: '2.3.7-p2',
     fixVersions: {
-      // Upstream correctly sets the module version to 100.3.7-p3 in the git tag, but in the actual upstream 2.3.7-p3
-      // release they used 100.3.7 as the dependency.
-      '2.3.7-p3': {
-        // The result of this configuration is that anywhere the module magento/module-bundle is referenced, the version
-        // 100.3.7 is used, both for building the package and when it is referenced as a dependency.
-        'magento/module-bundle': '100.3.7'
-      },
-
       // Upstream doesn't have tag 2.1.2. It does have a branch with that name but the metapackage is incorrect.
       // See https://github.com/magento/adobe-stock-integration/issues/1871
       '2.4.3': {
         'magento/adobe-stock-integration': '2.1.2'
       }
+    },
+    transform: {
+      // Upstream correctly sets the module version to 100.3.7-p3 in the git tag, but in the actual upstream 2.3.7-p3
+      // release they used 100.3.7 as the dependency.
+      'magento/product-community-edition': [
+        composerJson => {
+          const patch = composerJson.version === '2.3.7-p3'
+            ? {'magento/module-bundle': '100.3.7'}
+            : {}
+          composerJson.require = {...composerJson.require, ...patch}
+          return composerJson;
+        }
+      ]
     }
   },
   'security-package': {
@@ -45,6 +50,8 @@ const mirrorBuildConfig = {
     repoUrl: 'https://github.com/mage-os/mirror-magento2-page-builder.git',
     fromTag: '1.7.0',
     fixVersions: {
+      // Metapackage is missing the pinned versions and also versions in the
+      // tagged release for module-page-builder-admin-analytics, module-page-builder-analytics and module-page-builder
       '1.7.0': {
         'magento/module-page-builder':                   '2.2.1',
         'magento/module-aws-s3-page-builder':            '1.0.1',

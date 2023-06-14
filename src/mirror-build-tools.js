@@ -42,34 +42,34 @@ async function copyAdditionalPackages(archiveDir) {
   }
 }
 
-async function createMagentoCommunityEditionMetapackagesSinceTag(url, tagsSpec, fixVersions) {
+async function createMagentoCommunityEditionMetapackagesSinceTag(url, tagsSpec, fixVersions, transform) {
   const tags = await listTagsFrom(url, tagsSpec);
   console.log(`Versions to process: ${tags.join(', ')}`);
   for (const tag of tags) {
     console.log(`Processing ${tag}`);
-    await createMagentoCommunityEditionMetapackage(url, tag, {dependencyVersions: (fixVersions?.[tag] ?? {})});
+    await createMagentoCommunityEditionMetapackage(url, tag, {dependencyVersions: (fixVersions?.[tag] ?? {}), transform});
   }
   return tags;
 }
 
-async function createProjectPackagesSinceTag(url, tagsSpec, fixVersions) {
+async function createProjectPackagesSinceTag(url, tagsSpec, fixVersions, transform) {
   const tags = await listTagsFrom(url, tagsSpec);
   console.log(`Versions to process: ${tags.join(', ')}`);
   for (const tag of tags) {
     console.log(`Processing ${tag}`);
-    await createMagentoCommunityEditionProject(url, tag, {dependencyVersions: (fixVersions?.[tag] ?? {})});
+    await createMagentoCommunityEditionProject(url, tag, {dependencyVersions: (fixVersions?.[tag] ?? {}), transform});
   }
   return tags;
 }
 
-async function createMetaPackagesFromRepoDir(url, tagSpec, path, fixVersions) {
+async function createMetaPackagesFromRepoDir(url, tagSpec, path, fixVersions, transform) {
   const tags = await listTagsFrom(url, tagSpec);
   console.log(`Versions to process: ${tags.join(', ')}`);
   const built = [];
   for (const tag of tags) {
     console.log(`Processing ${tag}`);
     try {
-      await createMetaPackageFromRepoDir(url, path, tag, {dependencyVersions: (fixVersions?.[tag] ?? {})});
+      await createMetaPackageFromRepoDir(url, path, tag, {dependencyVersions: (fixVersions?.[tag] ?? {}), transform});
       built.push(tag);
     } catch (exception) {
       console.log(exception.message || exception);
@@ -172,7 +172,7 @@ async function processMirrorInstruction(instructions) {
   for (const packageMeta of (instructions.packageMetaFromDirs || [])) {
     const {label, dir} = packageMeta;
     console.log(`Packaging ${label}`);
-    tags = await createMetaPackagesFromRepoDir(repoUrl, tagsSpec, dir, fixVersions);
+    tags = await createMetaPackagesFromRepoDir(repoUrl, tagsSpec, dir, fixVersions, transform);
     console.log(label, tags);
   }
 
@@ -182,13 +182,13 @@ async function processMirrorInstruction(instructions) {
 
   if (instructions.magentoCommunityEditionMetapackage) {
     console.log('Packaging Magento Community Edition Product Metapackage');
-    tags = await createMagentoCommunityEditionMetapackagesSinceTag(repoUrl, tagsSpec, fixVersions);
+    tags = await createMagentoCommunityEditionMetapackagesSinceTag(repoUrl, tagsSpec, fixVersions, transform);
     console.log('Magento Community Edition Product Metapackage', tags);
   }
 
   if (instructions.magentoCommunityEditionProject) {
     console.log('Packaging Magento Community Edition Project');
-    tags = await createProjectPackagesSinceTag(repoUrl, tagsSpec, fixVersions);
+    tags = await createProjectPackagesSinceTag(repoUrl, tagsSpec, fixVersions, transform);
     console.log('Magento Community Edition Project', tags);
   }
   
