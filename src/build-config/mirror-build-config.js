@@ -50,6 +50,8 @@ const mirrorBuildConfig = {
     repoUrl: 'https://github.com/mage-os/mirror-magento2-page-builder.git',
     fromTag: '1.7.0',
     fixVersions: {
+      // Metapackage is missing the pinned versions and also versions in the
+      // tagged release for module-page-builder-admin-analytics, module-page-builder-analytics and module-page-builder
       '1.7.0': {
         'magento/module-page-builder':                   '2.2.1',
         'magento/module-aws-s3-page-builder':            '1.0.1',
