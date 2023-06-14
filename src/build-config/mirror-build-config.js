@@ -67,6 +67,8 @@ const mirrorBuildConfig = {
         'magento/module-cms-page-builder-analytics':     '1.6.1-p1',
         'magento/module-page-builder-admin-analytics':   '1.1.1-p1',
         'magento/module-page-builder-analytics':         '1.6.1-p1',
+        // phpgt/dom is pinned as 2.2.1 in the tagged release, but the upstream package requires 2.1.6
+        'phpgt/dom':                                     '2.1.6',
       }
     }
   },
