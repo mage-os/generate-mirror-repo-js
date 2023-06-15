@@ -76,10 +76,10 @@ const mirrorBuildConfig = {
     },
     transform: {
       // see comment in fixVersions for 1.7.0-p1 about explanation
-      'magento/module-page-builder': [
+      'magento/page-builder': [
         composerJson => {
           const patch = composerJson.version === '2.2.1-p0'
-            ? {'magento/module-page-builder': '2.2.1-p0',}
+            ? {'magento/module-page-builder': '2.2.1-p1'}
             : {}
           composerJson.require = {...composerJson.require, ...patch}
           return composerJson;
