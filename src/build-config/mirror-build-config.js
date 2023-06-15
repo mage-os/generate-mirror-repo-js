@@ -60,8 +60,11 @@ const mirrorBuildConfig = {
         'magento/module-page-builder-admin-analytics':   '1.1.1',
         'magento/module-page-builder-analytics':         '1.6.1',
       },
-      '1.7.0-p1': {
-        'magento/module-page-builder':                   '2.2.1-p1',
+      '1.7.0-p1': { // required by 2.4.3-p1
+        // the upstream package contents of module-page-builder 2.2.1-p1 match 1.7.0-p2, except for the composer.json
+        // use non-existent version 2.2.1-p0 so the 2.2.1-p1 package from additional packages is not overwritten, and
+        // fix the composer.json dependency via transform
+        'magento/module-page-builder':                   '2.2.1-p0',
         'magento/module-aws-s3-page-builder':            '1.0.1-p1',
         'magento/module-catalog-page-builder-analytics': '1.6.1-p1',
         'magento/module-cms-page-builder-analytics':     '1.6.1-p1',
@@ -70,7 +73,18 @@ const mirrorBuildConfig = {
         // phpgt/dom is pinned as 2.2.1 in the tagged release, but the upstream package requires 2.1.6
         'phpgt/dom':                                     '2.1.6',
       }
-    }
+    },
+    transform: {
+      // see comment in fixVersions for 1.7.0-p1 about explanation
+      'magento/module-page-builder': [
+        composerJson => {
+          const patch = composerJson.version === '2.2.1-p0'
+            ? {'magento/module-page-builder': '2.2.1-p0',}
+            : {}
+          composerJson.require = {...composerJson.require, ...patch}
+          return composerJson;
+        }
+      ],    }
   },
   'adobe-ims': {
     repoUrl: 'https://github.com/mage-os/mirror-adobe-ims.git',
