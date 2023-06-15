@@ -75,16 +75,27 @@ const mirrorBuildConfig = {
       }
     },
     transform: {
-      // see comment in fixVersions for 1.7.0-p1 about explanation
+      // see comment in fixVersions for 1.7.0-p1 about explanation. We want to require the 2.2.1-p1 from additional
+      // packages and not the generated package with the fixed version 2.2.1-p0
       'magento/page-builder': [
         composerJson => {
-          const patch = composerJson.version === '2.2.1-p0'
+          const patch = composerJson.version === '1.7.0-p1'
             ? {'magento/module-page-builder': '2.2.1-p1'}
             : {}
           composerJson.require = {...composerJson.require, ...patch}
           return composerJson;
         }
-      ],    }
+      ],
+      'magento/module-page-builder-analytics': [
+        composerJson => {
+          const patch = composerJson.version === '1.6.1-p1'
+            ? {'magento/module-page-builder': '2.2.1-p1'}
+            : {}
+          composerJson.require = {...composerJson.require, ...patch}
+          return composerJson;
+        }
+      ],
+    }
   },
   'adobe-ims': {
     repoUrl: 'https://github.com/mage-os/mirror-adobe-ims.git',
