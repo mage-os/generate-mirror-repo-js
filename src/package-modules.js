@@ -308,7 +308,7 @@ function isInAdditionalPackages(name, version) {
   const [vendorName, packageName] = name.split('/')
 
   const m = version.match(/^(?<mainVersion>[0-9.]+)(?:-p(?<patchVersion>[0-9]+))?$/)
-  const {mainVersion, patchVersion} = m.groups || {mainVersion: version, patchVersion: undefined}
+  const {mainVersion, patchVersion} = m && m.groups || {mainVersion: version, patchVersion: undefined}
 
   const baseName = path.join(dir, `${vendorName}-${packageName}-${mainVersion}`)
   const fileNames = patchVersion
