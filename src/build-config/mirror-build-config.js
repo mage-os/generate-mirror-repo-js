@@ -265,7 +265,7 @@ const mirrorBuildConfig = {
         'magento/module-adobe-stock-client-api': '2.1.0-p1',
         'magento/module-adobe-stock-image-api':  '1.3.0-p1',
 
-        // Files are different in version control.
+        // Files are different in version control than in upstream package from repo.magento.com.
         'magento/module-adobe-stock-client':         '1.3.1-p1',
         'magento/module-adobe-stock-image':          '1.3.1-p1',
         'magento/module-adobe-stock-image-admin-ui': '1.3.1-p1',
