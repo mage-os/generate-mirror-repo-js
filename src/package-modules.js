@@ -297,9 +297,25 @@ async function createPackageForRef(url, moduleDir, ref, options) {
   }
   filesInZip.sort((a, b) => ('' + a.filepath).localeCompare('' + b.filepath));
 
-  await writePackage(packageFilepath, filesInZip)
+  if (! isInAdditionalPackages(composerConfig.name, composerConfig.version)) await writePackage(packageFilepath, filesInZip)
   
   return packageWithVersion;
+}
+
+function isInAdditionalPackages(name, version) {
+  const dir = `${__dirname}/../resource/additional-packages`;
+
+  const [vendorName, packageName] = name.split('/')
+
+  const {groups} = version.match(/^(?<mainVersion>[0-9.]+)(?:-p(?<patchVersion>[0-9]+))?$/)
+  const {mainVersion, patchVersion} = groups
+
+  const baseName = path.join(dir, `${vendorName}-${packageName}-${mainVersion}`)
+  const fileNames = patchVersion
+    ? [`${baseName}-p${patchVersion}.zip`, `${baseName}-patch${patchVersion}.zip`]
+    : [`${baseName}.zip`]
+
+  return fileNames.some(fs.existsSync)
 }
 
 /**
@@ -440,8 +456,8 @@ async function createMagentoCommunityEditionMetapackage(url, ref, options) {
 
     return (transform && transform[name] || []).reduce((config, transformFn) => transformFn(config), composerConfig);
   }, release || version);
-  
-  await writePackage(packageFilepath, files);
+
+  if (! isInAdditionalPackages(name, version)) await writePackage(packageFilepath, files)
   
   return {[name]: version};
 }
@@ -499,8 +515,8 @@ async function createMagentoCommunityEditionProject(url, ref, options) {
       isExecutable: false,
     })
   }
-  
-  await writePackage(packageFilepath, files)
+
+  if (! isInAdditionalPackages(name, version)) await writePackage(packageFilepath, files)
 
   return {[name]: version}
 }
@@ -559,7 +575,7 @@ async function createMetaPackageFromRepoDir(url, dir, ref, options) {
   }];
 
   const packageFilepath = archiveFilePath(name, version);
-  await writePackage(packageFilepath, files)
+  if (! isInAdditionalPackages(composerConfig.name, composerConfig.version)) await writePackage(packageFilepath, files)
 
   return {[name]: version}
 }
