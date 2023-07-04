@@ -254,10 +254,10 @@ const mirrorBuildConfig = {
     }
   },
   // Disable temporarily since it seems to cause a lot of breakage
-  // 'composer': {
-  //   repoUrl: 'https://github.com/mage-os/mirror-composer.git',
-  //   fromTag: '1.0.0',
-  // },
+  'composer': {
+    repoUrl: 'https://github.com/mage-os/mirror-composer.git',
+    fromTag: '1.0.0',
+  },
   'composer-root-update-plugin': {
     repoUrl: 'https://github.com/mage-os/mirror-composer-root-update-plugin.git',
     fromTag: '1.0.0',
