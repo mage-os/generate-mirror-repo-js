@@ -68,15 +68,14 @@ const branchBuildConfig = {
     repoUrl: 'https://github.com/mage-os/mageos-commerce-data-export.git',
     ref: 'main'
   },
-  // Keep disabled until repos exist and are integrated into the upstream synchronization process
-  // 'magento-coding-standard': {
-  //   repoUrl: 'https://github.com/mage-os/mageos-magento-coding-standard.git',
-  //   ref: 'develop'
-  // },
-  // 'magento2-functional-testing-framework': {
-  //   repoUrl: 'https://github.com/mage-os/mageos-magento2-functional-testing-framework.git',
-  //   ref: 'develop'
-  // },
+  'magento-coding-standard': {
+    repoUrl: 'https://github.com/mage-os/mageos-magento-coding-standard.git',
+    ref: 'develop'
+  },
+  'magento2-functional-testing-framework': {
+    repoUrl: 'https://github.com/mage-os/mageos-magento2-functional-testing-framework.git',
+    ref: 'develop'
+  },
 };
 
 module.exports = {
