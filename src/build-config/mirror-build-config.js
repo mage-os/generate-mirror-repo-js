@@ -261,9 +261,6 @@ const mirrorBuildConfig = {
   'composer-root-update-plugin': {
     repoUrl: 'https://github.com/mage-os/mirror-composer-root-update-plugin.git',
     fromTag: '1.0.0',
-    // Skip tag 2.0.3 until the expected release date of 2.4.6 because it probably was tagged by accident in upstream
-    // See issue https://github.com/magento/composer-root-update-plugin/issues/37
-    //skipTags: {'2.0.3': () => (new Date('2023-03-14')).getTime() < Date.now()},
   },
   'composer-dependency-version-audit-plugin': {
     repoUrl: 'https://github.com/mage-os/mirror-composer-dependency-version-audit-plugin.git',
@@ -276,15 +273,14 @@ const mirrorBuildConfig = {
     repoUrl: 'https://github.com/mage-os/mirror-magento2-sample-data.git',
     fromTag: '2.3.7-p3',
   },
-  // Keep disabled until the mirror repos exist and are integrated into the upstream synchronization process
-  // 'magento-coding-standard': {
-  //   repoUrl: 'https://github.com/mage-os/mirror-magento-coding-standard.git',
-  //   fromTag: '1.0.0'
-  // },
-  // 'magento2-functional-testing-framework': {
-  //   repoUrl: 'https://github.com/mage-os/mirror-magento2-functional-testing-framework.git',
-  //   fromTag: '1.0.0'
-  // },
+  'magento-coding-standard': {
+    repoUrl: 'https://github.com/mage-os/mirror-magento-coding-standard.git',
+    fromTag: '1.0.0',
+  },
+  'magento2-functional-testing-framework': {
+    repoUrl: 'https://github.com/mage-os/mirror-magento2-functional-testing-framework.git',
+    fromTag: '1.0.0',
+  },
 }
 
 module.exports = {
