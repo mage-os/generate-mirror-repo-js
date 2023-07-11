@@ -282,6 +282,34 @@ const mirrorBuildConfig = {
     repoUrl: 'https://github.com/mage-os/mirror-magento2-functional-testing-framework.git',
     fromTag: '1.0.0',
   },
+  'magento-zend-db': {
+    repoUrl: 'https://github.com/mage-os/mirror-magento-zend-db.git',
+    fromTag: '1.16.0'
+  },
+  'magento-zend-loader': {
+    repoUrl: 'https://github.com/mage-os/mirror-magento-zend-loader.git',
+    fromTag: '1.16.0'
+  },
+  'magento-zend-pdf': {
+    repoUrl: 'https://github.com/mage-os/mirror-magento-zend-pdf.git',
+    fromTag: '1.16.0'
+  },
+  'magento-zend-cache': {
+    repoUrl: 'https://github.com/mage-os/mirror-magento-zend-cache.git',
+    fromTag: '1.16.0'
+  },
+  'magento-zend-exception': {
+    repoUrl: 'https://github.com/mage-os/mirror-magento-zend-exception.git',
+    fromTag: '1.16.0'
+  },
+  'magento-zend-log': {
+    repoUrl: 'https://github.com/mage-os/mirror-magento-zend-log.git',
+    fromTag: '1.16.0'
+  },
+  'magento-zend-memory': {
+    repoUrl: 'https://github.com/mage-os/mirror-magento-zend-memory.git',
+    fromTag: '1.16.0'
+  },
 }
 
 module.exports = {

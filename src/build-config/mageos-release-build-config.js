@@ -37,11 +37,10 @@ const releaseBuildConfig = {
     repoUrl: 'https://github.com/mage-os/mageos-magento-composer-installer.git',
     ref: 'master',
   },
-  // Keep disabled until repo exists and is integrated into upstream synchronization process
-  // 'composer': {
-  //   repoUrl: 'https://github.com/mage-os/mageos-composer.git',
-  //   ref: 'develop',
-  // },
+  'composer': {
+    repoUrl: 'https://github.com/mage-os/mageos-composer.git',
+    ref: 'develop',
+  },
   'composer-root-update-plugin': {
     repoUrl: 'https://github.com/mage-os/mageos-composer-root-update-plugin.git',
     ref: 'develop',
@@ -54,15 +53,42 @@ const releaseBuildConfig = {
     repoUrl: 'https://github.com/mage-os/mageos-magento2-sample-data.git',
     ref: '2.4-develop',
   },
-  // Keep disabled until repos exist and are integrated into the upstream synchronization process
-  // 'magento-coding-standard': {
-  //   repoUrl: 'https://github.com/mage-os/mageos-magento-coding-standard.git',
-  //   ref: 'develop'
-  // },
-  // 'magento2-functional-testing-framework': {
-  //   repoUrl: 'https://github.com/mage-os/mageos-magento2-functional-testing-framework.git',
-  //   ref: 'develop'
-  // },
+  'magento-coding-standard': {
+    repoUrl: 'https://github.com/mage-os/mageos-magento-coding-standard.git',
+    ref: 'develop'
+  },
+  'magento2-functional-testing-framework': {
+    repoUrl: 'https://github.com/mage-os/mageos-magento2-functional-testing-framework.git',
+    ref: 'develop'
+  },
+  'magento-zend-db': {
+    repoUrl: 'https://github.com/mage-os/mageos-magento-zend-db.git',
+    ref: 'main'
+  },
+  'magento-zend-loader': {
+    repoUrl: 'https://github.com/mage-os/mageos-magento-zend-loader.git',
+    ref: 'main'
+  },
+  'magento-zend-pdf': {
+    repoUrl: 'https://github.com/mage-os/mageos-magento-zend-pdf.git',
+    ref: 'main'
+  },
+  'magento-zend-cache': {
+    repoUrl: 'https://github.com/mage-os/mageos-magento-zend-cache.git',
+    ref: 'main'
+  },
+  'magento-zend-exception': {
+    repoUrl: 'https://github.com/mage-os/mageos-magento-zend-exception.git',
+    ref: 'main'
+  },
+  'magento-zend-log': {
+    repoUrl: 'https://github.com/mage-os/mageos-magento-zend-log.git',
+    ref: 'main'
+  },
+  'magento-zend-memory': {
+    repoUrl: 'https://github.com/mage-os/mageos-magento-zend-memory.git',
+    ref: 'main'
+  },
 };
 
 module.exports = {

@@ -486,9 +486,9 @@ async function createMagentoCommunityEditionMetapackage(url, ref, options) {
     return (transform && transform[packageName] || []).reduce((config, transformFn) => transformFn(config), composerConfig);
   }, release || version);
 
-  if (! isInAdditionalPackages(name, version)) await writePackage(packageFilepath, files)
+  if (! isInAdditionalPackages(packageName, version)) await writePackage(packageFilepath, files)
 
-  return {[name]: version};
+  return {[packageName]: version};
 }
 
 async function determineMagentoCommunityEditionProject(url, ref, release) {

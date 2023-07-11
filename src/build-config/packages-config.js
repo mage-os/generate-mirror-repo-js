@@ -284,4 +284,88 @@ module.exports = {
     ],
     packageMetaFromDirs: [],
   },
+  'magento-zend-db': {
+    repoUrl: 'https://github.com/mage-os/mirror-magento-zend-db.git',
+
+    packageDirs: [],
+    packageIndividual: [
+      {
+        label: 'Magento fork of Zend_Db',
+        dir: ''
+      }
+    ],
+    packageMetaFromDirs: [],
+  },
+  'magento-zend-loader': {
+    repoUrl: 'https://github.com/mage-os/mirror-magento-zend-loader.git',
+
+    packageDirs: [],
+    packageIndividual: [
+      {
+        label: 'Magento fork of Zend_Loader',
+        dir: ''
+      }
+    ],
+    packageMetaFromDirs: [],
+  },
+  'magento-zend-pdf': {
+    repoUrl: 'https://github.com/mage-os/mirror-magento-zend-pdf.git',
+
+    packageDirs: [],
+    packageIndividual: [
+      {
+        label: 'Magento fork of Zend_Pdf',
+        dir: ''
+      }
+    ],
+    packageMetaFromDirs: [],
+  },
+  'magento-zend-cache': {
+    repoUrl: 'https://github.com/mage-os/mirror-magento-zend-cache.git',
+
+    packageDirs: [],
+    packageIndividual: [
+      {
+        label: 'Magento fork of Zend_Cache',
+        dir: ''
+      }
+    ],
+    packageMetaFromDirs: [],
+  },
+  'magento-zend-exception': {
+    repoUrl: 'https://github.com/mage-os/mirror-magento-zend-exception.git',
+
+    packageDirs: [],
+    packageIndividual: [
+      {
+        label: 'Magento fork of Zend_Exception',
+        dir: ''
+      }
+    ],
+    packageMetaFromDirs: [],
+  },
+  'magento-zend-log': {
+    repoUrl: 'https://github.com/mage-os/mirror-magento-zend-log.git',
+
+    packageDirs: [],
+    packageIndividual: [
+      {
+        label: 'Magento fork of Zend_Log',
+        dir: ''
+      }
+    ],
+    packageMetaFromDirs: [],
+  },
+  'magento-zend-memory': {
+    repoUrl: 'https://github.com/mage-os/mirror-magento-zend-memory.git',
+
+    packageDirs: [],
+    packageIndividual: [
+      {
+        label: 'Magento fork of Zend_Memory',
+        dir: ''
+      }
+    ],
+    packageMetaFromDirs: [],
+  },
 };
