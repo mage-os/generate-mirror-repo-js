@@ -24,7 +24,7 @@ module.exports = {
           }
           return !ref.startsWith('2.4.0') && (file === '.github' || file.startsWith('.github/'));
         }, (ref, file) => {
-          const releasesWithoutGitIgnore = ['2.4.1', '2.4.1-p1', '2.4.2', '2.4.4-p3', '2.4.5-p2', '2.4.6'];
+          const releasesWithoutGitIgnore = ['2.4.1', '2.4.1-p1', '2.4.2', '2.4.4-p3', '2.4.4-p4', '2.4.5-p2', '2.4.5-p3', '2.4.6', '2.4.6-p1'];
           if (typeof file === "undefined") {
             return releasesWithoutGitIgnore.includes(ref) ? '.gitignore' : '';
           }
@@ -189,6 +189,18 @@ module.exports = {
     ],
     packageMetaFromDirs: [],
   },
+  'composer': {
+    repoUrl: 'https://github.com/mage-os/mirror-composer.git',
+
+    packageDirs: [],
+    packageIndividual: [
+      {
+        label: 'Magento Composer',
+        dir: '',
+      }
+    ],
+    packageMetaFromDirs: [],
+  },
   'composer-root-update-plugin': {
     repoUrl: 'https://github.com/mage-os/mirror-composer-root-update-plugin.git',
 
@@ -247,5 +259,29 @@ module.exports = {
         dir: '_metapackage',
       }
     ],
-  }
+  },
+  'magento-coding-standard': {
+    repoUrl: 'https://github.com/mage-os/mirror-magento-coding-standard.git',
+
+    packageDirs: [],
+    packageIndividual: [
+      {
+        label: 'Magento Coding Standard',
+        dir: ''
+      }
+    ],
+    packageMetaFromDirs: [],
+  },
+  'magento2-functional-testing-framework': {
+    repoUrl: 'https://github.com/mage-os/mirror-magento2-functional-testing-framework.git',
+
+    packageDirs: [],
+    packageIndividual: [
+      {
+        label: 'Magento2 Functional Testing Framework',
+        dir: ''
+      }
+    ],
+    packageMetaFromDirs: [],
+  },
 };

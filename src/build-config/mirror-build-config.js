@@ -1,4 +1,3 @@
-
 const packagesConfig = require('./packages-config');
 const {mergeBuildConfigs} = require('../utils');
 
@@ -7,19 +6,24 @@ const mirrorBuildConfig = {
     repoUrl: 'https://github.com/mage-os/mirror-magento2.git',
     fromTag: '2.3.7-p2',
     fixVersions: {
-      // Upstream correctly sets the module version to 100.3.7-p3 in the git tag, but in the actual upstream 2.3.7-p3
-      // release they used 100.3.7 as the dependency.
-      '2.3.7-p3': {
-        // The result of this configuration is that anywhere the module magento/module-bundle is referenced, the version
-        // 100.3.7 is used, both for building the package and when it is referenced as a dependency.
-        'magento/module-bundle': '100.3.7'
-      },
-
       // Upstream doesn't have tag 2.1.2. It does have a branch with that name but the metapackage is incorrect.
       // See https://github.com/magento/adobe-stock-integration/issues/1871
       '2.4.3': {
         'magento/adobe-stock-integration': '2.1.2'
       }
+    },
+    transform: {
+      // Upstream correctly sets the module version to 100.3.7-p3 in the git tag, but in the actual upstream 2.3.7-p3
+      // release they used 100.3.7 as the dependency.
+      'magento/product-community-edition': [
+        composerJson => {
+          const patch = composerJson.version === '2.3.7-p3'
+            ? {'magento/module-bundle': '100.3.7'}
+            : {}
+          composerJson.require = {...composerJson.require, ...patch}
+          return composerJson;
+        }
+      ]
     }
   },
   'security-package': {
@@ -47,6 +51,8 @@ const mirrorBuildConfig = {
     repoUrl: 'https://github.com/mage-os/mirror-magento2-page-builder.git',
     fromTag: '1.7.0',
     fixVersions: {
+      // Metapackage is missing the pinned versions and also versions in the
+      // tagged release for module-page-builder-admin-analytics, module-page-builder-analytics and module-page-builder
       '1.7.0': {
         'magento/module-page-builder':                   '2.2.1',
         'magento/module-aws-s3-page-builder':            '1.0.1',
@@ -55,15 +61,17 @@ const mirrorBuildConfig = {
         'magento/module-page-builder-admin-analytics':   '1.1.1',
         'magento/module-page-builder-analytics':         '1.6.1',
       },
-      '1.7.0-p1': {
-        'magento/module-page-builder':                   '2.2.1-p1',
+      '1.7.0-p1': { // required by 2.4.3-p1
+        'magento/module-page-builder':                   '2.2.1-p1', // won't be written as it is in additional-packages
         'magento/module-aws-s3-page-builder':            '1.0.1-p1',
         'magento/module-catalog-page-builder-analytics': '1.6.1-p1',
         'magento/module-cms-page-builder-analytics':     '1.6.1-p1',
         'magento/module-page-builder-admin-analytics':   '1.1.1-p1',
         'magento/module-page-builder-analytics':         '1.6.1-p1',
+        // phpgt/dom is pinned as 2.2.1 in the tagged release, but the upstream package requires 2.1.6
+        'phpgt/dom':                                     '2.1.6',
       }
-    }
+    },
   },
   'adobe-ims': {
     repoUrl: 'https://github.com/mage-os/mirror-adobe-ims.git',
@@ -72,6 +80,102 @@ const mirrorBuildConfig = {
   'adobe-stock-integration': {
     repoUrl: 'https://github.com/mage-os/mirror-adobe-stock-integration.git',
     fromTag: '1.0.0',
+    transform: {
+      // require wildcard versions to match upstream release
+      'magento/adobe-stock-integration': [
+        composerJson => {
+          const patch = composerJson.version === '1.0.3-p2'
+            ? {
+              'magento/module-adobe-stock-asset':          '1.0.*',
+              'magento/module-adobe-stock-asset-api':      '1.0.*',
+              'magento/module-adobe-stock-image':          '1.0.*',
+              'magento/module-adobe-stock-image-admin-ui': '1.0.*',
+              'magento/module-adobe-stock-image-api':      '1.0.*',
+              'magento/module-adobe-stock-client':         '1.0.*',
+              'magento/module-adobe-stock-client-api':     '1.0.*',
+              'magento/module-adobe-stock-admin-ui':       '1.0.*',
+              'magento/module-adobe-ims':                  '1.0.*',
+              'magento/module-adobe-ims-api':              '1.0.*'
+            }
+            : {}
+          composerJson.require = {...composerJson.require, ...patch}
+          return composerJson;
+        }
+      ],
+      'magento/module-adobe-ims': [
+        composerJson => {
+          const patch = composerJson.version === '1.0.2-p1'
+            ? {'magento/module-adobe-ims-api': '1.0.*',}
+            : {}
+          composerJson.require = {...composerJson.require, ...patch}
+          return composerJson;
+        }
+      ],
+      'magento/module-adobe-stock-admin-ui': [
+        composerJson => {
+          const patch = composerJson.version === '1.0.2-p1'
+            ? {
+               'magento/module-adobe-ims-api':           '1.0.*',
+                'magento/module-adobe-stock-client-api': '1.0.*'
+              }
+            : {}
+          composerJson.require = {...composerJson.require, ...patch}
+          return composerJson;
+        }
+      ],
+      'magento/module-adobe-stock-asset': [
+        composerJson => {
+          const patch = composerJson.version === '1.0.2-p1'
+            ? {
+              'magento/module-adobe-stock-asset-api':  '1.0.*',
+              'magento/module-adobe-stock-client-api': '1.0.*',
+            }
+            : {}
+          composerJson.require = {...composerJson.require, ...patch}
+          return composerJson;
+        }
+      ],
+      'magento/module-adobe-stock-client': [
+        composerJson => {
+          const patch = composerJson.version === '1.0.2-p1'
+            ? {
+              'magento/module-adobe-ims-api':          '1.0.*',
+              'magento/module-adobe-stock-client-api': '1.0.*',
+            }
+            : {}
+          composerJson.require = {...composerJson.require, ...patch}
+          return composerJson;
+        }
+      ],
+      'magento/module-adobe-stock-image': [
+        composerJson => {
+          const patch = composerJson.version === '1.0.2-p2'
+            ? {
+              'magento/module-adobe-stock-client-api': '1.0.*',
+              'magento/module-adobe-stock-asset-api':  '1.0.*',
+              'magento/module-adobe-stock-image-api':  '1.0.*',
+            }
+            : {}
+          composerJson.require = {...composerJson.require, ...patch}
+          return composerJson;
+        }
+      ],
+      'magento/module-adobe-stock-image-admin-ui': [
+        composerJson => {
+          const patch = composerJson.version === '1.0.3-p2'
+            ? {
+              'magento/module-adobe-ims':              '1.0.*',
+              'magento/module-adobe-ims-api':          '1.0.*',
+              'magento/module-adobe-stock-asset-api':  '1.0.*',
+              'magento/module-adobe-stock-image-api':  '1.0.*',
+              'magento/module-adobe-stock-client-api': '1.0.*',
+            }
+            : {}
+          composerJson.require = {...composerJson.require, ...patch}
+          return composerJson;
+        }
+      ],
+    },
     fixVersions: {
       '1.0.3-p2': {
         // Upstream release ships with these deps, but in the tagged release * dependencies are used in the metapackage
@@ -83,6 +187,19 @@ const mirrorBuildConfig = {
         'magento/module-adobe-stock-client':         '1.0.2-p1',
         'magento/module-adobe-stock-client-api':     '1.0.2-p1',
         'magento/module-adobe-stock-image-api':      '1.0.2-p1',
+        'magento/module-adobe-stock-image':          '1.0.2-p2',
+        'magento/module-adobe-stock-image-admin-ui': '1.0.3-p2',
+      },
+      '1.0.3-p3': {
+        // Upstream release ships with these deps, but in the tagged release * dependencies are used in the metapackage
+        'magento/module-adobe-ims':                  '1.0.2',
+        'magento/module-adobe-ims-api':              '1.0.2',
+        'magento/module-adobe-stock-admin-ui':       '1.0.2',
+        'magento/module-adobe-stock-asset':          '1.0.2',
+        'magento/module-adobe-stock-asset-api':      '1.0.2',
+        'magento/module-adobe-stock-client':         '1.0.2',
+        'magento/module-adobe-stock-client-api':     '1.0.2',
+        'magento/module-adobe-stock-image-api':      '1.0.2',
         'magento/module-adobe-stock-image':          '1.0.2-p2',
         'magento/module-adobe-stock-image-admin-ui': '1.0.3-p2',
       },
@@ -99,13 +216,13 @@ const mirrorBuildConfig = {
       },
       '2.1.2-p1': {
         // Metapackage missing pinned versions.
-        'magento/module-adobe-stock-admin-ui':       '1.3.0-p1',
-        'magento/module-adobe-stock-asset':          '1.3.0-p1',
-        'magento/module-adobe-stock-asset-api':      '2.0.0-p1',
-        'magento/module-adobe-stock-client-api':     '2.1.0-p1',
-        'magento/module-adobe-stock-image-api':      '1.3.0-p1',
+        'magento/module-adobe-stock-admin-ui':   '1.3.0-p1',
+        'magento/module-adobe-stock-asset':      '1.3.0-p1',
+        'magento/module-adobe-stock-asset-api':  '2.0.0-p1',
+        'magento/module-adobe-stock-client-api': '2.1.0-p1',
+        'magento/module-adobe-stock-image-api':  '1.3.0-p1',
 
-        // Files are different in version control.
+        // Files are different in version control than in upstream package from repo.magento.com.
         'magento/module-adobe-stock-client':         '1.3.1-p1',
         'magento/module-adobe-stock-image':          '1.3.1-p1',
         'magento/module-adobe-stock-image-admin-ui': '1.3.1-p1',
@@ -115,13 +232,36 @@ const mirrorBuildConfig = {
   'magento-composer-installer': {
     repoUrl: 'https://github.com/mage-os/mirror-magento-composer-installer.git',
     fromTag: '0.1.4',
+    // The composer.json is missing the version in all tagged releases
+    fixVersions: {
+      '0.1.10': {'magento/magento-composer-installer': '0.1.10'},
+      '0.1.11': {'magento/magento-composer-installer': '0.1.11'},
+      '0.1.12': {'magento/magento-composer-installer': '0.1.12'},
+      '0.1.13': {'magento/magento-composer-installer': '0.1.13'},
+      '0.1.4': {'magento/magento-composer-installer': '0.1.4'},
+      '0.1.5': {'magento/magento-composer-installer': '0.1.5'},
+      '0.1.6': {'magento/magento-composer-installer': '0.1.6'},
+      '0.1.7': {'magento/magento-composer-installer': '0.1.7'},
+      '0.1.8': {'magento/magento-composer-installer': '0.1.8'},
+      '0.1.9': {'magento/magento-composer-installer': '0.1.9'},
+      '0.2.0': {'magento/magento-composer-installer': '0.2.0'},
+      '0.2.1': {'magento/magento-composer-installer': '0.2.1'},
+      '0.2.1-beta1': {'magento/magento-composer-installer': '0.2.1-beta1'},
+      '0.3.0': {'magento/magento-composer-installer': '0.3.0'},
+      '0.3.0-beta.1': {'magento/magento-composer-installer': '0.3.0-beta.1'},
+      '0.4.0': {'magento/magento-composer-installer': '0.4.0'},
+      '0.4.0-beta1': {'magento/magento-composer-installer': '0.4.0-beta1'},
+      '0.4.0-beta2': {'magento/magento-composer-installer': '0.4.0-beta2'},
+    }
+  },
+  // Disable temporarily since it seems to cause a lot of breakage
+  'composer': {
+    repoUrl: 'https://github.com/mage-os/mirror-composer.git',
+    fromTag: '1.0.0',
   },
   'composer-root-update-plugin': {
     repoUrl: 'https://github.com/mage-os/mirror-composer-root-update-plugin.git',
     fromTag: '1.0.0',
-    // Skip tag 2.0.3 until the expected release date of 2.4.6 because it probably was tagged by accident in upstream
-    // See issue https://github.com/magento/composer-root-update-plugin/issues/37
-    //skipTags: {'2.0.3': () => (new Date('2023-03-14')).getTime() < Date.now()},
   },
   'composer-dependency-version-audit-plugin': {
     repoUrl: 'https://github.com/mage-os/mirror-composer-dependency-version-audit-plugin.git',
@@ -133,7 +273,15 @@ const mirrorBuildConfig = {
   'magento2-sample-data': {
     repoUrl: 'https://github.com/mage-os/mirror-magento2-sample-data.git',
     fromTag: '2.3.7-p3',
-  }
+  },
+  'magento-coding-standard': {
+    repoUrl: 'https://github.com/mage-os/mirror-magento-coding-standard.git',
+    fromTag: '1.0.0',
+  },
+  'magento2-functional-testing-framework': {
+    repoUrl: 'https://github.com/mage-os/mirror-magento2-functional-testing-framework.git',
+    fromTag: '1.0.0',
+  },
 }
 
 module.exports = {

@@ -48,6 +48,11 @@ const branchBuildConfig = {
     repoUrl: 'https://github.com/mage-os/mageos-magento-composer-installer.git',
     ref: 'master',
   },
+  // Keep disabled until repo is set up and integrated into upstream synchronization
+  // 'composer': {
+  //   repoUrl: 'https://github.com/mage-os/mageos-composer.git',
+  //   ref: 'develop',
+  // },
   'composer-root-update-plugin': {
     repoUrl: 'https://github.com/mage-os/mageos-composer-root-update-plugin.git',
     ref: 'develop',
@@ -63,7 +68,15 @@ const branchBuildConfig = {
   'commerce-data-export': {
     repoUrl: 'https://github.com/mage-os/mageos-commerce-data-export.git',
     ref: 'main'
-  }
+  },
+  'magento-coding-standard': {
+    repoUrl: 'https://github.com/mage-os/mageos-magento-coding-standard.git',
+    ref: 'develop'
+  },
+  'magento2-functional-testing-framework': {
+    repoUrl: 'https://github.com/mage-os/mageos-magento2-functional-testing-framework.git',
+    ref: 'develop'
+  },
 };
 
 module.exports = {
