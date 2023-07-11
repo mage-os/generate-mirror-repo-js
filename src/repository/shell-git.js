@@ -135,7 +135,7 @@ async function listFileNames(repoDir, path, excludes) {
 
 }
 
-async function createBranch(url, branch) {
+async function createBranch(url, branch, ref) {
   const dir = fullRepoPath(url);
 
   clearWorkingCopyStat(dir)
@@ -147,7 +147,7 @@ async function createBranch(url, branch) {
     }
 
     console.log(`checking out ${branch} (creating new branch)`)
-    await exec(`git checkout --force --quiet -b ${branch}`, {cwd: dir})
+    await exec(`git checkout --force --quiet -b ${branch} ${ref}`, {cwd: dir})
   }
 
   return dir;
@@ -196,9 +196,10 @@ module.exports = {
     validateRefIsSecure(ref);
     return initRepo(url, ref);
   },
-  async createBranch(url, branch) {
+  async createBranch(url, branch, ref) {
+    validateBranchIsSecure(ref);
     validateBranchIsSecure(branch);
-    return createBranch(url, branch);
+    return createBranch(url, branch, ref);
   },
   async createTagForRef(url, ref, tag, details) {
     validateRefIsSecure(ref);
