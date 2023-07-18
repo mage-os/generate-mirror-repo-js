@@ -10,3 +10,5 @@
 # unignored files
 !/satis.json
 !/LICENSE
+!/mageos.html.twig
+!/package.json

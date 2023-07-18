@@ -8,5 +8,6 @@
       "url": "/build/packages"
     }
   ],
-  "require-all": true
+  "require-all": true,
+  "twig-template": "views/mageos.html.twig"
 }
