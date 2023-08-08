@@ -85,6 +85,16 @@ cd /satis
   cp /generate-repo/satis.json /tmp/satis.json   
 }
 
+# Add generator version number to Satis HTML
+cp /generate-repo/mageos.html.twig ./views/mageos.html.twig
+
+GENERATOR_VERSION=$(cat /generate-repo/package.json \
+  | grep version \
+  | head -1 \
+  | awk -F: '{ print $2 }' \
+  | sed 's/[",]//g')
+
+printf "%s" "$GENERATOR_VERSION" > ./views/version
 
 # Build satis into /build
 /satis/bin/satis build /tmp/satis.json /build
