@@ -239,7 +239,7 @@ module.exports = {
   async prepRelease(releaseVersion, vendor, instruction, replaceVersionMap) {
     const {ref, repoUrl} = instruction
 
-    const workBranch = `prep/${vendor}-release-${releaseVersion}`;
+    const workBranch = `prep-release/${vendor}-${releaseVersion}`;
 
     const workingCopyPath = await repo.pull(repoUrl, ref);
     await repo.createBranch(repoUrl, workBranch, ref);
