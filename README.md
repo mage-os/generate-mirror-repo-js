@@ -108,6 +108,17 @@ chmod +x /usr/local/bin/php-classes.phar
 
 Check the corresponding workflows in `.github/workflows` for details on how to run the generation.
 
+## Generating custom releases based on Mage-OS
+
+Currently, the manual generation approach needs to be used to create custom releases.  
+Two things are required:
+
+* Specify a custom vendor name using the `--mageosVendor=extreme-commerce` option
+* Provide custom meta-package dependency templates in `resource/composer-templates/{vendor-name}/`  
+  See the existing ones in `resource/composer-templates/mage-os` for examples.  
+  In future it will be possible to specify the composer-templates path with a command line argument.
+
+
 ## Building the docker image
 
 ```bash
