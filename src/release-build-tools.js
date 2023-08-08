@@ -174,11 +174,8 @@ function updateComposerConfigFromMagentoToMageOs(composerConfig, releaseVersion,
   updateComposerPluginConfigForMageOs(composerConfig, vendor)
 }
 
-async function prepPackageForRelease({label, dir}, repoUrl, ref, releaseVersion, replaceVersionMap, workingCopyPath) {
+async function prepPackageForRelease({label, dir}, repoUrl, ref, releaseVersion, vendor, replaceVersionMap, workingCopyPath) {
   console.log(`Preparing ${label}`);
-
-  // todo: pass vendor as argument
-  const vendor = 'mage-os';
 
   const composerConfig = JSON.parse(await readComposerJson(repoUrl, dir, ref))
   updateComposerConfigFromMagentoToMageOs(composerConfig, releaseVersion, replaceVersionMap, vendor)
@@ -239,10 +236,10 @@ module.exports = {
     await installSampleData(dir)
     return getInstalledPackageMap(dir)
   },
-  async prepRelease(releaseVersion, instruction, replaceVersionMap) {
+  async prepRelease(releaseVersion, vendor, instruction, replaceVersionMap) {
     const {ref, repoUrl} = instruction
 
-    const workBranch = `work-in-progress-release-prep-${releaseVersion}`;
+    const workBranch = `prep/${vendor}-release-${releaseVersion}`;
 
     const workingCopyPath = await repo.pull(repoUrl, ref);
     await repo.createBranch(repoUrl, workBranch, ref);
@@ -276,16 +273,16 @@ module.exports = {
           'label': `${composerJson.name} (part of ${packageDirInstruction.label})`,
           'dir': childPackageDir
         }
-        await prepPackageForRelease(instruction, repoUrl, workBranch, releaseVersion, replaceVersionMap, workingCopyPath);
+        await prepPackageForRelease(instruction, repoUrl, workBranch, releaseVersion, vendor, replaceVersionMap, workingCopyPath);
       }
     }
 
     for (const individualInstruction of (instruction.packageIndividual || [])) {
-      await prepPackageForRelease(individualInstruction, repoUrl, workBranch, releaseVersion, replaceVersionMap, workingCopyPath);
+      await prepPackageForRelease(individualInstruction, repoUrl, workBranch, releaseVersion, vendor, replaceVersionMap, workingCopyPath);
     }
 
     for (const packageDirInstruction of (instruction.packageMetaFromDirs || [])) {
-      await prepPackageForRelease(packageDirInstruction, repoUrl, workBranch, releaseVersion, replaceVersionMap, workingCopyPath)
+      await prepPackageForRelease(packageDirInstruction, repoUrl, workBranch, releaseVersion, vendor, replaceVersionMap, workingCopyPath)
     }
 
     if (instruction.magentoCommunityEditionMetapackage) {
@@ -297,16 +294,15 @@ module.exports = {
         'label': 'Mage-OS Community Edition Product Metapackage',
         'dir': ''
       }
-      await prepPackageForRelease(instruction, repoUrl, workBranch, releaseVersion, replaceVersionMap, workingCopyPath)
+      await prepPackageForRelease(instruction, repoUrl, workBranch, releaseVersion, vendor, replaceVersionMap, workingCopyPath)
     }
 
     return workBranch
   },
 
-  async processBuildInstructions(mageosRelease, instruction, upstreamVersionMap) {
+  async processBuildInstructions(mageosRelease, vendor, instruction, upstreamVersionMap) {
     const dependencyVersions = {'*': mageosRelease}
     const fallbackVersion = mageosRelease
-    const vendor = 'mage-os' // todo: make vendor an argument
 
     const packages = {} // record generated packages with versions
 

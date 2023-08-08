@@ -17,7 +17,7 @@ const {
 const {buildConfig: releaseInstructions} = require('./../build-config/mageos-release-build-config');
 
 const options = parseOptions(
-  `$outputDir $gitRepoDir $repoUrl $mageosRelease $upstreamRelease @help|h`,
+  `$outputDir $gitRepoDir $repoUrl $mageosVendor $mageosRelease $upstreamRelease @help|h`,
   process.argv
 );
 
@@ -32,6 +32,7 @@ Options:
   --outputDir=       Dir to contain the built packages (default: packages)
   --gitRepoDir=      Dir to clone repositories into (default: repositories)
   --repoUrl=         Composer repository URL to use in base package (default: https://repo.mage-os.org/)
+  --mageosVendor=    Composer release vendor-name (default: mage-os)
   --mageosRelease=   Target Mage-OS release version
   --upstreamRelease= Upstream Magento Open Source release to use for package compatibility
 `);
@@ -50,6 +51,7 @@ if (options.repoUrl) {
 }
 
 const mageosRelease = options.mageosRelease || ''
+const mageosVendor = options.mageosVendor || 'mage-os'
 const upstreamRelease = options.upstreamRelease || ''
 
 validateVersionString(mageosRelease, 'mageosRelease');
@@ -64,12 +66,12 @@ upstreamRelease && validateVersionString(upstreamRelease, 'upstreamRelease');
 
     for (const instruction of releaseInstructions) {
 
-      const workBranch = await prepRelease(mageosRelease, instruction, upstreamVersionMap)
+      const workBranch = await prepRelease(mageosRelease, mageosVendor, instruction, upstreamVersionMap)
 
       // TODO: maybe commit prepped branch and tag as mageosRelease?
 
       const releaseInstructions = {...instruction, ref: workBranch}
-      await processBuildInstructions(mageosRelease, releaseInstructions, upstreamVersionMap)
+      await processBuildInstructions(mageosRelease, mageosVendor, releaseInstructions, upstreamVersionMap)
 
       // TODO: maybe push commit and tag to repoUrl? Maybe leave that as a manual step?
     }
