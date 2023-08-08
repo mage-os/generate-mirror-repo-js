@@ -72,7 +72,12 @@ jobs:
         name: "Configure satis repository URL so composer knows where to download packages from"
       - run: cat <<< $(jq '."output-dir" = "../build" | .repositories[0].url = "../build/packages"' /tmp/satis.json) > /tmp/satis.json
         name: "Tell satis where to find the generated packages"
+      - run: |
+          cp mageos.html.twig satis/views/mageos.html.twig
+          jq -r .version package.json > satis/views/version
+        name: "Add generator version number to Satis HTML"
       - run: cd satis && bin/satis build /tmp/satis.json ../build && cd -
+        name: "Run satis"
       - run: cd satis && node ../bin/set-satis-output-url-prefix.js --satisOutputDir=../build --repoUrl="${{ env.repo }}" && cd -
         name: "Fix path to packages in the packages.json satis created"
 
