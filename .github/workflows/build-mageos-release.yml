@@ -42,10 +42,14 @@ jobs:
   deploy:
     uses: ./.github/workflows/deploy.yml
     with:
-      repo: ${{ inputs.repo || 'https://preview-repo.mage-os.org' }}
-      remote_dir: ${{ inputs.remote_dir || '/var/www/preview-repo.mage-os.org/html/' }}
+      repo: ${{ inputs.repo }}
+      remote_dir: ${{ inputs.remote_dir }}
       entrypoint: src/make/mageos-release.js
       delete: true
+      mageos_release: ${{ inputs.mageos_release }}
+      upstream_release: ${{ inputs.upstream_release }}
+      publish_tag: ${{ inputs.publish_tag }}
+
     secrets:
       SERVER_SSH_KEY: ${{ secrets.SERVER_SSH_KEY }}
       REMOTE_USER: ${{ secrets.REMOTE_USER }}
