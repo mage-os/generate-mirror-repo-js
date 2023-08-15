@@ -1,0 +1,9 @@
+name: Build, deploy & check Release
+
+on:
+  workflow_dispatch:
+
+jobs:
+  dummy:
+    - run: echo "dummy step"
+      name: "Dummy content to introduce a new workflow into the main branch"
