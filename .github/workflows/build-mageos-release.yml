@@ -1,0 +1,72 @@
+name: Build, deploy & check Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      repo:
+        description: 'The composer repository url'
+        required: true
+        default: 'https://preview-repo.mage-os.org/'
+        type: choice
+        options:
+          - https://preview-repo.mage-os.org/
+          - https://repo.mage-os.org/
+      remote_dir:
+        description: 'The deploy target directory on the repo host'
+        required: true
+        default: '/var/www/preview-repo.mage-os.org/html/'
+        type: choice
+        options:
+          - /var/www/preview-repo.mage-os.org/html/
+          - /var/www/repo.mage-os.org/html/
+      mageos_release:
+        description: 'New Mage-OS version (e.g. 1.0.0)'
+        required: true
+        type: string
+      upstream_release:
+        description: 'Closest Magento Open Source version (e.g. 2.4.6-p2)'
+        required: false
+        default: ''
+        type: string
+      publish_tag:
+        description: 'Push new release tag to repos (TODO)'
+        required: false
+        default: false
+        type: boolean
+
+  push:
+    branches:
+    - main
+
+jobs:
+  deploy:
+    uses: ./.github/workflows/deploy.yml
+    with:
+      repo: ${{ inputs.repo || 'https://preview-repo.mage-os.org' }}
+      remote_dir: ${{ inputs.remote_dir || '/var/www/preview-repo.mage-os.org/html/' }}
+      entrypoint: src/make/mageos-release.js
+      delete: true
+    secrets:
+      SERVER_SSH_KEY: ${{ secrets.SERVER_SSH_KEY }}
+      REMOTE_USER: ${{ secrets.REMOTE_USER }}
+  compute-release-service-versions:
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.supported-version.outputs.matrix }}
+    steps:
+      - uses: actions/checkout@v3
+      - uses: mage-os/github-actions/supported-version@main
+        with:
+          kind: nightly
+        id: supported-version
+  integration-check:
+    needs: [ deploy, compute-release-service-versions ]
+    uses: mage-os/github-actions/.github/workflows/integration.yaml@main
+    with:
+      package_name: mage-os/demo-package
+      use_local_source: false
+      matrix: ${{ needs.compute-relese-service-versions.outputs.matrix }}
+      test_command: ../../../vendor/bin/phpunit ../../../vendor/mage-os/demo-package/Test/Integration
+      fail-fast: false
+      magento_repository: ${{ inputs.repo || 'https://preview-repo.mage-os.org' }}
+      composer_cache_key: ${{ inputs.composer_cache_key || 'v1' }}

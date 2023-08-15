@@ -23,6 +23,16 @@ on:
         required: false
         default: true
         type: boolean
+      mageos_release:
+        description: 'New Mage-OS version (e.g. 1.0.0)'
+        required: false
+        default: ''
+        type: string
+      upstream_release:
+        description: 'Closest Magento Open Source version (e.g. 2.4.6-p2)'
+        required: false
+        default: ''
+        type: string
     secrets:
       SERVER_SSH_KEY:
         description: "SSH Key used to upload to the satis server."
@@ -37,6 +47,8 @@ env:
   repo: ${{ inputs.repo || 'https://preview-mirror.mage-os.org/' }}
   entrypoint: ${{ inputs.entrypoint || 'src/make/mirror.js' }}
   delete_arg: ${{ inputs.delete && '--delete' || '' }}
+  mageos_release_arg: ${{ inputs.mageos_release != '' && format('--mageosRelease="{0}"', inputs.mageos_release) || '' }}
+  upstream_release_arg: ${{ inputs.upstream_release != '' && format('--upstreamRelease="{0}"', inputs.upstream_release) || '' }}
 
 jobs:
   deploy:
@@ -54,9 +66,9 @@ jobs:
           cache: 'npm'
       - run: curl -L https://github.com/mage-os/php-dependency-list/raw/main/php-classes.phar -o /usr/local/bin/php-classes.phar && chmod +x /usr/local/bin/php-classes.phar
         name: "Install PHP source code dependency analyzer and make executable (used by nightly build script for base package)"
-      
+
       # Composer create-project and composer require have limited support for commit hashes, they check composer-plugin-api constraints
-      # of the specified branch HEAD instead of the specified commit hash. 
+      # of the specified branch HEAD instead of the specified commit hash.
       #- run: composer create-project "composer/satis:dev-main#fafc1c2eca6394235f12f8a3ee4da7fc7c9fc874"
       # To work around the limitation, we use: git clone && git install.
       #
@@ -66,7 +78,9 @@ jobs:
         name: "Install satis"
 
       - run: npm ci
-      - run: node ${{ env.entrypoint }} --outputDir=build/packages --gitRepoDir=generate-repo/repositories --repoUrl="${{ env.repo }}"
+      - run: |
+          node ${{ env.entrypoint }} --outputDir=build/packages --gitRepoDir=generate-repo/repositories --repoUrl="${{ env.repo }}" \
+            ${{ env.mageos_release_arg }} ${{ env.upstream_release_arg }}
         name: "Generate the packages for the composer repo"
       - run: node bin/set-satis-homepage-url.js --satisConfig=satis.json --repoUrl="${{ env.repo }}" > /tmp/satis.json
         name: "Configure satis repository URL so composer knows where to download packages from"

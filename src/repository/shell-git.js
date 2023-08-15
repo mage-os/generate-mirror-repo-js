@@ -5,6 +5,17 @@ const childProcess = require('child_process');
 let repoBaseDir;
 let report = console.log;
 
+const memoizedWorkingCopyStats = {}
+async function memoizeWorkingCopyStat(dir, type, cmd) {
+  if (memoizedWorkingCopyStats[dir] === undefined) memoizedWorkingCopyStats[dir] = {}
+  if (memoizedWorkingCopyStats[dir][type] === undefined) memoizedWorkingCopyStats[dir][type] = await cmd()
+  return memoizedWorkingCopyStats[dir][type];
+}
+
+function clearWorkingCopyStat(dir) {
+  delete memoizedWorkingCopyStats[dir]
+}
+
 function dirForRepoUrl(url) {
   // todo: add vendor namespace directory inside of repoBaseDir to path?
   if (url.slice(-4).toLowerCase() === '.git') {
@@ -41,6 +52,13 @@ function validateRefIsSecure(ref) {
   return ref;
 }
 
+function validateBranchIsSecure(branch) {
+  if (branch.substring(0, 1) === '-' || branch.includes(' ') || branch.includes('`') || branch.includes('$')) {
+    throw new Error(`Rejecting the branch "${branch}" as potentially insecure`)
+  }
+  return branch;
+}
+
 async function exec(cmd, options) {
   return new Promise((resolve, reject) => {
     const bufferBytes = 4 * 1024 * 1024; // 4M
@@ -64,7 +82,24 @@ async function cloneRepo(url, dir, ref) {
     fs.mkdirSync(path.dirname(dir), {recursive: true})
   }
 
+  clearWorkingCopyStat(dir)
+
   return exec(`git clone --depth 15 --quiet --no-single-branch ${url} ${dir}`);
+}
+
+async function currentTag(dir) {
+  const cmd = async () => (await exec(`git describe --tags --always`, {cwd: dir})).trim();
+  return memoizeWorkingCopyStat(dir, 'tag', cmd)
+}
+
+async function currentBranch(dir) {
+  const cmd = async () => (await exec(`git branch --show-current`, {cwd: dir})).trim()
+  return memoizeWorkingCopyStat(dir, 'branch', cmd)
+}
+
+async function currentCommit(dir) {
+  const cmd = async () => (await exec(`git log -1 --pretty=%H`, {cwd: dir})).trim()
+  return memoizeWorkingCopyStat(dir, 'commit', cmd)
 }
 
 async function initRepo(url, ref) {
@@ -74,14 +109,16 @@ async function initRepo(url, ref) {
     await cloneRepo(url, dir, ref);
   }
   if (ref) {
-    const current = (await exec(`git describe --tags --always`, {cwd: dir})).trim();
-    if (current !== ref) {
+    if (await currentTag(dir) !== ref && await currentBranch(dir) !== ref && await currentCommit(dir) !== ref) {
+      console.log(`checking out ${ref}`)
+      clearWorkingCopyStat(dir)
       await exec(`git checkout --force --quiet ${ref}`, {cwd: dir})
     }
   }
-  
+
   return dir;
 }
+
 
 async function listFileNames(repoDir, path, excludes) {
   const excludeGit = `-not -path '.git' -not -path '.git/*'`;
@@ -95,7 +132,25 @@ async function listFileNames(repoDir, path, excludes) {
   return path === ''
     ? files.map(file => file.slice(2)) // cut off leading ./ if path is empty
     : files;
-  
+
+}
+
+async function createBranch(url, branch, ref) {
+  const dir = fullRepoPath(url);
+
+  clearWorkingCopyStat(dir)
+  if (branch) {
+    if ((await exec(`git branch -l ${branch}`, {cwd: dir})).includes(branch)) {
+      console.log(`checking out ${branch} (branch already existed)`)
+      await exec(`git checkout --force --quiet ${branch}`, {cwd: dir})
+      return dir;
+    }
+
+    console.log(`checking out ${branch} (creating new branch)`)
+    await exec(`git checkout --force --quiet -b ${branch} ${ref}`, {cwd: dir})
+  }
+
+  return dir;
 }
 
 module.exports = {
@@ -141,6 +196,11 @@ module.exports = {
     validateRefIsSecure(ref);
     return initRepo(url, ref);
   },
+  async createBranch(url, branch, ref) {
+    validateBranchIsSecure(ref);
+    validateBranchIsSecure(branch);
+    return createBranch(url, branch, ref);
+  },
   async createTagForRef(url, ref, tag, details) {
     validateRefIsSecure(ref);
     validateRefIsSecure(tag);
@@ -157,15 +217,16 @@ module.exports = {
     }
   },
   async pull(url, ref) {
-    validateRefIsSecure(ref);
-    const dir = await initRepo(url, ref);
-    await exec(`git pull --ff-only --quiet origin ${ref}`, {cwd: dir});
+    validateRefIsSecure(ref)
+    const dir = await initRepo(url, ref)
+    await exec(`git pull --ff-only --quiet origin ${ref}`, {cwd: dir})
+    return dir
   },
   clearCache() {
     // noop
   },
   setStorageDir(dir) {
-    repoBaseDir = dir;
+    repoBaseDir = dir
   },
   testing: {
     dirForRepoUrl,

@@ -1,5 +1,6 @@
 
 const packagesConfig = require('./packages-config');
+const {mergeBuildConfigs} = require('../utils');
 
 const branchBuildConfig = {
   'magento2': {
@@ -75,11 +76,36 @@ const branchBuildConfig = {
     repoUrl: 'https://github.com/mage-os/mirror-magento2-functional-testing-framework.git',
     ref: 'develop'
   },
+  'magento-zend-db': {
+    repoUrl: 'https://github.com/mage-os/mirror-magento-zend-db.git',
+    ref: 'main'
+  },
+  'magento-zend-loader': {
+    repoUrl: 'https://github.com/mage-os/mirror-magento-zend-loader.git',
+    ref: 'main'
+  },
+  'magento-zend-pdf': {
+    repoUrl: 'https://github.com/mage-os/mirror-magento-zend-pdf.git',
+    ref: 'main'
+  },
+  'magento-zend-cache': {
+    repoUrl: 'https://github.com/mage-os/mirror-magento-zend-cache.git',
+    ref: 'main'
+  },
+  'magento-zend-exception': {
+    repoUrl: 'https://github.com/mage-os/mirror-magento-zend-exception.git',
+    ref: 'main'
+  },
+  'magento-zend-log': {
+    repoUrl: 'https://github.com/mage-os/mirror-magento-zend-log.git',
+    ref: 'main'
+  },
+  'magento-zend-memory': {
+    repoUrl: 'https://github.com/mage-os/mirror-magento-zend-memory.git',
+    ref: 'main'
+  },
 };
 
 module.exports = {
-  buildConfig: Object.keys(branchBuildConfig).reduce((acc, key) => {
-    acc.push(Object.assign({}, (packagesConfig[key] || {}), branchBuildConfig[key]));
-    return acc;
-  }, [])
+  buildConfig: mergeBuildConfigs(packagesConfig, branchBuildConfig)
 };

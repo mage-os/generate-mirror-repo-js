@@ -1,6 +1,6 @@
-name: "Checkout Magento"
+name: "Checkout Magento Open Source"
 author: "danslo"
-description: "A Github action that does a composer checkout for Magento."
+description: "A Github action that does a composer checkout for Magento Open Source."
 
 inputs:
   repository-url:

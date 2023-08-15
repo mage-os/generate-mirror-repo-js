@@ -1,4 +1,3 @@
-
 module.exports = {
   'magento2': {
     repoUrl: 'https://github.com/mage-os/mirror-magento2.git',
@@ -31,7 +30,7 @@ module.exports = {
           }
           return file === '.gitignore' && releasesWithoutGitIgnore.includes(ref);
         }, "app/code/", "app/design/frontend/", "app/design/adminhtml/", "app/i18n/", "lib/internal/Magento/Framework/", "composer.lock", "app/etc/vendor_path.php", "dev/tests/static/testsuite/Magento/Test/Legacy/FilesystemTest.php"],
-        composerJsonPath: `${__dirname}/../../resource/history/magento/magento2-base/template.json`,
+        composerJsonPath: `${__dirname}/../../resource/composer-templates/magento/magento2-base/template.json`,
         // The directories are required for the magento-composer-installer to properly function, otherwise it doesn't complete processing and app/etc is missing.
         emptyDirsToAdd: ['app/design/frontend/Magento', 'app/design/adminhtml/Magento', 'app/code/Magento', 'app/i18n/Magento', 'lib/internal/Magento'],
       },
@@ -69,7 +68,11 @@ module.exports = {
 
     // After package generation, the files for these specific module versions will be replaced.
     packageReplacements: [
-      {name: 'magento/module-catalog', version: '103.0.7-p3', files: ['Test/Mftf/ActionGroup/CustomOptionsActionGroup.xml']}
+      {
+        name: 'magento/module-catalog',
+        version: '103.0.7-p3',
+        files: ['Test/Mftf/ActionGroup/CustomOptionsActionGroup.xml']
+      }
     ],
   },
   'security-package': {
@@ -79,7 +82,7 @@ module.exports = {
       {
         label: 'Security Packages',
         dir: '',
-        excludes: ['.github/', '_metapackage/', 'dev/'],
+        excludes: ['.github/', '_metapackage/', 'dev/', '.git/'],
       }
     ],
     packageIndividual: [],
@@ -97,7 +100,7 @@ module.exports = {
       {
         label: 'Inventory Packages',
         dir: '',
-        excludes: ['.github/', '_metapackage/', 'dev/'],
+        excludes: ['.github/', '_metapackage/', 'dev/', '.git/'],
       }
     ],
     packageIndividual: [],
@@ -127,7 +130,7 @@ module.exports = {
       {
         label: 'PageBuilder Packages',
         dir: 'app/code/Magento',
-        excludes: ['app/code/Magento/_metapackage/'],
+        excludes: ['app/code/Magento/_metapackage/', '.git/'],
       }
     ],
     packageIndividual: [],
@@ -145,7 +148,7 @@ module.exports = {
       {
         label: 'Adobe IMS Packages',
         dir: '',
-        excludes: ['_metapackage/', '.github/', 'i18n', 'dev'],
+        excludes: ['_metapackage/', '.github/', 'i18n', 'dev', '.git/'],
       }
     ],
     packageIndividual: [],
@@ -163,7 +166,7 @@ module.exports = {
       {
         label: 'Stock Integration Packages',
         dir: '',
-        excludes: ['_metapackage/', '.github/', 'dev/'],
+        excludes: ['_metapackage/', '.github/', 'dev/', '.git/'],
       }
     ],
     packageIndividual: [],
@@ -246,7 +249,7 @@ module.exports = {
       {
         label: 'Commerce Data Export Packages',
         dir: '',
-        excludes: ['.github/', '_metapackage/', 'dev/'],
+        excludes: ['.github/', '_metapackage/', 'dev/', '.git/'],
       }
     ],
     packageIndividual: [],
@@ -276,6 +279,90 @@ module.exports = {
     packageIndividual: [
       {
         label: 'Magento2 Functional Testing Framework',
+        dir: ''
+      }
+    ],
+    packageMetaFromDirs: [],
+  },
+  'magento-zend-db': {
+    repoUrl: 'https://github.com/mage-os/mirror-magento-zend-db.git',
+
+    packageDirs: [],
+    packageIndividual: [
+      {
+        label: 'Magento fork of Zend_Db',
+        dir: ''
+      }
+    ],
+    packageMetaFromDirs: [],
+  },
+  'magento-zend-loader': {
+    repoUrl: 'https://github.com/mage-os/mirror-magento-zend-loader.git',
+
+    packageDirs: [],
+    packageIndividual: [
+      {
+        label: 'Magento fork of Zend_Loader',
+        dir: ''
+      }
+    ],
+    packageMetaFromDirs: [],
+  },
+  'magento-zend-pdf': {
+    repoUrl: 'https://github.com/mage-os/mirror-magento-zend-pdf.git',
+
+    packageDirs: [],
+    packageIndividual: [
+      {
+        label: 'Magento fork of Zend_Pdf',
+        dir: ''
+      }
+    ],
+    packageMetaFromDirs: [],
+  },
+  'magento-zend-cache': {
+    repoUrl: 'https://github.com/mage-os/mirror-magento-zend-cache.git',
+
+    packageDirs: [],
+    packageIndividual: [
+      {
+        label: 'Magento fork of Zend_Cache',
+        dir: ''
+      }
+    ],
+    packageMetaFromDirs: [],
+  },
+  'magento-zend-exception': {
+    repoUrl: 'https://github.com/mage-os/mirror-magento-zend-exception.git',
+
+    packageDirs: [],
+    packageIndividual: [
+      {
+        label: 'Magento fork of Zend_Exception',
+        dir: ''
+      }
+    ],
+    packageMetaFromDirs: [],
+  },
+  'magento-zend-log': {
+    repoUrl: 'https://github.com/mage-os/mirror-magento-zend-log.git',
+
+    packageDirs: [],
+    packageIndividual: [
+      {
+        label: 'Magento fork of Zend_Log',
+        dir: ''
+      }
+    ],
+    packageMetaFromDirs: [],
+  },
+  'magento-zend-memory': {
+    repoUrl: 'https://github.com/mage-os/mirror-magento-zend-memory.git',
+
+    packageDirs: [],
+    packageIndividual: [
+      {
+        label: 'Magento fork of Zend_Memory',
         dir: ''
       }
     ],
