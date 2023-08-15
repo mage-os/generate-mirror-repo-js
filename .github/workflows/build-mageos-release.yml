@@ -69,7 +69,7 @@ jobs:
     with:
       package_name: mage-os/demo-package
       use_local_source: false
-      matrix: ${{ needs.compute-relese-service-versions.outputs.matrix }}
+      matrix: ${{ needs.compute-release-service-versions.outputs.matrix }}
       test_command: ../../../vendor/bin/phpunit ../../../vendor/mage-os/demo-package/Test/Integration
       fail-fast: false
       magento_repository: ${{ inputs.repo || 'https://preview-repo.mage-os.org' }}
