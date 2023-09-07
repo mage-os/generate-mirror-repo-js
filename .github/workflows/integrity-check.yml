@@ -56,7 +56,7 @@ jobs:
           sample-data: 'true'
       
       # Integrity checks
-      - run: node src/integrity-test/validate-package-versions-match.js ${{ github.workspace }}/mageos ${{ github.workspace }}/magento
+      - run: node src/integrity-test/validate-package-versions-match.js ${{ github.workspace }}/mageos/vendor ${{ github.workspace }}/magento/vendor
         name: Package Versions Integrity Check
 
       # Ignore composer.json, composer.log, generated composer autoload files and files in var/cache that start with `mage---`

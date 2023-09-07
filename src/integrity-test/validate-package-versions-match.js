@@ -13,7 +13,8 @@ function getComposerPackagesConfig(vendorDir) {
         throw new Error('Vendor directory not found');
     }
 
-    const composerLockPath = path.join(__dirname, 'composer.lock');
+    const composerLockPath = path.join(vendorDir + '/..', 'composer.lock');
+
     let composerLockData;
     try {
         composerLockData = JSON.parse(fs.readFileSync(composerLockPath));
