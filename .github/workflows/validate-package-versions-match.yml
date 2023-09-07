@@ -1,4 +1,4 @@
-name: Check integrity of given Mirror repo
+name:  Check integrity of Mirror repo: Package Versions Integrity Check
 
 on:
   workflow_call:
@@ -12,15 +12,15 @@ on:
         required: true
 jobs:
   compute-matrix:
-      runs-on: ubuntu-latest
-      outputs:
-        matrix: ${{ steps.supported-version.outputs.matrix }}
-      steps:
-        - uses: actions/checkout@v3
-        - uses: mage-os/github-actions/supported-version@main
-          with:
-            kind: all
-          id: supported-version
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.supported-version.outputs.matrix }}
+    steps:
+      - uses: actions/checkout@v3
+      - uses: mage-os/github-actions/supported-version@main
+        with:
+          kind: all
+        id: supported-version
 
   integrity-check:
     name: ${{ matrix.magento }}
@@ -56,10 +56,5 @@ jobs:
           sample-data: 'true'
 
       # Integrity checks
-      - run: diff <(composer show -d ${{ github.workspace }}/magento | sort) <(composer show -d ${{ github.workspace }}/mageos | sort)
-        name: Version Integrity Check
-
-      # Ignore composer.json, composer.log, generated composer autoload files and files in var/cache that start with `mage---`
-      - run: diff -rq -x "*composer*" -x "*autoload*" -x "*mage---*" ${{ github.workspace }}/magento ${{ github.workspace }}/mageos
-        if: always()
-        name: Files Integrity Check
+      - run: node src/integrity-test/validate-package-versions-match.js ${{ github.workspace }}/mageos/vendor ${{ github.workspace }}/magento/vendor
+        name: Package Versions Integrity Check
