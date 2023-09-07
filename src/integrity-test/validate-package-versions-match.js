@@ -19,7 +19,8 @@ function getComposerPackagesConfig(vendorDir) {
   try {
     composerLockData = JSON.parse(fs.readFileSync(composerLockPath));
   } catch (e) {
-    throw new Error(`Failed to read or parse composer.lock file: ${e.message}`);
+    throw new Error(`Failed to read or parse composer.lock file: ${e.message}\ncomposer.lock path: ${composerLockPath} \nvendor: ${vendorDir}`
+    );
   }
 
   fs.readdirSync(vendorDir, {withFileTypes: true}).forEach(dirEntry => {
@@ -27,13 +28,13 @@ function getComposerPackagesConfig(vendorDir) {
       return;
     }
 
-    const packageDir = path.join(vendorDir, dirEntry.name);
-    fs.readdirSync(packageDir, {withFileTypes: true}).forEach(subDirEntry => {
+    const vendorNamespaceDir = path.join(vendorDir, dirEntry.name);
+    fs.readdirSync(vendorNamespaceDir, {withFileTypes: true}).forEach(subDirEntry => {
       if (!subDirEntry.isDirectory()) {
         return;
       }
 
-      const composerJsonPath = path.join(packageDir, subDirEntry.name, 'composer.json');
+      const composerJsonPath = path.join(vendorNamespaceDir, subDirEntry.name, 'composer.json');
       if (!fs.existsSync(composerJsonPath)) {
         return;
       }
@@ -170,4 +171,5 @@ try {
   console.log(chalk.green('Done. No differences found.'));
 } catch (error) {
   console.error(error.message);
+  process.exit(1);
 }
