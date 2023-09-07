@@ -39,5 +39,12 @@ jobs:
     uses: ./.github/workflows/integrity-check.yml
     with:
       repo: ${{ inputs.repo || 'https://preview-mirror.mage-os.org/' }}
-    secrets: 
+    secrets:
+      composer_auth: ${{ secrets.composer_auth }}
+  integrity-check-package-versions-validate:
+    needs: [deploy]
+    uses: ./.github/workflows/integrity-check-package-versions-validate.yml
+    with:
+      repo: ${{ inputs.repo || 'https://preview-mirror.mage-os.org/' }}
+    secrets:
       composer_auth: ${{ secrets.composer_auth }}

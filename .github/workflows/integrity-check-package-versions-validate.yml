@@ -1,4 +1,4 @@
-name:  Check integrity of Mirror repo: Package Versions Integrity Check
+name:  Check integrity of Mirror repo: Package Versions Validate
 
 on:
   workflow_call:
@@ -57,4 +57,4 @@ jobs:
 
       # Integrity checks
       - run: node src/integrity-test/validate-package-versions-match.js ${{ github.workspace }}/mageos/vendor ${{ github.workspace }}/magento/vendor
-        name: Package Versions Integrity Check
+        name: Package Versions Validate
