@@ -1,5 +1,4 @@
 const fs = require('fs');
-const chalk = require('chalk');
 const path = require('path');
 
 /**
@@ -133,13 +132,13 @@ function comparePackages(obj1, obj2) {
  */
 function displayDiffs(diffs, originName, targetName) {
   Object.keys(diffs).forEach(packageName => {
-    console.log(chalk.bold(packageName));
+    console.log('\x1b[1m' + packageName + '\x1b[0m');
 
     diffs[packageName].forEach(diff => {
-      const section = chalk.cyan(diff.section);
-      const key = chalk.green(diff.key);
-      const value1 = diff.value1 ? chalk.red(diff.value1) : chalk.gray('undefined');
-      const value2 = diff.value2 ? chalk.blue(diff.value2) : chalk.gray('undefined');
+      const section = '\x1b[36m' + diff.section + '\x1b[0m';
+      const key = '\x1b[32m' + diff.key + '\x1b[0m';
+      const value1 = diff.value1 ? '\x1b[31m' + diff.value1 + '\x1b[0m' : '\x1b[90m' + 'undefined' + '\x1b[0m';
+      const value2 = diff.value2 ? '\x1b[34m' + diff.value2 + '\x1b[0m' : '\x1b[90m' + 'undefined' + '\x1b[0m';
 
       console.log(`  ${section}:
     package: ${key}
@@ -168,7 +167,7 @@ try {
     process.exit(1);
   }
 
-  console.log(chalk.green('Done. No differences found.'));
+  console.log('\x1b[32m' + 'Done. No differences found.' + '\x1b[0m');
 } catch (error) {
   console.error(error.message);
   process.exit(1);
