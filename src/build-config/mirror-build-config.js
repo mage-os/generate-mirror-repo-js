@@ -42,6 +42,20 @@ const mirrorBuildConfig = {
         details: 'Remove extraRefToRelease from mirror build config if https://github.com/magento/inventory/issues/3354 is resolved'
       }
     ],
+    transform: {
+      'magento/module-inventory-catalog-frontend-ui': [
+        composerJson => {
+          // The version of the module didn't change but the suggested version does. Both or these are 1.0.2:
+          // https://github.com/mage-os/mirror-inventory/blob/1.2.4-p5/InventoryCatalogFrontendUi/composer.json#L17
+          // https://github.com/mage-os/mirror-inventory/blob/1.2.5/InventoryCatalogFrontendUi/composer.json#L17C13-L17C13
+          // This affects releases 2.4.4-p1 to 2.4.5-p4.
+          if (composerJson.version === '1.0.2') {
+            composerJson.suggest['magento/module-inventory-catalog'] = '1.2.*';
+          }
+          return composerJson;
+        }
+      ]
+    }
   },
   'inventory-composer-installer': {
     repoUrl: 'https://github.com/mage-os/mirror-inventory-composer-installer.git',
@@ -72,10 +86,157 @@ const mirrorBuildConfig = {
         'phpgt/dom':                                     '2.1.6',
       }
     },
+    transform: {
+      'magento/module-page-builder-admin-analytics': [
+        composerJson => {
+          // Fix 2.4.4 and 2.4.6 - 2.4.6-p2: suggested version in released package is different from tagged suggest in repo
+          if (composerJson.version === '1.1.3') {
+            composerJson.suggest['magento/module-admin-analytics'] = '*'
+          }
+          return composerJson;
+        },
+        composerJson => {
+          // Fix 2.4.3-p1
+          if (composerJson.version === '1.1.1-p1') {
+            composerJson.require = {
+              ...composerJson.require,
+              'php':                            '~7.3.0||~7.4.0',
+              'magento/module-admin-analytics': '100.4.3-p1',
+              'magento/framework':              '103.0.3-p1',
+            }
+          }
+          return composerJson;
+        },
+        composerJson => {
+          // Fix 2.4.3
+          if (composerJson.version === '1.1.1') {
+            composerJson.require = {
+              ...composerJson.require,
+              'magento/framework':           '~103.0.3',
+              'magento/module-page-builder': '2.2.*',
+            }
+          }
+          return composerJson;
+        },
+      ],
+      'magento/module-catalog-page-builder-analytics': [
+        composerJson => {
+          // Fix 2.4.3-p1
+          if (composerJson.version === '1.6.1-p1') {
+            composerJson.require = {
+              ...composerJson.require,
+              'php':                    '~7.3.0||~7.4.0',
+              'magento/module-catalog': '104.0.3-p1',
+              'magento/framework':      '103.0.3-p1',
+            }
+          }
+          // Fix 2.4.3
+          if (composerJson.version === '1.6.1') {
+            composerJson.require = {
+              ...composerJson.require,
+              'magento/module-page-builder-analytics': '1.6.*',
+              'magento/module-catalog':                '~104.0.3',
+              'magento/framework':                     '~103.0.3',
+            }
+          }
+          return composerJson;
+        }
+      ],
+      'magento/module-cms-page-builder-analytics': [
+        composerJson => {
+          // Fix 2.4.3-p1
+          if (composerJson.version === '1.6.1-p1') {
+            composerJson.require = {
+              ...composerJson.require,
+              'php':                '~7.3.0||~7.4.0',
+              'magento/module-cms': '104.0.3-p1',
+              'magento/framework':  '103.0.3-p1',
+            }
+          }
+          // Fix 2.4.3
+          if (composerJson.version === '1.6.1') {
+            composerJson.require = {
+              ...composerJson.require,
+              'magento/framework':                     '~103.0.3',
+              'magento/module-page-builder-analytics': '1.6.*',
+            }
+          }
+          return composerJson;
+        }
+      ],
+      'magento/module-page-builder-analytics': [
+        composerJson => {
+          // Fix 2.4.3-p1
+          if (composerJson.version === '1.6.1-p1') {
+            composerJson.require = {
+              ...composerJson.require,
+              'php':                      '~7.3.0||~7.4.0',
+              'magento/module-analytics': '100.4.3',
+              'magento/framework':        '103.0.3-p1',
+            }
+          }
+          // Fix 2.4.3
+          if (composerJson.version === '1.6.1') {
+            composerJson.require = {
+              ...composerJson.require,
+              'magento/module-analytics':    '~100.4.3',
+              'magento/module-page-builder': '2.2.*',
+              'magento/framework':           '~103.0.3',
+            }
+          }
+          return composerJson;
+        }
+      ],
+      'magento/module-aws-s3-page-builder': [
+        composerJson => {
+          // Fix 2.4.3
+          if (composerJson.version === '1.0.1') {
+            composerJson.require = {
+              ...composerJson.require,
+              'magento/module-page-builder': '2.2.*',
+              'magento/framework':           '~103.0.3',
+            }
+          }
+          return composerJson;
+        }
+      ],
+      'magento/module-page-builder': [
+        composerJson => {
+          // Fix 2.4.3
+          if (composerJson.version === '2.2.1') {
+            composerJson.require = {
+              ...composerJson.require,
+              'magento/framework':        '~103.0.3',
+              'magento/module-store':     '~101.1.3',
+              'magento/module-backend':   '~102.0.3',
+              'magento/module-catalog':   '~104.0.3',
+              'magento/module-config':    '~101.2.3',
+              'magento/module-rule':      '~100.4.2',
+              'magento/module-directory': '~100.4.3',
+            }
+          }
+          return composerJson;
+        }
+      ],
+    }
   },
   'adobe-ims': {
     repoUrl: 'https://github.com/mage-os/mirror-adobe-ims.git',
     fromTag: '2.1.0',
+    transform: {
+      'magento/module-adobe-ims': [
+        composerJson => {
+        // Fix 2.3.7-p4
+          if (composerJson.version === '1.0.2') {
+            composerJson.require = {
+              ...composerJson.require,
+              'magento/module-adobe-ims-api': '1.0.*',
+            }
+          }
+          return composerJson;
+        }
+      ]
+    }
   },
   'adobe-stock-integration': {
     repoUrl: 'https://github.com/mage-os/mirror-adobe-stock-integration.git',
@@ -113,65 +274,217 @@ const mirrorBuildConfig = {
       ],
       'magento/module-adobe-stock-admin-ui': [
         composerJson => {
-          const patch = composerJson.version === '1.0.2-p1'
-            ? {
-               'magento/module-adobe-ims-api':           '1.0.*',
-                'magento/module-adobe-stock-client-api': '1.0.*'
-              }
-            : {}
-          composerJson.require = {...composerJson.require, ...patch}
+          if (composerJson.version === '1.0.2') {
+            // Fix 2.3.7-p4
+            composerJson.require = {
+              ...composerJson.require,
+              'magento/module-adobe-ims-api':          '1.0.*',
+              'magento/module-adobe-stock-client-api': '1.0.*'
+            }
+          }
+          if (composerJson.version === '1.0.2-p1') {
+            composerJson.require = {
+              ...composerJson.require,
+              'magento/module-adobe-ims-api':          '1.0.*',
+              'magento/module-adobe-stock-client-api': '1.0.*'
+            }
+          }
+          if (composerJson.version === '1.3.0-p2') {
+            // This fix affects 2.4.3-p2 - 2.4.3-p3
+            composerJson.require = {
+              ...composerJson.require,
+              'magento/module-adobe-stock-client-api': '2.1.0-p2'
+            }
+          }
+          if (composerJson.version === '1.3.0-p1') {
+            // This fix affects 2.4.3-p1
+            composerJson.require = {
+              ...composerJson.require,
+              'php': '~7.3.0||~7.4.0'
+            }
+          }
+          if (composerJson.version === '1.3.0') {
+            // This fix affects 2.4.2 and 2.4.3
+            composerJson.require = {
+              ...composerJson.require,
+              'magento/module-adobe-stock-client-api': '2.1.*'
+            }
+          }
           return composerJson;
         }
       ],
       'magento/module-adobe-stock-asset': [
         composerJson => {
-          const patch = composerJson.version === '1.0.2-p1'
-            ? {
+          if (composerJson.version === '1.0.2') {
+            // Fix 2.3.7-p4
+            composerJson.require = {
+              ...composerJson.require,
               'magento/module-adobe-stock-asset-api':  '1.0.*',
               'magento/module-adobe-stock-client-api': '1.0.*',
             }
-            : {}
-          composerJson.require = {...composerJson.require, ...patch}
+          }
+          if (composerJson.version === '1.0.2-p1') {
+            composerJson.require = {
+              ...composerJson.require,
+              'magento/module-adobe-stock-asset-api':  '1.0.*',
+              'magento/module-adobe-stock-client-api': '1.0.*',
+            }
+          }
+          if (composerJson.version === '1.3.0-p2') {
+            // Fix 2.4.3-p2 - 2.4.3-p3
+            composerJson.require = {
+              ...composerJson.require,
+              'magento/module-adobe-stock-asset-api':  '2.0.0-p2',
+              'magento/module-adobe-stock-client-api': '2.1.0-p2',
+            }
+          }
+          if (composerJson.version === '1.3.0-p1') {
+            // Fix 2.4.3-p1
+            composerJson.require = {
+              ...composerJson.require,
+              'php': '~7.3.0||~7.4.0',
+            }
+          }
+          if (composerJson.version === '1.3.0') {
+            // Fix 2.4.2 and 2.4.3
+            composerJson.require = {
+              ...composerJson.require,
+              'magento/module-adobe-stock-asset-api': '2.0.*',
+              'magento/module-adobe-stock-client-api': '2.1.*'
+            }
+          }
           return composerJson;
         }
       ],
       'magento/module-adobe-stock-client': [
         composerJson => {
-          const patch = composerJson.version === '1.0.2-p1'
-            ? {
+          if (composerJson.version === '1.0.2') {
+            // Fix 2.3.7-p4
+            composerJson.require = {
+              ...composerJson.require,
               'magento/module-adobe-ims-api':          '1.0.*',
               'magento/module-adobe-stock-client-api': '1.0.*',
             }
-            : {}
-          composerJson.require = {...composerJson.require, ...patch}
+          }
+          if (composerJson.version === '1.0.2-p1') {
+            composerJson.require = {
+              ...composerJson.require,
+              'magento/module-adobe-ims-api':          '1.0.*',
+              'magento/module-adobe-stock-client-api': '1.0.*',
+            }
+          }
+          if (composerJson.version === '1.3.0') {
+            // Fix 2.4.2 - 2.4.2-p1
+            composerJson.require['magento/module-adobe-stock-client-api'] = '2.1.*'
+          }
+          if (composerJson.version === '1.3.1-p2') {
+            // Fix 2.4.3-p2 - 2.4.3-p3
+            composerJson.require['magento/module-adobe-stock-client-api'] = '2.1.0-p2'
+          }
+          if (composerJson.version === '1.3.2') {
+            // Fix 2.4.4-p1 to 2.4.5-p4 uses '*' in public repo, but in released package uses 2.1.*
+            composerJson.require['magento/module-adobe-ims-api'] = '2.1.*'
+          }
           return composerJson;
         }
       ],
       'magento/module-adobe-stock-image': [
         composerJson => {
-          const patch = composerJson.version === '1.0.2-p2'
-            ? {
+          if (composerJson.version === '1.0.2-p2') {
+            composerJson.require = {
+              ...composerJson.require,
               'magento/module-adobe-stock-client-api': '1.0.*',
               'magento/module-adobe-stock-asset-api':  '1.0.*',
               'magento/module-adobe-stock-image-api':  '1.0.*',
             }
-            : {}
-          composerJson.require = {...composerJson.require, ...patch}
+          }
+          if (composerJson.version === '1.3.0') {
+            // Fix 2.4.2 and 2.4.2-p1
+            composerJson.require = {
+              ...composerJson.require,
+              'magento/module-adobe-stock-client-api': '2.1.*',
+              'magento/module-adobe-stock-asset-api':  '2.0.*',
+              'magento/module-adobe-stock-image-api':  '1.3.*'
+            }
+          }
+          if (composerJson.version === '1.3.1-p2') {
+            // Fix 2.4.3-p2 - 2.4.3-p3
+            composerJson.require = {
+              ...composerJson.require,
+              'magento/module-adobe-stock-client-api': '2.1.0-p2',
+              'magento/module-adobe-stock-asset-api':  '2.0.0-p2',
+              'magento/module-adobe-stock-image-api':  '1.3.0-p2'
+            }
+          }
           return composerJson;
         }
       ],
       'magento/module-adobe-stock-image-admin-ui': [
         composerJson => {
-          const patch = composerJson.version === '1.0.3-p2'
-            ? {
+          if (composerJson.version === '1.0.3') {
+            // Fix 2.4.2 and 2.4.2-p1
+            composerJson.require = {
+              ...composerJson.require,
+              'magento/module-adobe-stock-asset-api':  '2.0.*',
+              'magento/module-adobe-stock-image-api':  '1.3.*',
+              'magento/module-adobe-stock-client-api': '2.1.*'
+            }
+          }
+          if (composerJson.version === '1.0.3-p2') {
+            composerJson.require = {
+              ...composerJson.require,
               'magento/module-adobe-ims':              '1.0.*',
               'magento/module-adobe-ims-api':          '1.0.*',
               'magento/module-adobe-stock-asset-api':  '1.0.*',
               'magento/module-adobe-stock-image-api':  '1.0.*',
               'magento/module-adobe-stock-client-api': '1.0.*',
             }
-            : {}
-          composerJson.require = {...composerJson.require, ...patch}
+          }
+          if (composerJson.version === '1.3.1-p2') {
+            // Fix 2.4.3-p2 - 2.4.3-p3
+            composerJson.require = {
+              ...composerJson.require,
+              'magento/module-adobe-stock-asset-api': '2.0.0-p2',
+              'magento/module-adobe-stock-image-api': '1.3.0-p2',
+              'magento/module-adobe-stock-client-api': '2.1.0-p2',
+            }
+          }
+          return composerJson;
+        }
+      ],
+      'magento/module-adobe-stock-asset-api': [
+        composerJson => {
+          if (composerJson.version === '2.0.0-p1') {
+            // Fix 2.4.3-p1
+            composerJson.require = {
+              ...composerJson.require,
+              'php': '~7.3.0||~7.4.0',
+            }
+          }
+          return composerJson;
+        }
+      ],
+      'magento/module-adobe-stock-client-api': [
+        composerJson => {
+          if (composerJson.version === '2.1.0-p1') {
+            // Fix 2.4.3-p1
+            composerJson.require = {
+              ...composerJson.require,
+              'php': '~7.3.0||~7.4.0',
+            }
+          }
+          return composerJson;
+        }
+      ],
+      'magento/module-adobe-stock-image-api': [
+        composerJson => {
+          if (composerJson.version === '1.3.0-p1') {
+            // Fix 2.4.3-p1
+            composerJson.require = {
+              ...composerJson.require,
+              'php': '~7.3.0||~7.4.0',
+            }
+          }
           return composerJson;
         }
       ],
