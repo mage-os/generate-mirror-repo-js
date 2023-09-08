@@ -55,6 +55,9 @@ jobs:
           php-version: ${{ matrix.php }}
           sample-data: 'true'
 
+      - name: Install npm dependencies
+        run: npm install
+
       # Integrity checks
       - run: node src/integrity-test/validate-package-versions-match.js ${{ github.workspace }}/mageos/vendor ${{ github.workspace }}/magento/vendor
         name: Package Versions Validate
