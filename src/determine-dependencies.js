@@ -44,7 +44,7 @@ async function composerInstall() {
 }
 
 module.exports = {
-  // This determineSourceDependencies function is used to determine the actual source dependencies for the base package 
+  // This determineSourceDependencies function is used to determine the actual source dependencies for the base package
   async determineSourceDependencies(dir, files) {
     const prevCwd = cwd();
     try {
@@ -61,38 +61,42 @@ module.exports = {
       return new Promise(async resolve => {
         const phpFiles = files.filter(file => file.filepath.endsWith('.php') || file.filepath.endsWith('.phtml'));
         console.log(`Inspecting ${phpFiles.length} files to determine composer dependencies...`);
-        
+
         const findPackages = childProcess.spawn(path.resolve(`${__dirname}/../bin/find-composer-packages.php`), ['vendor/autoload.php']);
-        
+
         let packages = '';
         findPackages.stdout.on('data', data => packages += data);
         findPackages.on('close', status => {
-          resolve(JSON.parse("{" + packages.trim().split("\n").join(",\n") + "}"));
+          if (status !== 0) {
+            throw new Error(`Error determining source dependencies: ${packages.trim()}`)
+          }
+          const json = "{" + packages.trim().split("\n").join(",\n") + "}";
+          resolve(JSON.parse(json));
         });
-        
+
         // Spawns write directly to findPackages STDIN using this stdio option:
         const options = {stdio: ['pipe', findPackages.stdin, 'pipe']}; // [stdin, stdout, stderr]
 
         await new Promise(resolve => {
           const classesInPhp = childProcess.spawn('php-classes.phar', [], options);
           classesInPhp.on('close', status => resolve());
-          
+
           // Pipe file contents to php-classes.phar separated by a zero byte
           Promise.all(phpFiles.map(async file => {
               classesInPhp.stdin.write(file.contentBuffer);
               classesInPhp.stdin.write(Buffer.alloc(1));
           })).then(() => classesInPhp.stdin.end());
         });
-        
+
         await new Promise(resolve => {
-          // Pass only app/etc/di.xml file as an argument, ignore di.xml under dev/ for now 
+          // Pass only app/etc/di.xml file as an argument, ignore di.xml under dev/ for now
           const classesInDiXml = childProcess.spawn('php-classes.phar', ['--di.xml', 'app/etc/di.xml'], options);
           classesInDiXml.on('close', status => resolve());
         });
-        
+
         findPackages.stdin.end();
       });
-      
+
     } finally {
       chdir(prevCwd);
     }
