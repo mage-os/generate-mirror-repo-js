@@ -110,7 +110,7 @@ async function initRepo(url, ref) {
   }
   if (ref) {
     if (await currentTag(dir) !== ref && await currentBranch(dir) !== ref && await currentCommit(dir) !== ref) {
-      console.log(`checking out ${ref}`)
+      //console.log(`checking out ref "${ref}"`)
       clearWorkingCopyStat(dir)
       await exec(`git checkout --force --quiet ${ref}`, {cwd: dir})
     }
@@ -141,12 +141,12 @@ async function createBranch(url, branch, ref) {
   clearWorkingCopyStat(dir)
   if (branch) {
     if ((await exec(`git branch -l ${branch}`, {cwd: dir})).includes(branch)) {
-      console.log(`checking out ${branch} (branch already existed)`)
+      //console.log(`checking out branch "${branch}" (branch already existed)`)
       await exec(`git checkout --force --quiet ${branch}`, {cwd: dir})
       return dir;
     }
 
-    console.log(`checking out ${branch} (creating new branch)`)
+    //console.log(`checking out branch "${branch}" (creating new branch)`)
     await exec(`git checkout --force --quiet -b ${branch} ${ref}`, {cwd: dir})
   }
 

@@ -100,9 +100,12 @@ const mirrorBuildConfig = {
           if (composerJson.version === '1.1.1-p1') {
             composerJson.require = {
               ...composerJson.require,
-              'php':                            '~7.3.0||~7.4.0',
+              'php':               '~7.3.0||~7.4.0',
+              'magento/framework': '103.0.3-p1',
+            }
+            composerJson.suggest = {
+              ...composerJson.suggest,
               'magento/module-admin-analytics': '100.4.3-p1',
-              'magento/framework':              '103.0.3-p1',
             }
           }
           return composerJson;
@@ -112,7 +115,10 @@ const mirrorBuildConfig = {
           if (composerJson.version === '1.1.1') {
             composerJson.require = {
               ...composerJson.require,
-              'magento/framework':           '~103.0.3',
+              'magento/framework': '~103.0.3',
+            }
+            composerJson.suggest = {
+              ...composerJson.suggest,
               'magento/module-page-builder': '2.2.*',
             }
           }
@@ -193,8 +199,11 @@ const mirrorBuildConfig = {
           if (composerJson.version === '1.0.1') {
             composerJson.require = {
               ...composerJson.require,
+              'magento/framework': '~103.0.3',
+            }
+            composerJson.suggest = {
+              ...composerJson.suggest,
               'magento/module-page-builder': '2.2.*',
-              'magento/framework':           '~103.0.3',
             }
           }
           return composerJson;
@@ -223,20 +232,6 @@ const mirrorBuildConfig = {
   'adobe-ims': {
     repoUrl: 'https://github.com/mage-os/mirror-adobe-ims.git',
     fromTag: '2.1.0',
-    transform: {
-      'magento/module-adobe-ims': [
-        composerJson => {
-        // Fix 2.3.7-p4
-          if (composerJson.version === '1.0.2') {
-            composerJson.require = {
-              ...composerJson.require,
-              'magento/module-adobe-ims-api': '1.0.*',
-            }
-          }
-          return composerJson;
-        }
-      ]
-    }
   },
   'adobe-stock-integration': {
     repoUrl: 'https://github.com/mage-os/mirror-adobe-stock-integration.git',
@@ -265,10 +260,13 @@ const mirrorBuildConfig = {
       ],
       'magento/module-adobe-ims': [
         composerJson => {
-          const patch = composerJson.version === '1.0.2-p1'
-            ? {'magento/module-adobe-ims-api': '1.0.*',}
-            : {}
-          composerJson.require = {...composerJson.require, ...patch}
+          // Fix 2.3.7-p4 and later
+          if (composerJson.version === '1.0.2' || composerJson.version === '1.0.2-p1') {
+            composerJson.require = {
+              ...composerJson.require,
+              'magento/module-adobe-ims-api': '1.0.*',
+            }
+          }
           return composerJson;
         }
       ],
@@ -421,15 +419,6 @@ const mirrorBuildConfig = {
       ],
       'magento/module-adobe-stock-image-admin-ui': [
         composerJson => {
-          if (composerJson.version === '1.0.3') {
-            // Fix 2.4.2 and 2.4.2-p1
-            composerJson.require = {
-              ...composerJson.require,
-              'magento/module-adobe-stock-asset-api':  '2.0.*',
-              'magento/module-adobe-stock-image-api':  '1.3.*',
-              'magento/module-adobe-stock-client-api': '2.1.*'
-            }
-          }
           if (composerJson.version === '1.0.3-p2') {
             composerJson.require = {
               ...composerJson.require,
@@ -438,6 +427,15 @@ const mirrorBuildConfig = {
               'magento/module-adobe-stock-asset-api':  '1.0.*',
               'magento/module-adobe-stock-image-api':  '1.0.*',
               'magento/module-adobe-stock-client-api': '1.0.*',
+            }
+          }
+          if (composerJson.version === '1.3.0') {
+            // Fix 2.4.2 - 2.4.2-p2
+            composerJson.require = {
+              ...composerJson.require,
+              'magento/module-adobe-stock-asset-api':  '2.0.*',
+              'magento/module-adobe-stock-image-api':  '1.3.*',
+              'magento/module-adobe-stock-client-api': '2.1.*'
             }
           }
           if (composerJson.version === '1.3.1-p2') {
