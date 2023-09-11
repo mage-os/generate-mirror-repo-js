@@ -81,9 +81,9 @@ async function getPackageVersionsForBuildInstructions(buildInstructions, suffix)
 }
 
 function addSuffixToVersion(version, buildSuffix) {
-  const pos = version.indexOf('-');
-  if (pos !== -1) {
-    return `${version.slice(0, pos)}${(version.slice(pos))}${buildSuffix}`
+  const match = version.match(/(?<versions>(?:[\d]+\.?){1,4})(?<suffix>-[^+]+)?(?<legacy>\+.+)?/)
+  if (match) {
+    return `${match.groups.versions}-a${buildSuffix}${match.groups.legacy ? match.groups.legacy : ''}`
   }
   return `${version}-a${buildSuffix || 'lpha'}`
 }
@@ -103,8 +103,9 @@ function calcNightlyBuildPackageBaseVersion(version) {
   if (! version.match(/^v?(?:\d+\.){0,3}\d+(?:-[a-z]\w*|)$/i)) {
     throw Error(`Unable to determine branch release version for input version "${version}"`)
   }
-  const suffix = version.includes('-') ? version.slice(version.indexOf('-')) : '';
-  const versions = version.includes('-') ? version.slice(0, version.indexOf('-')) : version;
+  const pos = version.indexOf('-')
+  const suffix = pos !== -1 ? version.slice(pos + 1) : '';
+  const versions = pos !== -1 ? version.slice(0, pos) : version;
   const parts = versions.split('.');
   if (parts.length < 4) {
     parts.push('1')
@@ -112,9 +113,7 @@ function calcNightlyBuildPackageBaseVersion(version) {
     parts[parts.length - 1]++;
   }
 
-  // The -dev suffix is special.
-  // The composer/semver parser throws an exception, so we prepend the buildSuffix with -alpha if it is dev to alpha-dev
-  return `${parts.join('.')}${suffix === '-dev' ? '-alpha-dev' : suffix}`;
+  return `${parts.join('.')}${suffix ? '-alpha+' + suffix : ''}`;
 }
 
 /**
