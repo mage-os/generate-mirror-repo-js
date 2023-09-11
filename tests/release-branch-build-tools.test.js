@@ -12,28 +12,34 @@ test('It calculates the version', () => {
   expect(sut.calcNightlyBuildPackageBaseVersion('103.0.2')).toBe('103.0.2.1');
   expect(sut.calcNightlyBuildPackageBaseVersion('103.0.2.1')).toBe('103.0.2.2');
   expect(sut.calcNightlyBuildPackageBaseVersion('v103.0.2.1')).toBe('v103.0.2.2');
-  expect(sut.calcNightlyBuildPackageBaseVersion('0.4.0-beta1')).toBe('0.4.0.1-beta1');
-  expect(sut.calcNightlyBuildPackageBaseVersion('1.2.0-dev')).toBe('1.2.0.1-alpha-dev');
+  expect(sut.calcNightlyBuildPackageBaseVersion('0.4.0-beta1')).toBe('0.4.0.1-alpha+beta1');
+  expect(sut.calcNightlyBuildPackageBaseVersion('1.2.0-dev')).toBe('1.2.0.1-alpha+dev');
+  expect(sut.calcNightlyBuildPackageBaseVersion('1.0-dev')).toBe('1.0.1-alpha+dev');
 });
 
 
 test('It updates every version in the input package->version map', () => {
   expect(sut.transformVersionsToNightlyBuildVersions({}, '')).toEqual({})
-  expect(sut.transformVersionsToNightlyBuildVersions({
-    'foo/bar': '103.0.2'
-  }, '20220703')).toEqual({
-    'foo/bar': '103.0.2.1-a20220703'
-  })
-  expect(sut.transformVersionsToNightlyBuildVersions({
-    'foo/bar': '1.2.0-dev'
-  }, '20220703')).toEqual({
-    'foo/bar': '1.2.0.1-alpha-dev20220703'
-  })
-  expect(sut.transformVersionsToNightlyBuildVersions({
-    'foo/bar': '1.2.0-beta1'
-  }, '20220703')).toEqual({
-    'foo/bar': '1.2.0.1-beta120220703'
-  })
+  expect(sut.transformVersionsToNightlyBuildVersions(
+    {'foo/bar': '103.0.2'}, '20220703')
+  ).toEqual(
+    {'foo/bar': '103.0.2.1-a20220703'}
+  )
+  expect(sut.transformVersionsToNightlyBuildVersions(
+    {'foo/bar': '1.2.0-dev'}, '20220705')
+  ).toEqual(
+    {'foo/bar': '1.2.0.1-a20220705+dev'}
+  )
+  expect(sut.transformVersionsToNightlyBuildVersions(
+    {'foo/bar': '1.0-dev'}, '20220703')
+  ).toEqual(
+    {'foo/bar': '1.0.1-a20220703+dev'}
+  )
+  expect(sut.transformVersionsToNightlyBuildVersions(
+    {'foo/bar': '1.2.0-beta1'}, '20220703')
+  ).toEqual(
+    {'foo/bar': '1.2.0.1-a20220703+beta1'}
+  )
   expect(sut.transformVersionsToNightlyBuildVersions({
     'foo/bar': '103.0.2',
     'baz/moo': '103.0.1.2',
@@ -42,8 +48,8 @@ test('It updates every version in the input package->version map', () => {
   }, '20220704')).toEqual({
     'foo/bar': '103.0.2.1-a20220704',
     'baz/moo': '103.0.1.3-a20220704',
-    'moo/qux': '0.3.4.1-beta120220704',
-    'moo/foo': '0.3.4.1-p220220704',
+    'moo/qux': '0.3.4.1-a20220704+beta1',
+    'moo/foo': '0.3.4.1-a20220704+p2',
   })
 });
 
