@@ -22,8 +22,8 @@ async function getPackagesForBuildInstruction(instructions) {
   let toBeBuilt = {};
 
   const {repoUrl} = instructions;
-  
-  
+
+
   // use the latest tag in branch ref
   const baseVersionsOnRef = await getLatestTag(repoUrl);
   console.log(`Basing ${repoUrl} package versions on those from tag ${baseVersionsOnRef}`);
@@ -34,7 +34,7 @@ async function getPackagesForBuildInstruction(instructions) {
     toBeBuilt = await determinePackagesForRef(repoUrl, dir, baseVersionsOnRef, {excludes});
     Object.assign(packages, toBeBuilt);
   }
-  
+
   for (const individualPackage of (instructions.packageIndividual || [])) {
     const defaults = {excludes: [], composerJsonPath: '', emptyDirsToAdd: []};
     const {label, dir, excludes, composerJsonPath, emptyDirsToAdd} = Object.assign(defaults, individualPackage);
@@ -61,7 +61,7 @@ async function getPackagesForBuildInstruction(instructions) {
     toBeBuilt = await determineMagentoCommunityEditionProject(repoUrl, baseVersionsOnRef);
     Object.assign(packages, toBeBuilt);
   }
-  
+
   repo.clearCache();
   return packages;
 }
@@ -83,9 +83,7 @@ async function getPackageVersionsForBuildInstructions(buildInstructions, suffix)
 function addSuffixToVersion(version, buildSuffix) {
   const pos = version.indexOf('-');
   if (pos !== -1) {
-    const suffix = version.slice(pos)
-    // dev is special. composer/semver parser throws an exception if the buildSuffix is appended without a '+'
-    return `${version.slice(0, pos)}${suffix === '-dev' ? '-dev+' : suffix}${buildSuffix}`
+    return `${version.slice(0, pos)}${(version.slice(pos))}${buildSuffix}`
   }
   return `${version}-a${buildSuffix || 'lpha'}`
 }
@@ -113,8 +111,10 @@ function calcNightlyBuildPackageBaseVersion(version) {
   } else {
     parts[parts.length - 1]++;
   }
-  
-  return `${parts.join('.')}${suffix}`;
+
+  // The -dev suffix is special.
+  // The composer/semver parser throws an exception, so we prepend the buildSuffix with -alpha if it is dev to alpha-dev
+  return `${parts.join('.')}${suffix === '-dev' ? '-alpha-dev' : suffix}`;
 }
 
 /**
