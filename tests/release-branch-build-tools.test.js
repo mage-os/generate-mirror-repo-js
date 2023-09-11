@@ -13,7 +13,7 @@ test('It calculates the version', () => {
   expect(sut.calcNightlyBuildPackageBaseVersion('103.0.2.1')).toBe('103.0.2.2');
   expect(sut.calcNightlyBuildPackageBaseVersion('v103.0.2.1')).toBe('v103.0.2.2');
   expect(sut.calcNightlyBuildPackageBaseVersion('0.4.0-beta1')).toBe('0.4.0.1-beta1');
-  expect(sut.calcNightlyBuildPackageBaseVersion('1.2.0-dev')).toBe('1.2.0.1-dev');
+  expect(sut.calcNightlyBuildPackageBaseVersion('1.2.0-dev')).toBe('1.2.0.1-alpha-dev');
 });
 
 
@@ -27,7 +27,7 @@ test('It updates every version in the input package->version map', () => {
   expect(sut.transformVersionsToNightlyBuildVersions({
     'foo/bar': '1.2.0-dev'
   }, '20220703')).toEqual({
-    'foo/bar': '1.2.0.1-dev+20220703'
+    'foo/bar': '1.2.0.1-alpha-dev20220703'
   })
   expect(sut.transformVersionsToNightlyBuildVersions({
     'foo/bar': '1.2.0-beta1'
