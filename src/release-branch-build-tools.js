@@ -83,7 +83,9 @@ async function getPackageVersionsForBuildInstructions(buildInstructions, suffix)
 function addSuffixToVersion(version, buildSuffix) {
   const pos = version.indexOf('-');
   if (pos !== -1) {
-    return `${version.slice(0, pos)}${version.slice(pos)}${buildSuffix}`
+    const suffix = version.slice(pos)
+    // dev is special. composer/semver parser throws an exception if the buildSuffix is appended without a '+'
+    return `${version.slice(0, pos)}${suffix === '-dev' ? '-dev+' : suffix}${buildSuffix}`
   }
   return `${version}-a${buildSuffix || 'lpha'}`
 }
