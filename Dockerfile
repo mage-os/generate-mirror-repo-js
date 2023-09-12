@@ -19,6 +19,8 @@ RUN chmod +x /usr/local/bin/install-php-extensions && \
 WORKDIR /generate-repo
 
 COPY . /generate-repo
+RUN cd /generate-repo && npm install
+
 RUN chmod -R 0777 /satis/views
 
 RUN mkdir /generate-repo/repositories && chmod 0777 /generate-repo/repositories && chmod -R 0777 /satis/vendor/composer

@@ -116,6 +116,7 @@ cd /satis
 cp /generate-repo/mageos.html.twig ./views/mageos.html.twig
 
 GENERATOR_VERSION=$(jq -r .version /generate-repo/package.json)
+
 printf "%s" "$GENERATOR_VERSION" > ./views/version
 
 # Build satis into /build
