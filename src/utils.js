@@ -1,6 +1,7 @@
 const compareVersions = require("compare-versions");
 const http = require('https');
 const {URL} = require('url');
+const packagesConfig = require("./build-config/packages-config");
 
 /**
  * If a and b are the same, return 0. Return pos number if a > b, or neg number if a < b
@@ -30,6 +31,31 @@ function compareTags(a, b) {
   return 0; // same base and patch versions
 }
 
+/**
+ * Merge given build configurations, prioritizing values from the second parameter
+ * @returns {*[]}
+ */
+function mergeBuildConfigs(a, b) {
+  return Object.keys(b).reduce((acc, key) => {
+    const repoInstruction = b[key] || {};
+    ['packageDirs', 'packageIndividual', 'packageMetaFromDirs'].forEach(type => {
+      if (! repoInstruction[type]) return
+      repoInstruction[type].map(bx => {
+        const idField = bx.dir ? 'dir' : 'label'
+        const targetIdx = (a[key]?.[type] || []).findIndex(ax => ax[idField] === bx[idField])
+        if (targetIdx > -1) {
+          a[key][type][targetIdx] = Object.assign(a[key][type][targetIdx], bx)
+        } else {
+          a[key][type].push(bx)
+        }
+      })
+      delete b[key][type];
+    })
+    acc.push(Object.assign({}, (a[key] || {}), b[key]));
+    return acc;
+  }, [])
+}
+
 module.exports = {
   /**
    * Given 'app/code/Magento/Catalog', return 'Magento/Catalog'
@@ -57,5 +83,6 @@ module.exports = {
       request.on('error', err => reject(e.message));
       request.end();
     });
-  }
+  },
+  mergeBuildConfigs
 }

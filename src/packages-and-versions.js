@@ -10,7 +10,7 @@ const options = parseOptions(
 
 
 if (options.help) {
-  console.log(`Print out Mage-OS composer release packages with versions that would used for a nightly build.
+  console.log(`Print out Mage-OS composer release packages with versions that would be used for a nightly build.
 
 Usage:
   node src/packages-and-versions [OPTIONS]

@@ -1,13 +1,25 @@
 [![Build, Deploy & check Integrity of preview-mirror](https://github.com/mage-os/generate-mirror-repo-js/actions/workflows/build-preview-mirror.yml/badge.svg)](https://github.com/mage-os/generate-mirror-repo-js/actions/workflows/build-preview-mirror.yml)
 
-# Mage-OS Mirror Repository Generator - JS Edition
+# Mage-OS Composer Repository Generator
+
+## Background
 
 This project was started not with the primary goal to go into production, but rather to explore and learn how to build Magento Open Source releases.  
 It has evolved to be used in production. However, the intention is to create additional implementations, for example in Rust <https://github.com/mage-os/package-splitter>.  
 
-## Generated versions
+## Generated composer repositories
 
-All packages required to install Magento Open Source 2.3.7-p3 and newer will be generated.
+The generator is used to generate the following composer repositories:
+
+- https://mirror.mage-os.org
+- https://upstream-nightly.mage-os.org
+- https://repo.mage-os.org
+
+It can also be used to generate custom mirrors and releases based on Mage-OS.
+
+## Versions generated for mirrors
+
+When generating a mirror composer repository, all packages required to install Magento Open Source 2.3.7-p3 and newer will be created.
 This might change in the future.
 
 ## Usage
@@ -27,7 +39,18 @@ By default, a Magento Open Source mirror repository is generated.
 
 #### `--target=upstream-nightly`
 
-Alternatively a release of the current development versions of Magento Open Source can be generated. This is known as a "nightly" build.
+This generates a release of the current development versions of Magento Open Source. This is known as an "upstream nightly" build.
+
+#### `--target=mageos-nightly`
+
+This generates a release of the current development versions of Mage-OS. This is known as a "nightly" build.
+
+#### `--target=release`
+
+This build target requires a number of additional arguments:
+* `--mageosRelease=x.x.x` The release version, for example 1.0.0
+* `--mageosVendor=mage-os` The composer vendor name for the release. Defaults to `mage-os` 
+* `--upstreamRelease=2.4.6-p1` The corresponding Magento Open Source release.
 
 
 ### Caching git repositories
@@ -45,11 +68,6 @@ Example: `--volume "${HOME}/repo-cache:/generate-repo/repositories"`
 
 A `~/.composer` directory can be mounted, too, which will allow satis to benefit from existing caches. This doesn't make a big difference though.  
 Example: `--volume "${COMPOSER_HOME:-$HOME/.composer}:/composer"`
-
-### Regenerating exiting packages
-
-If a package for a given version already exist, it will be skipped during subsequent runs.  
-Regenerating specific packages requires deleting the packages in question and then re-executing the image. 
 
 ### Example with docker
 
@@ -74,11 +92,10 @@ podman run --rm --init -it \
   magece/mageos-repo-js:latest --mirror-base-url=https://mirror.mage-os.org
 ```
 
-### manual generation
-**Warning: This method is unsupported and might break without further notice!** 
+### Manual generation
 
-Alternatively it is possible to generate the repo without using a container.  
-This is mainly useful in order to debug the build process or to help understand what happens inside a container during the build.
+It is possible to generate the composer repositories without a container.  
+This process can be useful for automation, for example the mage-os composer repositories are built in this way via GitHub actions.  
 
 For this, you'll need nodejs 16, php8-0 (or 7.4), yarn, git and composer.
 
@@ -89,51 +106,17 @@ curl -L https://github.com/mage-os/php-dependency-list/raw/main/php-classes.phar
 chmod +x /usr/local/bin/php-classes.phar
 ```
 
-To generate the repo in the directory `./build/`, issue the following commands:
+Check the corresponding workflows in `.github/workflows` for details on how to run the generation.
 
-```sh
-export MIRROR_BASE_URL="https://example.com"
-git clone https://github.com/mage-os/generate-mirror-repo-js.git
-cd generate-mirror-repo-js/
-composer2  create-project composer/satis --stability=dev
-yarn install
-node src/make/mirror.js --outputDir=./build/packages --gitRepoDir=./generate-repo/repositories --repoUrl="$MIRROR_BASE_URL"
-node bin/set-satis-homepage-url.js --satisConfig=satis.json  --repoUrl="$MIRROR_BASE_URL" > /tmp/satis.json   
-./satis/bin/satis build  /tmp/satis.json ./build/
-node ./bin/set-satis-output-url-prefix.js --satisOutputDir=./build --repoUrl="$MIRROR_BASE_URL"  
-```
+## Generating custom releases based on Mage-OS
 
-To generate an upstream-nightly build, replace the first node command with
+Currently, the manual generation approach needs to be used to create custom releases.  
+Two things are required:
 
-```sh
-node src/make/upstream.js --outputDir=./build/packages --gitRepoDir=./generate-repo/repositories --repoUrl="$MIRROR_BASE_URL"
-```
-
-## Updating a mirror with a new release
-
-### 1. Update cached git repos
-
-If you are using cached git repositories, be sure to fetch the latest tags .  
-In case you didn't specify a repository cache directory when generating the image, this step can be skipped as the repositories will be cloned again always.
-
-For example, to fetch the latest release tags, if the git repos are cached in a directory `./repositories`, run the following command:
-
-```sh
-cd repositories
-for repo in *; do cd $repo; git fetch --all; git fetch --tags; cd -; done
-cd .. 
-```
-
-Alternatively, delete the contents of the repo cache dir, and all repos will be cloned again. 
-
-### 2. Update the container image
-
-Be sure to fetch the latest version of the image with `podman pull magece/mageos-repo-js:latest`
-or `docker pull magece/mageos-repo-js:latest`.
-
-### 3. Re-run the command to generate the composer repo
-
-Then re-run the repository generation with the same arguments as the initial generation.
+* Specify a custom vendor name using the `--mageosVendor=extreme-commerce` option
+* Provide custom meta-package dependency templates in `resource/composer-templates/{vendor-name}/`  
+  See the existing ones in `resource/composer-templates/mage-os` for examples.  
+  In future it will be possible to specify the composer-templates path with a command line argument.
 
 
 ## Building the docker image
@@ -142,13 +125,7 @@ Then re-run the repository generation with the same arguments as the initial gen
 docker build -t magece/mirror-repo-js .
 ```
 
-## TODO
-* Improve performance of package generation without using significantly more memory.
-  Maybe this can be done by switching to https://www.nodegit.org/api/libgit_2/    
-  Note: this has a low priority, as for my purposes it currently is "fast enough".
-
-
-## Copyright 2022 Vinai Kopp
+## Copyright 2022 Vinai Kopp, Mage-OS
 
 Distributed under the terms of the 3-Clause BSD Licence.
 See the [LICENSE](LICENSE) file for more details.

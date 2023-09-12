@@ -1,3 +1,13 @@
+/**
+ * @deprecated and unmaintained
+ *
+ * This git implementation will be removed soon(ish), because isomorphic-git turned out
+ * to me much slower than shelling out and using the git binary.
+ *
+ * NOTE: This implementation is missing some functions, which would need to be
+ * implemented before it could be used.
+ */
+
 const path = require('path');
 const fs = require('fs');
 const git = require('isomorphic-git');
@@ -30,11 +40,11 @@ function collapseCommit(commit) {
 
 async function cloneRepo(url, dir, ref) {
   report(`Creating shallow clone of ${ref || 'all branches'} in "${dir.split('/').slice(-2).join('/')}"...`);
-  
+
   if (! fs.existsSync(path.dirname(dir))) {
     fs.mkdirSync(path.dirname(dir), {recursive: true})
   }
-  
+
   const refConf = ref ? {ref, singleBranch: true} : {};
   await git.clone({fs, http, cache, url, dir, noCheckout: false, depth: 30, onProgress: progress(), ...refConf});
 }
@@ -45,7 +55,7 @@ function fullRepoPath(url) {
 
 async function initRepo(url, ref) {
   const dir = fullRepoPath(url);
-  
+
   if (! fs.existsSync(dir)) {
     await cloneRepo(url, dir, ref);
   }
@@ -54,7 +64,7 @@ async function initRepo(url, ref) {
 }
 
 function progress() {
-  
+
 }
 
 async function expandHistory(url, depth) {
@@ -66,7 +76,7 @@ function isFoldersIn(dir) {
   const targetDir = dir
     ? (dir.slice(-1) === '/' ? dir.slice(0, dir.length - 1) : dir)
     : '.';
-  
+
   return async (filepath, [entry]) => {
     const isDir = await entry.type() === 'tree';
     if (isDir && (filepath === '.' || path.dirname(filepath) === targetDir)) {
@@ -80,7 +90,7 @@ function listFilesIn(url, dir) {
   const targetDir = dir
     ? (dir.slice(-1) !== '/' ? dir + '/' : dir)
     : '';
-  
+
   return async (filepath, [entry]) => {
     if (isFirstWalk) {
       isFirstWalk = false;
@@ -111,7 +121,7 @@ async function latestCommitForFile(url, filepath, ref) {
   report(`Finding latest commit for ${filepath}...`);
   const dir = await initRepo(url, ref);
   const commits = await git.log({fs, dir, cache})
-  
+
   // from https://isomorphic-git.org/docs/en/snippets#git-log-path-to-file
   let lastSHA = null
   let lastCommit = null
@@ -128,12 +138,12 @@ async function latestCommitForFile(url, filepath, ref) {
       return collapseCommit(lastCommit)
     }
   }
-  
+
   const lastKnown = commits[commits.length -1].oid;
   report(`Expanding clone history by 100, starting from ${lastKnown}`);
   await expandHistory(url, 100);
   const commitsBeforeLastKnown = await git.log({fs, dir, cache, ref: lastKnown});
-   
+
   return commitsBeforeLastKnown.length > 1
     ? await latestCommitForFile(url, filepath, ref) // found new commits, try again
     : {}; // reached first commit, no commits that matter in entire history

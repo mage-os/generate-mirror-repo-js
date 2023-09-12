@@ -102,9 +102,11 @@ async function createPackageSinceTag(url, tagsSpec, modulesPath, excludes, compo
     console.log(`Processing ${tag}`);
     let composerJsonFile = '';
     // Note: if the composerJsonFile ends with the "template.json" the composer dependencies will be calculated
-    // This is only used for the magento2-base-package
+    // This is only used for non-mirror magento2-base-package builds
     if (composerJsonPath && composerJsonPath.length) {
-      composerJsonFile = (composerJsonPath || '').replace('template.json', `${tag}.json`);
+      composerJsonFile = (composerJsonPath || '')
+        .replace('composer-templates', 'history')
+        .replace('template.json', `${tag}.json`);
       composerJsonFile = fs.existsSync(composerJsonFile)
         ? composerJsonFile
         : composerJsonPath;
@@ -122,7 +124,7 @@ async function createPackageSinceTag(url, tagsSpec, modulesPath, excludes, compo
 async function replacePackageFiles(name, version, files) {
   const packageFilePath = archiveFilePath(name, version);
   if (!fs.existsSync(packageFilePath)) {
-    throw {message: `Could not find archive for replacement: ${name}:${version}.`};
+    throw {message: `Could not find archive ${packageFilePath} for replacement: ${name}:${version}.`};
   }
 
   fs.readFile(packageFilePath, function(_, data) {
@@ -191,7 +193,7 @@ async function processMirrorInstruction(instructions) {
     tags = await createProjectPackagesSinceTag(repoUrl, tagsSpec, fixVersions, transform);
     console.log('Magento Community Edition Project', tags);
   }
-  
+
   repo.clearCache();
 }
 
