@@ -1,12 +1,7 @@
-FROM node:16.14-alpine3.14 AS node
 
 FROM composer/satis as build
 
-COPY --from=node /usr/lib /usr/lib
-COPY --from=node /usr/local/share /usr/local/share
-COPY --from=node /usr/local/lib /usr/local/lib
-COPY --from=node /usr/local/include /usr/local/include
-COPY --from=node /usr/local/bin /usr/local/bin
+RUN apk add nodejs
 
 ENV NODE_ENV=production
 
@@ -17,15 +12,21 @@ RUN chmod +x /usr/local/bin/install-php-extensions && \
     install-php-extensions bcmath gd intl pdo_mysql soap xsl
 
 WORKDIR /generate-repo
-
 COPY . /generate-repo
 RUN cd /generate-repo && npm install
 
-RUN chmod -R 0777 /satis/views
+ENV XDG_CONFIG_HOME=/generate-repo
+RUN mkdir /generate-repo/git && \
+    chmod 0777 /generate-repo/git && \
+    touch /generate-repo/git/config && \
+    chmod 0666 /generate-repo/git/config
 
-RUN mkdir /generate-repo/repositories && chmod 0777 /generate-repo/repositories && chmod -R 0777 /satis/vendor/composer
+RUN mkdir /generate-repo/repositories && \
+    chmod 0777 /generate-repo/repositories && \
+    chmod -R 0777 /satis/vendor/composer && \
+    chmod -R 0777 /satis/views
 
-RUN curl -L https://github.com/mage-os/php-dependency-list/raw/main/php-classes.phar -o /usr/local/bin/php-classes.phar
-RUN chmod +x /usr/local/bin/php-classes.phar
+RUN curl -L https://github.com/mage-os/php-dependency-list/raw/main/php-classes.phar -o /usr/local/bin/php-classes.phar && \
+    chmod +x /usr/local/bin/php-classes.phar
 
 ENTRYPOINT ["/generate-repo/bin/docker-entrypoint.sh"]

@@ -75,6 +75,14 @@ async function exec(cmd, options) {
   });
 }
 
+/**
+ * Relaxing permissions is required to work around issues when running in docker with a mounted dir:
+ *   fatal: detected dubious ownership in repository at '...'
+ */
+async function relaxRepoOwnerPermissions(dir) {
+  return exec(`git config --global --add safe.directory ${dir}`, {cwd: dir})
+}
+
 async function cloneRepo(url, dir, ref) {
   report(`Creating shallow ${url} clone of ${ref || 'all branches'} in "${dir.split('/').slice(-2).join('/')}"...`);
 
@@ -84,7 +92,8 @@ async function cloneRepo(url, dir, ref) {
 
   clearWorkingCopyStat(dir)
 
-  return exec(`git clone --depth 15 --quiet --no-single-branch ${url} ${dir}`);
+  await exec(`git clone --depth 15 --quiet --no-single-branch ${url} ${dir}`)
+  return relaxRepoOwnerPermissions(dir);
 }
 
 async function currentTag(dir) {
