@@ -111,6 +111,21 @@ async function currentCommit(dir) {
   return memoizeWorkingCopyStat(dir, 'commit', cmd)
 }
 
+async function currentTag(dir) {
+  const cmd = async () => (await exec(`git describe --tags --always`, {cwd: dir})).trim();
+  return memoizeWorkingCopyStat(dir, 'tag', cmd)
+}
+
+async function currentBranch(dir) {
+  const cmd = async () => (await exec(`git branch --show-current`, {cwd: dir})).trim()
+  return memoizeWorkingCopyStat(dir, 'branch', cmd)
+}
+
+async function currentCommit(dir) {
+  const cmd = async () => (await exec(`git log -1 --pretty=%H`, {cwd: dir})).trim()
+  return memoizeWorkingCopyStat(dir, 'commit', cmd)
+}
+
 async function initRepo(url, ref) {
   const dir = fullRepoPath(url);
 
