@@ -1,7 +1,7 @@
 
 FROM composer/satis as build
 
-RUN apk add nodejs npm
+RUN apk add nodejs npm jq
 
 ENV NODE_ENV=production
 
