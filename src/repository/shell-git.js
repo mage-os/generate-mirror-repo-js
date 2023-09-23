@@ -5,6 +5,15 @@ const childProcess = require('child_process');
 let repoBaseDir;
 let report = console.log;
 
+/*
+ * Repositories may need to be cloned or may already exist. They may be mounted in a container from a variety of
+ * host systems. The .git folder may be owned by a different user than the one running this script.
+ * Because of this we need to run `git config --global --add safe.directory` for each one the first time
+ * it is used, so git doesn't complain about dubious ownership.
+ * We use initializedRepositories to memoize which one already have been used to minimize having to shell out.
+ */
+const initializedRepositories = {};
+
 const memoizedWorkingCopyStats = {}
 async function memoizeWorkingCopyStat(dir, type, cmd) {
   if (memoizedWorkingCopyStats[dir] === undefined) memoizedWorkingCopyStats[dir] = {}
@@ -75,12 +84,15 @@ async function exec(cmd, options) {
   });
 }
 
-/**
+/*
  * Relaxing permissions is required to work around issues when running in docker with a mounted dir:
  *   fatal: detected dubious ownership in repository at '...'
  */
 async function relaxRepoOwnerPermissions(dir) {
-  return exec(`git config --global --add safe.directory ${dir}`, {cwd: dir})
+  if (! initializedRepositories[dir]) {
+    initializedRepositories[dir] = true
+    return exec(`git config --global --add safe.directory ${dir}`, {cwd: dir})
+  }
 }
 
 async function cloneRepo(url, dir, ref) {
@@ -92,8 +104,7 @@ async function cloneRepo(url, dir, ref) {
 
   clearWorkingCopyStat(dir)
 
-  await exec(`git clone --depth 15 --quiet --no-single-branch ${url} ${dir}`)
-  return relaxRepoOwnerPermissions(dir);
+  return exec(`git clone --depth 15 --quiet --no-single-branch ${url} ${dir}`)
 }
 
 async function currentTag(dir) {
@@ -117,6 +128,9 @@ async function initRepo(url, ref) {
   if (! fs.existsSync(dir)) {
     await cloneRepo(url, dir, ref);
   }
+
+  await relaxRepoOwnerPermissions(dir);
+
   if (ref) {
     if (await currentTag(dir) !== ref && await currentBranch(dir) !== ref && await currentCommit(dir) !== ref) {
       //console.log(`checking out ref "${ref}"`)
