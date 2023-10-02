@@ -61,7 +61,9 @@ jobs:
       - uses: actions/checkout@v3
       - uses: mage-os/github-actions/supported-version@main
         with:
-          kind: nightly
+          project: 'mage-os'
+          kind: 'custom'
+          custom_versions: mage-os/project-community-edition:${{ inputs.mageos_release }}
         id: supported-version
   integration-check:
     needs: [ deploy, compute-release-service-versions ]
