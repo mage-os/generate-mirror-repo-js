@@ -37,6 +37,9 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - run: |
+          set -o pipefail
+          pwd
+          ls -l
           for working_copy in $(ls -d ${{ env.working_copies_dir }}/*/.git); do
             cd $(dirname $working_copy)
             git add --update -- '*composer.json'
