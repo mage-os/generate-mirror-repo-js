@@ -29,7 +29,7 @@ on:
         default: ''
         type: string
       publish_tag:
-        description: 'Push new release tag to repos (TODO)'
+        description: 'Push new release tag to repos'
         required: false
         default: false
         type: boolean
@@ -84,7 +84,7 @@ jobs:
     needs: [ deploy, integration-check ]
     uses: ./.github/workflows/push-release-tag.yml
     with:
-      working_copies_dir: generate-repo/repositories
+      working_copies_dir: ./generate-repo/repositories
       mageos_release: ${{ inputs.mageos_release }}
 
     secrets:
