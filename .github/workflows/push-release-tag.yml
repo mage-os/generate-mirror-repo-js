@@ -1,6 +1,4 @@
-name: "Publish Mage-OS Release Tag to GIT repositories"
-author: "vinai"
-description: "A Github action that pushes git the release tag from all repos used in a build to the source GIT repos"
+name: "Publish Mage-OS release tag to GIT repositories"
 
 on:
   workflow_call:
