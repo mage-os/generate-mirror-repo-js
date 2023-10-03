@@ -33,7 +33,7 @@ env:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    name: "Push git tags from repos in ${{ env.working_copies_dir }}"
+    name: "Push git tags from repos in ${{ inputs.working_copies_dir }}"
     steps:
       - uses: actions/checkout@v3
       - run: |
@@ -47,4 +47,4 @@ jobs:
             git push --dry-run --repository ${ORIG/https:\/\/github.com\//git@hgithub.com:} "${{ env.mageos_release }}"
             cd -
           done
-        name: "Tag ${{ env.mageos_release }} and push to origin"
+        name: "Tag ${{ inputs.mageos_release }} and push to origin"
