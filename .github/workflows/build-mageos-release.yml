@@ -40,6 +40,7 @@ on:
 
 jobs:
   deploy:
+    name: "generate & deploy"
     uses: ./.github/workflows/deploy.yml
     with:
       repo: ${{ inputs.repo }}
@@ -66,6 +67,7 @@ jobs:
           custom_versions: mage-os/project-community-edition:${{ inputs.mageos_release }}
         id: supported-version
   integration-check:
+    name: "installation check"
     needs: [ deploy, compute-release-service-versions ]
     uses: mage-os/github-actions/.github/workflows/integration.yaml@main
     with:
@@ -76,3 +78,14 @@ jobs:
       fail-fast: false
       magento_repository: ${{ inputs.repo }}
       composer_cache_key: ${{ inputs.composer_cache_key || 'v1' }}
+  publish-release-tag:
+    name: "Publish release tag"
+    if: ${{ inputs.publish_tag }}
+    needs: [ deploy, integration-check ]
+    uses: ./.github/workflows/push-release-tag.yml
+    with:
+      working_copies_dir: generate-repo/repositories
+      mageos_release: ${{ inputs.mageos_release }}
+
+    secrets:
+      SERVER_SSH_KEY: ${{ secrets.SERVER_SSH_KEY }}
