@@ -1,0 +1,52 @@
+name: "Publish Mage-OS Release Tag to GIT repositories"
+author: "vinai"
+description: "A Github action that pushes git the release tag from all repos used in a build to the source GIT repos"
+
+on:
+  workflow_call:
+    inputs:
+      mageos_release:
+        description: 'The Mage-OS Release Tag (e.g. 1.0.0)'
+        required: true
+        type: string
+      working_copies_dir:
+        description: 'Directory path to the repositories used during the build.'
+        required: true
+        default: 'generate-repo/repositories'
+        type: string
+
+    secrets:
+      SERVER_SSH_KEY:
+        description: "Temporary placeholder - will need to be replaced with the auth token to allow pushes"
+        required: true
+
+env:
+  mageos_release: ${{ inputs.mageos_release }}
+  working_copies_dir: ${{ inputs.working_copies_dir }}
+
+# For each repo working copy, do
+#   Add and commit all changed files (can be multiple composer.json files in subdirectories)
+#   Tag the release (with -m '' so the tag has an author and date)
+#   Transform the origin remote
+#     from https://github.com/mage-os/mageos-magento2.git
+#     to   git@github.com:mage-os/mageos-magento2.git
+#   Push the new git tag
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    name: "Push git tags from repos in ${{ env.working_copies_dir }}"
+    steps:
+      - uses: actions/checkout@v3
+      - run: |
+          for working_copy in $(ls -d ${{ env.working_copies_dir }}/*/.git); do
+            cd $(dirname $working_copy)
+            git add --update -- '*composer.json'
+            git commit -m"Release ${{ env.mageos_release }}"
+            git tag "${{ env.mageos_release }}" -m ""
+            ORIG=$(git remote -v | grep push | awk '{print $2}')
+            echo git push --repository ${ORIG/https:\/\/github.com\//git@hgithub.com:} ${{ env.mageos_release }}
+            git push --dry-run --repository ${ORIG/https:\/\/github.com\//git@hgithub.com:} "${{ env.mageos_release }}"
+            cd -
+          done
+        name: "Tag ${{ env.mageos_release }} and push to origin"
