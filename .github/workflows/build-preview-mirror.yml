@@ -26,6 +26,7 @@ on:
 jobs:
   deploy:
     uses: ./.github/workflows/deploy.yml
+    name: "generate & deploy"
     with:
       repo: ${{ inputs.repo || 'https://preview-mirror.mage-os.org' }}
       remote_dir: ${{ inputs.remote_dir || '/var/www/preview-mirror.mage-os.org/html/' }}
