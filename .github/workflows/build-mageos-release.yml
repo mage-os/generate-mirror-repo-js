@@ -80,11 +80,10 @@ jobs:
       composer_cache_key: ${{ inputs.composer_cache_key || 'v1' }}
   publish-release-tag:
     name: "Publish release tag"
-    if: ${{ inputs.publish_tag }}
+    if: ${{ success() && inputs.publish_tag }}
     needs: [ deploy, integration-check ]
     uses: ./.github/workflows/push-release-tag.yml
     with:
-      working_copies_dir: ./generate-repo/repositories
       mageos_release: ${{ inputs.mageos_release }}
 
     secrets:
