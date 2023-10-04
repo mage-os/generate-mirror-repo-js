@@ -46,7 +46,6 @@ jobs:
             git tag "${{ env.mageos_release }}" -m ""
             ORIG=$(git remote -v | grep push | awk '{print $2}')
             NEW=${ORIG/https:\/\/github.com/https:\/\/mage-os-ci:${{ env.github_pat }}@github.com}
-            echo git push $NEW ${{ env.mageos_release }}
             git push $NEW "${{ env.mageos_release }}"
             cd -
           done
