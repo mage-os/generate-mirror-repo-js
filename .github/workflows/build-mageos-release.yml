@@ -87,4 +87,4 @@ jobs:
       mageos_release: ${{ inputs.mageos_release }}
 
     secrets:
-      SERVER_SSH_KEY: ${{ secrets.SERVER_SSH_KEY }}
+      MAGE_OS_CI_TOKEN: ${{ secrets.MAGE_OS_CI_TOKEN }}
