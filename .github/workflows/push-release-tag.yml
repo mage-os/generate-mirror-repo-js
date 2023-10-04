@@ -7,11 +7,6 @@ on:
         description: 'The Mage-OS Release Tag (e.g. 1.0.0)'
         required: true
         type: string
-      working_copies_dir:
-        description: 'Directory path to the repositories used during the build.'
-        required: true
-        default: 'generate-repo/repositories'
-        type: string
 
     secrets:
       SERVER_SSH_KEY:
@@ -20,7 +15,6 @@ on:
 
 env:
   mageos_release: ${{ inputs.mageos_release }}
-  working_copies_dir: ${{ inputs.working_copies_dir }}
 
 # For each repo working copy, do
 #   Add and commit all changed files (can be multiple composer.json files in subdirectories)
@@ -33,14 +27,20 @@ env:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    name: "Push git tags from repos in ${{ inputs.working_copies_dir }}"
+    name: "Push git tags from repo working copies"
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/download-artifact@v3
+        with:
+          name: git-working-copies-${{ env.mageos_release }}
+          path: git-working-copies-${{ env.mageos_release }}.tar
+      - run: ls -l
+        name: "Debug: did download-artifact work?"
+      - run: tar -xvf ../git-working-copies-${{ env.mageos_release }}.tar
+        name: "Untar working copies"
+      - run: ls -l repositories
+        name: "Debug: did untar work?"
       - run: |
-          set -o pipefail
-          pwd
-          ls -l
-          for working_copy in $(ls -d ${{ env.working_copies_dir }}/*/.git); do
+          for working_copy in $(ls -d repositories/*/.git); do
             cd $(dirname $working_copy)
             git add --update -- '*composer.json'
             git commit -m"Release ${{ env.mageos_release }}"
