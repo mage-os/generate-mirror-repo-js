@@ -12,8 +12,9 @@ on:
         default: ''
 
 jobs:
-  deploy: 
+  deploy:
     uses: ./.github/workflows/deploy.yml
+    name: "generate & deploy"
     with:
       repo: https://upstream-nightly.mage-os.org
       remote_dir: /var/www/upstream-nightly.mage-os.org/html/
