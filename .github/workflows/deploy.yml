@@ -113,12 +113,12 @@ jobs:
           ARGS: "--verbose --compress --recursive --links --times --omit-dir-times ${{ env.delete_arg }}"
           SOURCE: "build/*"
 
-      - run: cd generate-repo && tar -cvf ../git-working-copies-${{ env.mageos_release }}.tar repositories && cd ..
+      - run: cd generate-repo && tar -cf ../git-working-copies-${{ env.mageos_release }}.tar repositories && cd ..
         name: Tar git working copies
         if: ${{ success() && env.mageos_release != '' && env.publish_tag }}
       - uses: actions/upload-artifact@v3
         if: ${{ success() && env.mageos_release != '' && env.publish_tag }}
         with:
-          name: git-working-copies-${{ env.mageos_release }}
-          path: git-working-copies-${{ env.mageos_release }}.tar
+          name: release-build-working-copies-${{ env.mageos_release }}
+          path: release-build-working-copies-${{ env.mageos_release }}.tar
 
