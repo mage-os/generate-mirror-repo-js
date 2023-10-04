@@ -1,4 +1,4 @@
-name: Build & check Upstream Nightly
+name: Build, deploy & check Upstream Nightly
 
 on:
   schedule:

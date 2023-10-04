@@ -1,4 +1,4 @@
-name: Build & deploy given Mage-OS composer repo
+name: "[workflow call] Build & deploy given Mage-OS composer repo"
 
 on:
   workflow_call:

@@ -1,4 +1,4 @@
-name: Check integrity of given Mirror repo
+name: "[workflow call] Check integrity of given mirror repo"
 
 on:
   workflow_call:
