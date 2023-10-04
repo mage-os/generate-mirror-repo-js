@@ -32,10 +32,11 @@ jobs:
       - uses: actions/download-artifact@v3
         with:
           name: release-build-working-copies-${{ env.mageos_release }}
-          path: release-build-working-copies-${{ env.mageos_release }}.tar
+      - run: ls -lR
+        name: "Debug: did it download the artifact in a directory?"
       - run: tar -xvf release-build-working-copies-${{ env.mageos_release }}.tar
         name: "Untar working copies"
-      - run: ls -l repositories
+      - run: ls -lR repositories
         name: "Debug: did untar work?"
       - run: |
           for working_copy in $(ls -d repositories/*/.git); do
