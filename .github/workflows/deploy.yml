@@ -1,4 +1,4 @@
-name: Build & deploy given Mage-OS repo
+name: Build & deploy given Mage-OS composer repo
 
 on:
   workflow_call:
@@ -49,10 +49,11 @@ on:
 
 env:
   remote_host: "repo.mage-os.org"
-  remote_dir: ${{ inputs.remote_dir || '/var/www/preview-mirror.mage-os.org/html/' }}
-  repo: ${{ inputs.repo || 'https://preview-mirror.mage-os.org/' }}
-  entrypoint: ${{ inputs.entrypoint || 'src/make/mirror.js' }}
+  remote_dir: ${{ inputs.remote_dir }}
+  repo: ${{ inputs.repo }}
+  entrypoint: ${{ inputs.entrypoint }}
   delete_arg: ${{ inputs.delete && '--delete' || '' }}
+  mageos_release: ${{ inputs.mageos_release }}
   mageos_release_arg: ${{ inputs.mageos_release != '' && format('--mageosRelease="{0}"', inputs.mageos_release) || '' }}
   upstream_release_arg: ${{ inputs.upstream_release != '' && format('--upstreamRelease="{0}"', inputs.upstream_release) || '' }}
   publish_tag: ${{ inputs.publish_tag }}
@@ -60,7 +61,7 @@ env:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    name: "Deploy to ${{ inputs.repo || 'https://preview-mirror.mage-os.org/' }}"
+    name: "Deploy ${{ inputs.repo }}"
     steps:
       - uses: actions/checkout@v3
       - uses: shivammathur/setup-php@v2
@@ -111,3 +112,13 @@ jobs:
           TARGET: ${{ env.remote_dir }}
           ARGS: "--verbose --compress --recursive --links --times --omit-dir-times ${{ env.delete_arg }}"
           SOURCE: "build/*"
+
+      - run: cd generate-repo && tar -cf ../release-build-working-copies-${{ env.mageos_release }}.tar repositories && cd ..
+        name: Tar git working copies
+        if: ${{ success() && env.mageos_release != '' && env.publish_tag == 'true' }}
+      - uses: actions/upload-artifact@v3
+        if: ${{ success() && env.mageos_release != '' && env.publish_tag  == 'true' }}
+        with:
+          name: release-build-working-copies-${{ env.mageos_release }}
+          path: release-build-working-copies-${{ env.mageos_release }}.tar
+

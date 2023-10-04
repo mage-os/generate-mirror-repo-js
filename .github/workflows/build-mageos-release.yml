@@ -29,7 +29,7 @@ on:
         default: ''
         type: string
       publish_tag:
-        description: 'Push new release tag to repos (TODO)'
+        description: 'Push new release tag to repos'
         required: false
         default: false
         type: boolean
@@ -41,6 +41,7 @@ on:
 jobs:
   deploy:
     uses: ./.github/workflows/deploy.yml
+    name: "generate & deploy"
     with:
       repo: ${{ inputs.repo }}
       remote_dir: ${{ inputs.remote_dir }}
@@ -61,9 +62,12 @@ jobs:
       - uses: actions/checkout@v3
       - uses: mage-os/github-actions/supported-version@main
         with:
-          kind: nightly
+          project: 'mage-os'
+          kind: 'custom'
+          custom_versions: mage-os/project-community-edition:${{ inputs.mageos_release }}
         id: supported-version
   integration-check:
+    name: "installation check"
     needs: [ deploy, compute-release-service-versions ]
     uses: mage-os/github-actions/.github/workflows/integration.yaml@main
     with:
@@ -72,5 +76,15 @@ jobs:
       matrix: ${{ needs.compute-release-service-versions.outputs.matrix }}
       test_command: ../../../vendor/bin/phpunit ../../../vendor/mage-os/demo-package/Test/Integration
       fail-fast: false
-      magento_repository: ${{ inputs.repo || 'https://preview-repo.mage-os.org' }}
+      magento_repository: ${{ inputs.repo }}
       composer_cache_key: ${{ inputs.composer_cache_key || 'v1' }}
+  publish-release-tag:
+    name: "Publish release tag"
+    if: ${{ success() && inputs.publish_tag }}
+    needs: [ deploy, integration-check ]
+    uses: ./.github/workflows/push-release-tag.yml
+    with:
+      mageos_release: ${{ inputs.mageos_release }}
+
+    secrets:
+      MAGE_OS_CI_TOKEN: ${{ secrets.MAGE_OS_CI_TOKEN }}
