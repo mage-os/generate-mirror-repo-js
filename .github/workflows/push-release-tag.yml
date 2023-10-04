@@ -40,13 +40,14 @@ jobs:
       - run: |
           for working_copy in $(ls -d repositories/*/.git); do
             cd $(dirname $working_copy)
+            echo Processing repository $(basename $(pwd))
             git add --update -- '*composer.json'
             git commit -m"Release ${{ env.mageos_release }}"
             git tag "${{ env.mageos_release }}" -m ""
             ORIG=$(git remote -v | grep push | awk '{print $2}')
-            NEW=${ORIG/https:\/\/github.com/https:\/\/mage-os-ci:${{ env.github_pat }}@github.com/}
+            NEW=${ORIG/https:\/\/github.com/https:\/\/mage-os-ci:${{ env.github_pat }}@github.com}
             echo git push $NEW ${{ env.mageos_release }}
-            git push --dry-run $NEW "${{ env.mageos_release }}"
+            git push $NEW "${{ env.mageos_release }}"
             cd -
           done
-        name: "Tag ${{ inputs.mageos_release }} and push to origin in all repositories"
+        name: "Tag ${{ inputs.mageos_release }} and push to each origin for all repositories"
