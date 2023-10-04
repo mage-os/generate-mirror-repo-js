@@ -34,10 +34,6 @@ on:
         default: false
         type: boolean
 
-  push:
-    branches:
-    - main
-
 jobs:
   deploy:
     uses: ./.github/workflows/deploy.yml
