@@ -1,0 +1,11 @@
+name: "Publish Mage-OS release tag to GIT repositories"
+
+on:
+  # Temporarily declared workflow_dispatch for quicker feedback cycle during development, will remove it again later
+  workflow_dispatch:
+
+jobs:
+  push-tags:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "Temporary dummy in default branch to allow workflow_dispatch to be called"
