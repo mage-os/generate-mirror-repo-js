@@ -1,6 +1,13 @@
 name: "Publish Mage-OS release tag to GIT repositories"
 
 on:
+  # Temporarily declared workflow_dispatch for quicker feedback cycle during development, will remove it again later
+  workflow_dispatch:
+    inputs:
+      mageos_release:
+        description: 'New Mage-OS version (e.g. 1.0.0)'
+        required: true
+        type: string
   workflow_call:
     inputs:
       mageos_release:
@@ -32,12 +39,10 @@ jobs:
       - uses: actions/download-artifact@v3
         with:
           name: release-build-working-copies-${{ env.mageos_release }}
-      - run: ls -lR
-        name: "Debug: did it download the artifact in a directory?"
       - run: tar -xvf release-build-working-copies-${{ env.mageos_release }}.tar
         name: "Untar working copies"
-      - run: ls -lR repositories
-        name: "Debug: did untar work?"
+      - run: git config --global user.email "info@mage-os.org" && git config --global user.name "Mage-OS CI"
+        name: "Configure git identity"
       - run: |
           for working_copy in $(ls -d repositories/*/.git); do
             cd $(dirname $working_copy)
