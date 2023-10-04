@@ -31,11 +31,9 @@ jobs:
     steps:
       - uses: actions/download-artifact@v3
         with:
-          name: git-working-copies-${{ env.mageos_release }}
-          path: git-working-copies-${{ env.mageos_release }}.tar
-      - run: ls -l
-        name: "Debug: did download-artifact work?"
-      - run: tar -xvf ../git-working-copies-${{ env.mageos_release }}.tar
+          name: release-build-working-copies-${{ env.mageos_release }}
+          path: release-build-working-copies-${{ env.mageos_release }}.tar
+      - run: tar -xvf release-build-working-copies-${{ env.mageos_release }}.tar
         name: "Untar working copies"
       - run: ls -l repositories
         name: "Debug: did untar work?"
