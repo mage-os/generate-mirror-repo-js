@@ -61,7 +61,7 @@ env:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    name: "Deploy to ${{ inputs.repo }}"
+    name: "Deploy ${{ inputs.repo }}"
     steps:
       - uses: actions/checkout@v3
       - uses: shivammathur/setup-php@v2
@@ -113,7 +113,7 @@ jobs:
           ARGS: "--verbose --compress --recursive --links --times --omit-dir-times ${{ env.delete_arg }}"
           SOURCE: "build/*"
 
-      - run: cd generate-repo && tar -cf ../git-working-copies-${{ env.mageos_release }}.tar repositories && cd ..
+      - run: cd generate-repo && tar -cf ../release-build-working-copies-${{ env.mageos_release }}.tar repositories && cd ..
         name: Tar git working copies
         if: ${{ success() && env.mageos_release != '' && env.publish_tag }}
       - uses: actions/upload-artifact@v3
