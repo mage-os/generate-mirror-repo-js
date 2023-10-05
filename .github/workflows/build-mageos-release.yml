@@ -38,6 +38,7 @@ jobs:
   deploy:
     uses: ./.github/workflows/deploy.yml
     name: "generate & deploy"
+    if: contains('["vinai","mage-os-ci"]', github.actor)
     with:
       repo: ${{ inputs.repo }}
       remote_dir: ${{ inputs.remote_dir }}
