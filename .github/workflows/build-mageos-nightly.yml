@@ -1,4 +1,4 @@
-name: Build & check Mage-OS Nightly
+name: Build, deploy & check Mage-OS Nightly
 
 on:
   schedule:

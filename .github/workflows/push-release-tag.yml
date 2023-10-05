@@ -1,4 +1,4 @@
-name: "Publish Mage-OS release tag to GIT repositories"
+name: "[workflow call] Publish Mage-OS release tag to git repositories"
 
 on:
   workflow_call:

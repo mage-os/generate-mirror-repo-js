@@ -1,4 +1,4 @@
-name: Build & deploy given Mage-OS composer repo
+name: "[workflow call] Build & deploy given Mage-OS composer repo"
 
 on:
   workflow_call:
@@ -121,4 +121,3 @@ jobs:
         with:
           name: release-build-working-copies-${{ env.mageos_release }}
           path: release-build-working-copies-${{ env.mageos_release }}.tar
-
