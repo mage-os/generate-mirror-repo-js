@@ -1,0 +1,12 @@
+{
+  "require": {
+    "adobe-commerce/adobe-ims-metapackage": "^2.2",
+    "magento/adobe-stock-integration": "2.1.5-p3",
+    "magento/inventory-metapackage": "1.2.6-p3",
+    "magento/google-shopping-ads": "4.0.1",
+    "magento/page-builder": "1.7.3-p3",
+    "magento/security-package": "1.1.5-p3",
+    "paypal/module-braintree": "4.5.0-p1",
+    "temando/module-shipping": "2.0.0"
+  }
+}
