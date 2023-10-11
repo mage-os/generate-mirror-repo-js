@@ -1,7 +1,6 @@
 const path = require("path");
 
 // Choose git backend implementation
-//const git = require('./repository/pure-js-git');
 const git = require('./repository/shell-git');
 
 let repoBaseDir = path.join(process.cwd(), 'repositories');
@@ -30,8 +29,14 @@ module.exports = {
   async pull(url, ref) {
     return git.pull(url, ref);
   },
-  async createTagForRef(url, ref, tag, details) {
-    return git.createTagForRef(url, ref, tag, details)
+  async addUpdated(url, pathSpec) {
+    return git.addUpdated(url, pathSpec);
+  },
+  async commit(url, branch, message) {
+    return git.commit(url, branch, message);
+  },
+  async createTagForRef(url, ref, tag, message, details) {
+    return git.createTagForRef(url, ref, tag, message, details)
   },
   async createBranch(url, branch, ref) {
     return git.createBranch(url, branch, ref)
