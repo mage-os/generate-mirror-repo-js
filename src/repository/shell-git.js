@@ -73,12 +73,11 @@ async function exec(cmd, options) {
     const bufferBytes = 4 * 1024 * 1024; // 4M
     childProcess.exec(cmd, {maxBuffer: bufferBytes, ...(options || {})}, (error, stdout, stderr) => {
       if (error) {
-        reject(`Error executing command: ${error.message}`);
+        reject(`Error executing command${options?.cwd ? ` in ${options.cwd}` : ''}: ${error.message}\n\n${stderr}`)
       }
       if (stderr) {
         reject(`[error] ${stderr}`);
       }
-      //console.log(`[${Math.ceil(stdout.length / 1024)}kb] ${cmd}`);
       resolve(stdout);
     });
   });
@@ -257,7 +256,7 @@ module.exports = {
   },
   async commit(url, branch, message) {
     const dir = await initRepo(url, branch)
-    await exec(`git commit -m'${ (message || '').replaceAll("'", '"') }'`, {cwd: dir})
+    await exec(`git commit --no-gpg-sign -m'${ (message || '').replaceAll("'", '"') }'`, {cwd: dir})
     return dir
   },
   clearCache() {

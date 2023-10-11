@@ -148,7 +148,7 @@ function setMageOsDependencyVersion(obj, dependencyType, releaseVersion, vendor)
 }
 
 function updateComposerDepsVersionForMageOs(composerConfig, releaseVersion, vendor) {
-  for (const dependencyType of ['require', 'require-dev', 'suggest']) {
+  for (const dependencyType of ['require', 'require-dev', 'suggest', 'replace']) {
     composerConfig[dependencyType] && (composerConfig[dependencyType] = setMageOsDependencyVersion(composerConfig[dependencyType], dependencyType, releaseVersion, vendor))
   }
 }
@@ -225,7 +225,7 @@ async function buildMageOsProjectCommunityEditionMetapackage(releaseVersion, ins
         }
       ]
     }
-  });
+  })
 }
 
 
@@ -286,12 +286,13 @@ module.exports = {
     }
 
     if (instruction.magentoCommunityEditionMetapackage) {
-      // nothing to prep - all handled in the build step
+      // nothing to do - the product-community-edition metapackage composer.json is built from a template
     }
 
     if (instruction.magentoCommunityEditionProject) {
+      // update the base composer.json for releasing (doesn't happen for the base package because that uses a composer.json template)
       const instruction = {
-        'label': 'Mage-OS Community Edition Product Metapackage',
+        'label': 'Mage-OS Community Edition Project Metapackage',
         'dir': ''
       }
       await prepPackageForRelease(instruction, repoUrl, workBranch, releaseVersion, vendor, replaceVersionMap, workingCopyPath)
@@ -352,9 +353,9 @@ module.exports = {
 
     if (instruction.magentoCommunityEditionProject) {
       const built = await buildMageOsProjectCommunityEditionMetapackage(mageosRelease, instruction, {replaceVersionMap: upstreamVersionMap}, vendor, dependencyVersions)
-      Object.assign(packages, built);
+      Object.assign(packages, built)
     }
 
     return packages
-  }
+  },
 }

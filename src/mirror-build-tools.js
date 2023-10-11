@@ -151,7 +151,7 @@ async function replacePackageFiles(name, version, files) {
 }
 
 /**
- * @param {{repoUrl:String, fromTag:String, skipTags:{Object}}} instructions Array with build instructions
+ * @param {{repoUrl:String, fromTag:String, skipTags:{Object}, magentoCommunityEditionMetapackage: boolean, magentoCommunityEditionProject: boolean }} instructions Array with build instructions
  * @returns {Promise<void>}
  */
 async function processMirrorInstruction(instructions) {

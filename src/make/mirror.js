@@ -16,7 +16,7 @@ if (options.help) {
 
 Usage:
   node src/make/mirror.js [OPTIONS]
-  
+
 Options:
   --outputDir=   Dir to contain the built packages (default: packages)
   --gitRepoDir=  Dir to clone repositories into (default: repositories)
