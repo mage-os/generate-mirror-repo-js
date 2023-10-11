@@ -5,7 +5,6 @@ const {
   prepRelease,
   processBuildInstructions,
   validateVersionString,
-  updateComposerConfigFromMagentoToMageOs,
 } = require('./../release-build-tools');
 const {
   setArchiveBaseDir,
@@ -61,25 +60,15 @@ if (upstreamRelease && ! mageosRelease) {
 
 (async () => {
   try {
+    // Build previous releases
     console.log(`Building previous ${mageosVendor} releases`)
-    for (const instructions of releaseInstructions) {
+    for (const instruction of releaseInstructions) {
       // set vendor for product-community-edition and project-community-edition meta packages
-      if (instructions.magentoCommunityEditionProject || instructions.magentoCommunityEditionMetapackage) {
-        instructions.vendor = mageosVendor
-      }
-      if (instructions.magentoCommunityEditionMetapackage) {
-        // update product package magento dependencies taken from the root composer.json to given vendor
-        const productPackage = `${mageosVendor}/product-community-edition`;
-        instructions.transform = instructions.transform || {}
-        instructions.transform[productPackage] = instructions.transform[productPackage] || []
-        instructions.transform[productPackage].push((composerConfig) => {
-          updateComposerConfigFromMagentoToMageOs(composerConfig, composerConfig.version, {}, mageosVendor)
-          return composerConfig
-        })
-      }
-      await processMirrorInstruction(instructions)
+      instruction.vendor = mageosVendor
+      await processMirrorInstruction(instruction)
     }
 
+    // Build new release if specified
     if (mageosRelease) {
       console.log(`Building new ${mageosVendor} release ${mageosRelease}`)
       const upstreamVersionMap = upstreamRelease
@@ -88,10 +77,10 @@ if (upstreamRelease && ! mageosRelease) {
 
       for (const instruction of releaseInstructions) {
         const workBranch = await prepRelease(mageosRelease, mageosVendor, instruction, upstreamVersionMap)
-        await repo.addUpdated(instruction.repoUrl, `'*composer.json'`)
-        await repo.commit(instruction.repoUrl, workBranch, `Release ${mageosRelease}`)
+        await repo.addUpdated(instruction.repoUrl, `'*composer.json`)
+        await repo.commit(instruction.repoUrl, workBranch, `Release ${ mageosRelease }`);
         await repo.createTagForRef(instruction.repoUrl, workBranch, mageosRelease, '')
-        await processBuildInstructions(mageosRelease, mageosVendor, {...instruction, ref: mageosRelease, origRef: instruction.ref}, upstreamVersionMap)
+        await processBuildInstructions(mageosRelease, mageosVendor, instruction, upstreamVersionMap)
       }
     }
   } catch (exception) {

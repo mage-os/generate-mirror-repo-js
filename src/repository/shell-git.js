@@ -78,12 +78,11 @@ async function exec(cmd, options) {
       if (stderr) {
         reject(`[error] ${stderr}`);
       }
+      //console.log(`[${Math.ceil(stdout.length / 1024)}kb] ${cmd}`);
       resolve(stdout);
     });
   });
 }
-
-
 
 /*
  * Relaxing permissions is required to work around issues when running in docker with a mounted dir:
@@ -258,9 +257,7 @@ module.exports = {
   },
   async commit(url, branch, message) {
     const dir = await initRepo(url, branch)
-    await exec(`git config user.email "info@mage-os.org"`, {cwd: dir});
-    await exec(`git config user.name "Mage-OS CI"`, {cwd: dir});
-    await exec(`git commit --no-gpg-sign -m'${ (message || '').replaceAll("'", '"') }'`, {cwd: dir})
+    await exec(`git commit -m'${ (message || '').replaceAll("'", '"') }'`, {cwd: dir})
     return dir
   },
   clearCache() {
