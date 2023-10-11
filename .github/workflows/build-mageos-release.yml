@@ -43,7 +43,7 @@ jobs:
       repo: ${{ inputs.repo }}
       remote_dir: ${{ inputs.remote_dir }}
       entrypoint: src/make/mageos-release.js
-      delete: true
+      delete: false
       mageos_release: ${{ inputs.mageos_release }}
       upstream_release: ${{ inputs.upstream_release }}
       publish_tag: ${{ inputs.publish_tag }}
