@@ -42,22 +42,30 @@ async function copyAdditionalPackages(archiveDir) {
   }
 }
 
-async function createMagentoCommunityEditionMetapackagesSinceTag(url, tagsSpec, fixVersions, transform) {
+async function createMagentoCommunityEditionMetapackagesSinceTag(url, tagsSpec, fixVersions, transform, vendor) {
   const tags = await listTagsFrom(url, tagsSpec);
   console.log(`Versions to process: ${tags.join(', ')}`);
   for (const tag of tags) {
     console.log(`Processing ${tag}`);
-    await createMagentoCommunityEditionMetapackage(url, tag, {dependencyVersions: (fixVersions?.[tag] ?? {}), transform});
+    await createMagentoCommunityEditionMetapackage(url, tag, {
+      dependencyVersions: (fixVersions?.[tag] ?? {}),
+      transform,
+      vendor: vendor || 'magento'
+    });
   }
   return tags;
 }
 
-async function createProjectPackagesSinceTag(url, tagsSpec, fixVersions, transform) {
+async function createProjectPackagesSinceTag(url, tagsSpec, fixVersions, transform, vendor) {
   const tags = await listTagsFrom(url, tagsSpec);
   console.log(`Versions to process: ${tags.join(', ')}`);
   for (const tag of tags) {
     console.log(`Processing ${tag}`);
-    await createMagentoCommunityEditionProject(url, tag, {dependencyVersions: (fixVersions?.[tag] ?? {}), transform});
+    await createMagentoCommunityEditionProject(url, tag, {
+      dependencyVersions: (fixVersions?.[tag] ?? {}),
+      transform,
+      vendor: vendor || 'magento'
+    });
   }
   return tags;
 }
@@ -149,11 +157,11 @@ async function replacePackageFiles(name, version, files) {
 async function processMirrorInstruction(instructions) {
   let tags = [];
 
-  const {repoUrl, fromTag, skipTags, extraRefToRelease, fixVersions, transform = null} = instructions;
+  const {repoUrl, fromTag, skipTags, extraRefToRelease, fixVersions, vendor = null, transform = null} = instructions;
   const tagsSpec = {fromTag, skipTags}
 
   await Promise.all(
-    (extraRefToRelease || []).map(extra => repo.createTagForRef(repoUrl, extra.ref, extra.release, extra.details))
+    (extraRefToRelease || []).map(extra => repo.createTagForRef(repoUrl, extra.ref, extra.release, 'Mage-OS Extra Ref', extra.details))
   );
 
   for (const packageDir of (instructions.packageDirs || [])) {
@@ -184,13 +192,13 @@ async function processMirrorInstruction(instructions) {
 
   if (instructions.magentoCommunityEditionMetapackage) {
     console.log('Packaging Magento Community Edition Product Metapackage');
-    tags = await createMagentoCommunityEditionMetapackagesSinceTag(repoUrl, tagsSpec, fixVersions, transform);
+    tags = await createMagentoCommunityEditionMetapackagesSinceTag(repoUrl, tagsSpec, fixVersions, transform, vendor);
     console.log('Magento Community Edition Product Metapackage', tags);
   }
 
   if (instructions.magentoCommunityEditionProject) {
     console.log('Packaging Magento Community Edition Project');
-    tags = await createProjectPackagesSinceTag(repoUrl, tagsSpec, fixVersions, transform);
+    tags = await createProjectPackagesSinceTag(repoUrl, tagsSpec, fixVersions, transform, vendor);
     console.log('Magento Community Edition Project', tags);
   }
 

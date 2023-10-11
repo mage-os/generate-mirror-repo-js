@@ -21,10 +21,10 @@ on:
           - /var/www/repo.mage-os.org/html/
       mageos_release:
         description: 'New Mage-OS version (e.g. 1.0.0)'
-        required: true
+        required: false
         type: string
       upstream_release:
-        description: 'Closest Magento Open Source version (e.g. 2.4.6-p2)'
+        description: 'Closest Magento Open Source version for new release (e.g. 2.4.6-p2)'
         required: false
         default: ''
         type: string
