@@ -24,7 +24,15 @@ const mirrorBuildConfig = {
           return composerJson;
         }
       ]
-    }
+    },
+    // After package generation, the files for these specific module versions will be replaced.
+    packageReplacements: [
+      {
+        name: 'magento/module-catalog',
+        version: '103.0.7-p3',
+        files: ['Test/Mftf/ActionGroup/CustomOptionsActionGroup.xml']
+      }
+    ],
   },
   'security-package': {
     repoUrl: 'https://github.com/mage-os/mirror-security-package.git',

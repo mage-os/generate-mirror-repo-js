@@ -18,8 +18,6 @@ env:
   github_pat: ${{ secrets.MAGE_OS_CI_TOKEN }}
 
 # For each repo working copy, do
-#   Add and commit all changed files (can be multiple composer.json files in subdirectories)
-#   Tag the release (with -m '' so the tag has an author and date)
 #   Transform the origin remote
 #     from https://github.com/mage-os/mageos-magento2.git
 #     to   https://your_username:$GITHUB_TOKEN@github.com/mage-os/mageos-magento2.git
@@ -41,12 +39,9 @@ jobs:
           for working_copy in $(ls -d repositories/*/.git); do
             cd $(dirname $working_copy)
             echo Processing repository $(basename $(pwd))
-            git add --update -- '*composer.json'
-            git commit -m"Release ${{ env.mageos_release }}"
-            git tag "${{ env.mageos_release }}" -m ""
             ORIG=$(git remote -v | grep push | awk '{print $2}')
             NEW=${ORIG/https:\/\/github.com/https:\/\/mage-os-ci:${{ env.github_pat }}@github.com}
             git push $NEW "${{ env.mageos_release }}"
             cd -
           done
-        name: "Tag ${{ inputs.mageos_release }} and push to each origin for all repositories"
+        name: "Push ${{ inputs.mageos_release }} to each origin for all repositories"

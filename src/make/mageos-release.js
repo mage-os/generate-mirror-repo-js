@@ -5,16 +5,13 @@ const {
   prepRelease,
   processBuildInstructions,
   validateVersionString,
-  buildMageOsProductCommunityEditionMetapackage
 } = require('./../release-build-tools');
 const {
   setArchiveBaseDir,
   setMageosPackageRepoUrl,
-  createPackagesForRef,
-  createPackageForRef,
-  createMetaPackageFromRepoDir
 } = require("../package-modules");
 const {buildConfig: releaseInstructions} = require('./../build-config/mageos-release-build-config');
+const {processMirrorInstruction} = require("../mirror-build-tools");
 
 const options = parseOptions(
   `$outputDir $gitRepoDir $repoUrl $mageosVendor $mageosRelease $upstreamRelease @help|h`,
@@ -54,26 +51,37 @@ const mageosRelease = options.mageosRelease || ''
 const mageosVendor = options.mageosVendor || 'mage-os'
 const upstreamRelease = options.upstreamRelease || ''
 
-validateVersionString(mageosRelease, 'mageosRelease');
+mageosRelease && validateVersionString(mageosRelease, 'mageosRelease');
 upstreamRelease && validateVersionString(upstreamRelease, 'upstreamRelease');
+
+if (upstreamRelease && ! mageosRelease) {
+  throw new Error(`An upstream release may only be specified when building a new release`)
+}
 
 (async () => {
   try {
-
-    const upstreamVersionMap = upstreamRelease
-      ? await getPackageVersionMap(upstreamRelease)
-      : {}
-
+    // Build previous releases
+    console.log(`Building previous ${mageosVendor} releases`)
     for (const instruction of releaseInstructions) {
+      // set vendor for product-community-edition and project-community-edition meta packages
+      instruction.vendor = mageosVendor
+      await processMirrorInstruction(instruction)
+    }
 
-      const workBranch = await prepRelease(mageosRelease, mageosVendor, instruction, upstreamVersionMap)
+    // Build new release if specified
+    if (mageosRelease) {
+      console.log(`Building new ${mageosVendor} release ${mageosRelease}`)
+      const upstreamVersionMap = upstreamRelease
+        ? await getPackageVersionMap(upstreamRelease)
+        : {}
 
-      // TODO: maybe commit prepped branch and tag as mageosRelease?
-
-      const releaseInstructions = {...instruction, ref: workBranch}
-      await processBuildInstructions(mageosRelease, mageosVendor, releaseInstructions, upstreamVersionMap)
-
-      // TODO: maybe push commit and tag to repoUrl? Maybe leave that as a manual step?
+      for (const instruction of releaseInstructions) {
+        const workBranch = await prepRelease(mageosRelease, mageosVendor, instruction, upstreamVersionMap)
+        await repo.addUpdated(instruction.repoUrl, `'*composer.json`)
+        await repo.commit(instruction.repoUrl, workBranch, `Release ${ mageosRelease }`);
+        await repo.createTagForRef(instruction.repoUrl, workBranch, mageosRelease, '')
+        await processBuildInstructions(mageosRelease, mageosVendor, instruction, upstreamVersionMap)
+      }
     }
   } catch (exception) {
     console.log(exception);
