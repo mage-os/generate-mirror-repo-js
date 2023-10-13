@@ -148,7 +148,7 @@ function setMageOsDependencyVersion(obj, dependencyType, releaseVersion, vendor)
 }
 
 function updateComposerDepsVersionForMageOs(composerConfig, releaseVersion, vendor) {
-  for (const dependencyType of ['require', 'require-dev', 'suggest', 'replace']) {
+  for (const dependencyType of ['require', 'require-dev', 'suggest']) {
     composerConfig[dependencyType] && (composerConfig[dependencyType] = setMageOsDependencyVersion(composerConfig[dependencyType], dependencyType, releaseVersion, vendor))
   }
 }

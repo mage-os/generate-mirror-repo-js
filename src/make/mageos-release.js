@@ -5,6 +5,7 @@ const {
   prepRelease,
   processBuildInstructions,
   validateVersionString,
+  updateComposerConfigFromMagentoToMageOs,
 } = require('./../release-build-tools');
 const {
   setArchiveBaseDir,
@@ -60,22 +61,25 @@ if (upstreamRelease && ! mageosRelease) {
 
 (async () => {
   try {
-    // Build previous releases
     console.log(`Building previous ${mageosVendor} releases`)
-    for (const instruction of releaseInstructions) {
+    for (const instructions of releaseInstructions) {
       // set vendor for product-community-edition and project-community-edition meta packages
-
-      // TODO: the product-community-edition and project-community-edition packages need to be treated as special cases
-      // Because they don't simply use the composer.json files out of a directory, but rather are generated on the fly
-      // with the help of templates in resource/composer-templates/mage-os, the processMirrorInstruction function
-      // doesn't correctly process the required values.
-      instruction.vendor = mageosVendor
-      // Setting the vendor is one step, but more is needed, mainly replacing the vendor name (see updateComposerConfigFromMagentoToMageOs in release-build-tools.js)
-
-      await processMirrorInstruction(instruction)
+      if (instructions.magentoCommunityEditionProject || instructions.magentoCommunityEditionMetapackage) {
+        instructions.vendor = mageosVendor
+      }
+      if (instructions.magentoCommunityEditionMetapackage) {
+        // update product package magento dependencies taken from the root composer.json to given vendor
+        const productPackage = `${mageosVendor}/product-community-edition`;
+        instructions.transform = instructions.transform || {}
+        instructions.transform[productPackage] = instructions.transform[productPackage] || []
+        instructions.transform[productPackage].push((composerConfig) => {
+          updateComposerConfigFromMagentoToMageOs(composerConfig, composerConfig.version, {}, mageosVendor)
+          return composerConfig
+        })
+      }
+      await processMirrorInstruction(instructions)
     }
 
-    // Build new release if specified
     if (mageosRelease) {
       console.log(`Building new ${mageosVendor} release ${mageosRelease}`)
       const upstreamVersionMap = upstreamRelease
