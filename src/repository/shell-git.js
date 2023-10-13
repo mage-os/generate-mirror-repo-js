@@ -73,7 +73,7 @@ async function exec(cmd, options) {
     const bufferBytes = 4 * 1024 * 1024; // 4M
     childProcess.exec(cmd, {maxBuffer: bufferBytes, ...(options || {})}, (error, stdout, stderr) => {
       if (error) {
-        reject(`Error executing command${options?.cwd ? ` in ${options.cwd}` : ''}: ${error.message}\n\n${stderr}`)
+        reject(`Error executing command${options?.cwd ? ` in ${options.cwd}` : ''}: ${error.message}`)
       }
       if (stderr) {
         reject(`[error] ${stderr}`);
