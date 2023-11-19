@@ -48,7 +48,7 @@ module.exports = {
   async determineSourceDependencies(dir, files) {
     const prevCwd = cwd();
     try {
-      console.log(`Determining dependencies for package being built...`);
+      console.log(`Determining dependencies...`);
       const hash = createHash('md5').update(dir).digest('hex');
       const workDir = `${tmpdir()}/workdir-${hash}`;
       await setupWorkDir(dir, workDir);

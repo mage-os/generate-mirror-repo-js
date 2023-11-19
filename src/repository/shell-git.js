@@ -73,7 +73,7 @@ async function exec(cmd, options) {
     const bufferBytes = 4 * 1024 * 1024; // 4M
     childProcess.exec(cmd, {maxBuffer: bufferBytes, ...(options || {})}, (error, stdout, stderr) => {
       if (error) {
-        reject(`Error executing command${options?.cwd ? ` in ${options.cwd}` : ''}: ${error.message}`)
+        reject(`Error executing command${options?.cwd ? ` in ${options.cwd}` : ''}: ${error.message}\n${stdout}`)
       }
       if (stderr) {
         reject(`[error] ${stderr}`);
@@ -82,6 +82,8 @@ async function exec(cmd, options) {
     });
   });
 }
+
+
 
 /*
  * Relaxing permissions is required to work around issues when running in docker with a mounted dir:
