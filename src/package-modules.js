@@ -125,8 +125,8 @@ function setDependencyVersions(composerConfig, dependencyVersions, vendor) {
         // See \Magento\SampleData\Model\Dependency::getSampleDataPackages
         // Package names are for example magento/module-catalog-sample-data or magento/magento/sample-data-media
         composerConfig[dependencyType][dep] = dependencyType === 'suggest' && (dep.endsWith('-sample-data') || dep.startsWith('sample-data-'))
-          ? `Sample Data version: ${dependencyVersions[dep]}`
-          : dependencyVersions[dep];
+          ? `Sample Data version: ${dependencyVersions[dep] || dependencyVersions['*']}`
+          : dependencyVersions[dep] || dependencyVersions['*'];
       }
     }
   }

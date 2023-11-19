@@ -83,6 +83,8 @@ async function exec(cmd, options) {
   });
 }
 
+
+
 /*
  * Relaxing permissions is required to work around issues when running in docker with a mounted dir:
  *   fatal: detected dubious ownership in repository at '...'
