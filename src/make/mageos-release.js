@@ -91,7 +91,7 @@ if (upstreamRelease && ! mageosRelease) {
         await repo.addUpdated(instruction.repoUrl, `'*composer.json'`)
         await repo.commit(instruction.repoUrl, workBranch, `Release ${mageosRelease}`)
         await repo.createTagForRef(instruction.repoUrl, workBranch, mageosRelease, '')
-        await processBuildInstructions(mageosRelease, mageosVendor, instruction, upstreamVersionMap)
+        await processBuildInstructions(mageosRelease, mageosVendor, {...instruction, ref: mageosRelease, origRef: instruction.ref}, upstreamVersionMap)
       }
     }
   } catch (exception) {

@@ -129,7 +129,7 @@ function updateMapFromMagentoToMageOs(obj, vendor) {
 
 function updateComposerDepsFromMagentoToMageOs(composerConfig, vendor) {
   composerConfig.name = setMageOsVendor(composerConfig.name, vendor)
-  for (const dependencyType of ['require', 'require-dev', 'suggest']) {
+  for (const dependencyType of ['require', 'require-dev', 'suggest', 'replace']) {
     composerConfig[dependencyType] && (composerConfig[dependencyType] = updateMapFromMagentoToMageOs(composerConfig[dependencyType], vendor))
   }
 }
@@ -163,15 +163,21 @@ function updateComposerPluginConfigForMageOs(composerConfig, vendor) {
   }
 }
 
+/**
+ * Replace all occurrences of the magento vendor name with the given vendor in a composer.json
+ *
+ * This also happens for the "replace" section, before the given replaceVersionMap is merged.
+ */
 function updateComposerConfigFromMagentoToMageOs(composerConfig, releaseVersion, replaceVersionMap, vendor) {
   composerConfig.version = releaseVersion
-  if (replaceVersionMap[composerConfig.name]) {
-    composerConfig.replace = {[composerConfig.name]: replaceVersionMap[composerConfig.name]}
-  }
   composerConfig.name = setMageOsVendor(composerConfig.name, vendor)
   updateComposerDepsFromMagentoToMageOs(composerConfig, vendor)
   updateComposerDepsVersionForMageOs(composerConfig, releaseVersion, vendor)
   updateComposerPluginConfigForMageOs(composerConfig, vendor)
+
+  if (replaceVersionMap[composerConfig.name]) {
+    composerConfig.replace = {[composerConfig.name]: replaceVersionMap[composerConfig.name]}
+  }
 }
 
 async function prepPackageForRelease({label, dir}, repoUrl, ref, releaseVersion, vendor, replaceVersionMap, workingCopyPath) {
@@ -308,7 +314,7 @@ module.exports = {
 
     const packages = {} // record generated packages with versions
 
-    const {repoUrl, transform, ref} = instruction
+    const {repoUrl, transform, ref, origRef} = instruction
 
     for (const packageDir of (instruction.packageDirs || [])) {
       const {label, dir, excludes} = Object.assign({excludes: []}, packageDir)
@@ -318,7 +324,9 @@ module.exports = {
         mageosRelease,
         fallbackVersion,
         dependencyVersions,
-        transform
+        transform,
+        origRef,
+        vendor
       })
       Object.assign(packages, built)
     }
@@ -335,7 +343,9 @@ module.exports = {
         mageosRelease,
         fallbackVersion,
         dependencyVersions,
-        transform
+        transform,
+        origRef,
+        vendor
       })
       Object.assign(packages, built)
     }
