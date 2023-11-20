@@ -123,8 +123,8 @@ function setDependencyVersions(composerConfig, dependencyVersions, vendor) {
       if (dependencyVersions[dep] || (vendor && dep.startsWith(vendor) && dependencyVersions['*'])) {
         // The "Sample Data version:" prefix is used by sampledata:deploy to identify packages to require.
         // See \Magento\SampleData\Model\Dependency::getSampleDataPackages
-        // Package names are for example magento/module-catalog-sample-data or magento/magento/sample-data-media
-        composerConfig[dependencyType][dep] = dependencyType === 'suggest' && (dep.endsWith('-sample-data') || dep.startsWith('sample-data-'))
+        // Package names are for example magento/module-catalog-sample-data or magento/sample-data-media
+        composerConfig[dependencyType][dep] = dependencyType === 'suggest' && (dep.endsWith('-sample-data') || dep.includes('/sample-data-'))
           ? `Sample Data version: ${dependencyVersions[dep] || dependencyVersions['*']}`
           : dependencyVersions[dep] || dependencyVersions['*'];
       }
