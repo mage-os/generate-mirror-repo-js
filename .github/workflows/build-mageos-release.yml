@@ -21,10 +21,11 @@ on:
           - /var/www/repo.mage-os.org/html/
       mageos_release:
         description: 'New Mage-OS version (e.g. 1.0.0)'
-        required: true
+        required: false
+        default: ''
         type: string
       upstream_release:
-        description: 'Closest Magento Open Source version (e.g. 2.4.6-p2)'
+        description: 'Closest Magento Open Source version for new release (e.g. 2.4.6-p2)'
         required: false
         default: ''
         type: string
@@ -60,8 +61,7 @@ jobs:
       - uses: mage-os/github-actions/supported-version@main
         with:
           project: 'mage-os'
-          kind: 'custom'
-          custom_versions: mage-os/project-community-edition:${{ inputs.mageos_release }}
+          kind: 'all'
         id: supported-version
   integration-check:
     name: "installation check"
@@ -77,7 +77,7 @@ jobs:
       composer_cache_key: ${{ inputs.composer_cache_key || 'v1' }}
   publish-release-tag:
     name: "Publish release tag"
-    if: ${{ success() && inputs.publish_tag }}
+    if: ${{ success() && inputs.mageos_release && inputs.publish_tag }}
     needs: [ deploy, integration-check ]
     uses: ./.github/workflows/push-release-tag.yml
     with:

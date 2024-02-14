@@ -5,16 +5,14 @@ const {
   prepRelease,
   processBuildInstructions,
   validateVersionString,
-  buildMageOsProductCommunityEditionMetapackage
+  updateComposerConfigFromMagentoToMageOs,
 } = require('./../release-build-tools');
 const {
   setArchiveBaseDir,
   setMageosPackageRepoUrl,
-  createPackagesForRef,
-  createPackageForRef,
-  createMetaPackageFromRepoDir
 } = require("../package-modules");
 const {buildConfig: releaseInstructions} = require('./../build-config/mageos-release-build-config');
+const {processMirrorInstruction} = require("../mirror-build-tools");
 
 const options = parseOptions(
   `$outputDir $gitRepoDir $repoUrl $mageosVendor $mageosRelease $upstreamRelease @help|h`,
@@ -54,26 +52,47 @@ const mageosRelease = options.mageosRelease || ''
 const mageosVendor = options.mageosVendor || 'mage-os'
 const upstreamRelease = options.upstreamRelease || ''
 
-validateVersionString(mageosRelease, 'mageosRelease');
+mageosRelease && validateVersionString(mageosRelease, 'mageosRelease');
 upstreamRelease && validateVersionString(upstreamRelease, 'upstreamRelease');
+
+if (upstreamRelease && ! mageosRelease) {
+  throw new Error(`An upstream release may only be specified when building a new release`)
+}
 
 (async () => {
   try {
+    console.log(`Building previous ${mageosVendor} releases`)
+    for (const instructions of releaseInstructions) {
+      // set vendor for product-community-edition and project-community-edition meta packages
+      if (instructions.magentoCommunityEditionProject || instructions.magentoCommunityEditionMetapackage) {
+        instructions.vendor = mageosVendor
+      }
+      if (instructions.magentoCommunityEditionMetapackage) {
+        // update product package magento dependencies taken from the root composer.json to given vendor
+        const productPackage = `${mageosVendor}/product-community-edition`;
+        instructions.transform = instructions.transform || {}
+        instructions.transform[productPackage] = instructions.transform[productPackage] || []
+        instructions.transform[productPackage].push((composerConfig) => {
+          updateComposerConfigFromMagentoToMageOs(composerConfig, composerConfig.version, {}, mageosVendor)
+          return composerConfig
+        })
+      }
+      await processMirrorInstruction(instructions)
+    }
 
-    const upstreamVersionMap = upstreamRelease
-      ? await getPackageVersionMap(upstreamRelease)
-      : {}
+    if (mageosRelease) {
+      console.log(`Building new ${mageosVendor} release ${mageosRelease}`)
+      const upstreamVersionMap = upstreamRelease
+        ? await getPackageVersionMap(upstreamRelease)
+        : {}
 
-    for (const instruction of releaseInstructions) {
-
-      const workBranch = await prepRelease(mageosRelease, mageosVendor, instruction, upstreamVersionMap)
-
-      // TODO: maybe commit prepped branch and tag as mageosRelease?
-
-      const releaseInstructions = {...instruction, ref: workBranch}
-      await processBuildInstructions(mageosRelease, mageosVendor, releaseInstructions, upstreamVersionMap)
-
-      // TODO: maybe push commit and tag to repoUrl? Maybe leave that as a manual step?
+      for (const instruction of releaseInstructions) {
+        const workBranch = await prepRelease(mageosRelease, mageosVendor, instruction, upstreamVersionMap)
+        await repo.addUpdated(instruction.repoUrl, `'*composer.json'`)
+        await repo.commit(instruction.repoUrl, workBranch, `Release ${mageosRelease}`)
+        await repo.createTagForRef(instruction.repoUrl, workBranch, mageosRelease, '')
+        await processBuildInstructions(mageosRelease, mageosVendor, {...instruction, ref: mageosRelease, origRef: instruction.ref}, upstreamVersionMap)
+      }
     }
   } catch (exception) {
     console.log(exception);

@@ -24,11 +24,11 @@ module.exports = {
           }
           return !ref.startsWith('2.4.0') && (file === '.github' || file.startsWith('.github/'));
         }, (ref, file) => {
-          const releasesWithoutGitIgnore = ['2.4.1', '2.4.1-p1', '2.4.2', '2.4.4-p3', '2.4.4-p4', '2.4.4-p5', '2.4.4-p6', '2.4.5-p2', '2.4.5-p3', '2.4.5-p4', '2.4.5-p5', '2.4.6', '2.4.6-p1', '2.4.6-p2', '2.4.6-p3'];
+          const releasesWithGitIgnore = ['2.4.0-p1', '2.4.0', '2.3.7-p4', '2.3.7-p3', '2.3.7-p2', '2.4.2-p1', '2.4.2-p2', '2.4.3', '2.4.3-p1', '2.4.3-p2', '2.4.3-p3', '2.4.4', '2.4.4-p1', '2.4.4-p2', '2.4.5', '2.4.5-p1', '2.4.7-beta2', '2.4.7-beta1']
           if (typeof file === "undefined") {
-            return releasesWithoutGitIgnore.includes(ref) ? '.gitignore' : '';
+            return releasesWithGitIgnore.includes(ref) ? '' : '.gitignore'
           }
-          return file === '.gitignore' && releasesWithoutGitIgnore.includes(ref);
+          return file === '.gitignore' && ! releasesWithGitIgnore.includes(ref);
         }, "app/code/", "app/design/frontend/", "app/design/adminhtml/", "app/i18n/", "lib/internal/Magento/Framework/", "composer.lock", "app/etc/vendor_path.php", "dev/tests/static/testsuite/Magento/Test/Legacy/FilesystemTest.php"],
         composerJsonPath: `${__dirname}/../../resource/composer-templates/magento/magento2-base/template.json`,
         // The directories are required for the magento-composer-installer to properly function, otherwise it doesn't complete processing and app/etc is missing.
@@ -65,15 +65,6 @@ module.exports = {
       },
     ],
     packageMetaFromDirs: [],
-
-    // After package generation, the files for these specific module versions will be replaced.
-    packageReplacements: [
-      {
-        name: 'magento/module-catalog',
-        version: '103.0.7-p3',
-        files: ['Test/Mftf/ActionGroup/CustomOptionsActionGroup.xml']
-      }
-    ],
   },
   'security-package': {
     repoUrl: 'https://github.com/mage-os/mirror-security-package.git',

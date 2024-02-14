@@ -73,25 +73,26 @@ async function exec(cmd, options) {
     const bufferBytes = 4 * 1024 * 1024; // 4M
     childProcess.exec(cmd, {maxBuffer: bufferBytes, ...(options || {})}, (error, stdout, stderr) => {
       if (error) {
-        reject(`Error executing command: ${error.message}`);
+        reject(`Error executing command${options?.cwd ? ` in ${options.cwd}` : ''}: ${error.message}\n${stdout}`)
       }
       if (stderr) {
         reject(`[error] ${stderr}`);
       }
-      //console.log(`[${Math.ceil(stdout.length / 1024)}kb] ${cmd}`);
       resolve(stdout);
     });
   });
 }
+
+
 
 /*
  * Relaxing permissions is required to work around issues when running in docker with a mounted dir:
  *   fatal: detected dubious ownership in repository at '...'
  */
 async function relaxRepoOwnerPermissions(dir) {
-  if (! initializedRepositories[dir]) {
-    initializedRepositories[dir] = true
-    return exec(`git config --global --add safe.directory ${dir}`, {cwd: dir})
+  if (! initializedRepositories['*']) {
+    initializedRepositories['*'] = true
+    return exec(`git config --global --add safe.directory "*"`, {cwd: dir})
   }
 }
 
@@ -224,25 +225,42 @@ module.exports = {
     validateBranchIsSecure(branch);
     return createBranch(url, branch, ref);
   },
-  async createTagForRef(url, ref, tag, details) {
+  async createTagForRef(url, ref, tag, message, details) {
     validateRefIsSecure(ref);
     validateRefIsSecure(tag);
     const dir = await initRepo(url);
-    const msg = await exec(`git tag -n ${tag}`, {cwd: dir});
-    if (msg.trim().length === 0) {
-      // Create tag if it doesn't exist
-      await exec(`git config user.email "repo@mage-os.org"`, {cwd: dir});
-      await exec(`git config user.name "Mage-OS Mirror Repo"`, {cwd: dir});
-      await exec(`git tag -a ${tag} ${ref} -m "Mage-OS Extra Ref"`, {cwd: dir});
-    } else if (! msg.includes('Mage-OS Extra Ref')) {
+    const messageForTag = (message || '').replaceAll("'", '');
+    const tags = await this.listTags(url);
+    if (tags.includes(tag)) {
       // Throw if the tag was not created by package generator
+      if (messageForTag.length > 0) {
+        const existingMessageOfTag = await exec(`git tag -n ${tag}`, {cwd: dir});
+        if (existingMessageOfTag.includes(messageForTag)) {
+          return
+        }
+      }
       throw (details || `Tag ${tag} already exists on repo ${url}`);
     }
+    await exec(`git config user.email "info@mage-os.org"`, {cwd: dir});
+    await exec(`git config user.name "Mage-OS CI"`, {cwd: dir});
+    await exec(`git tag -a ${tag} ${ref} -m '${messageForTag}'`, {cwd: dir});
   },
   async pull(url, ref) {
     validateRefIsSecure(ref)
     const dir = await initRepo(url, ref)
     await exec(`git pull --ff-only --quiet origin ${ref}`, {cwd: dir})
+    return dir
+  },
+  async addUpdated(url, pathSpec) {
+    const dir = await initRepo(url)
+    await exec(`git add --update -- ${ pathSpec }`, {cwd: dir})
+    return dir
+  },
+  async commit(url, branch, message) {
+    const dir = await initRepo(url, branch)
+    await exec(`git config user.email "info@mage-os.org"`, {cwd: dir});
+    await exec(`git config user.name "Mage-OS CI"`, {cwd: dir});
+    await exec(`git commit --no-gpg-sign -m'${ (message || '').replaceAll("'", '"') }'`, {cwd: dir})
     return dir
   },
   clearCache() {

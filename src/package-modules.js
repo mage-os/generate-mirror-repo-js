@@ -114,18 +114,19 @@ function chooseNameAndVersion(magentoName, composerJson, ref, givenVersion) {
 }
 
 /**
- * @param {{'require':{}, 'require-dev':{}}} composerConfig
+ * @param {{'require':{}, 'require-dev':{}, 'suggest':{}}} composerConfig
  * @param {{}} dependencyVersions composer package:version dependency map. Dependencies for packages in the map will be set to the given versions
  */
-function setDependencyVersions(composerConfig, dependencyVersions) {
+function setDependencyVersions(composerConfig, dependencyVersions, vendor) {
   for (const dependencyType of ['require', 'require-dev', 'suggest']) {
     for (const dep in (composerConfig[dependencyType] || {})) {
-      if (dependencyVersions[dep]) {
+      if (dependencyVersions[dep] || (vendor && dep.startsWith(vendor) && dependencyVersions['*'])) {
         // The "Sample Data version:" prefix is used by sampledata:deploy to identify packages to require.
         // See \Magento\SampleData\Model\Dependency::getSampleDataPackages
-        composerConfig[dependencyType][dep] = dependencyType === 'suggest' && dep.endsWith('-sample-data')
-          ? `Sample Data version: ${dependencyVersions[dep]}`
-          : dependencyVersions[dep];
+        // Package names are for example magento/module-catalog-sample-data or magento/sample-data-media
+        composerConfig[dependencyType][dep] = dependencyType === 'suggest' && (dep.endsWith('-sample-data') || dep.includes('/sample-data-'))
+          ? `Sample Data version: ${dependencyVersions[dep] || dependencyVersions['*']}`
+          : dependencyVersions[dep] || dependencyVersions['*'];
       }
     }
   }
@@ -226,7 +227,9 @@ async function createPackageForRef(url, moduleDir, ref, options) {
     emptyDirsToAdd,
     dependencyVersions,
     fallbackVersion,
-    transform
+    transform,
+    origRef,
+    vendor
   } = Object.assign(defaults, (options || {}));
 
   if (!excludes.includes('composer.json')) excludes.push('composer.json');
@@ -259,7 +262,11 @@ async function createPackageForRef(url, moduleDir, ref, options) {
    *
    * 4. nightly build, previously unreleased version:
    *    dependencyVersions: undefined, composer.json version: undefined
-   *    => use fallbackVersion
+   *    => use fallbackVersions
+   *
+   * 5. mageos release
+   *    dependencyVersions: set as {'*': releaseVersion}
+   *    => use dependencyVersions
    */
   ({
     name,
@@ -293,12 +300,19 @@ async function createPackageForRef(url, moduleDir, ref, options) {
   composerConfig.version = version;
 
   if ((composerJsonPath || '').endsWith('template.json')) {
-    const dir = await (repo.checkout(url, ref));
+    // the origRef that ref is based on needs to be checked out for composer isntall, because only magento/* packages are available through the mirror repo
+    const dir = await repo.checkout(url, origRef || ref);
     const deps = await determineSourceDependencies(dir, files);
+    origRef && await repo.checkout(url, ref);
     composerConfig.require = {};
-    Object.keys(deps).sort().forEach(dependency => composerConfig.require[dependency] = deps[dependency]);
+    Object.keys(deps).sort().forEach(dependency => {
+      const dependencyName = vendor && dependency.startsWith('magento/')
+        ? dependency.replace(/^magento\//, vendor + '/')
+        : dependency
+      composerConfig.require[dependencyName] = deps[dependency]
+    });
   }
-  setDependencyVersions(composerConfig, dependencyVersions);
+  setDependencyVersions(composerConfig, dependencyVersions, vendor);
 
   composerConfig = (transform && transform[name] || []).reduce((config, transformFn) => transformFn(config), composerConfig);
 
@@ -481,7 +495,7 @@ async function createMagentoCommunityEditionMetapackage(url, ref, options) {
     for (const k of ['autoload', 'autoload-dev', 'config', 'conflict', 'extra', 'minimum-stability', 'replace', 'require-dev', 'suggest']) {
       delete composerConfig[k];
     }
-    setDependencyVersions(composerConfig, dependencyVersions);
+    setDependencyVersions(composerConfig, dependencyVersions, vendor);
 
     return (transform && transform[packageName] || []).reduce((config, transformFn) => transformFn(config), composerConfig);
   }, release || version);
@@ -534,7 +548,7 @@ async function createMagentoCommunityEditionProject(url, ref, options) {
     for (const k of ['replace', 'suggest']) {
       delete composerConfig[k];
     }
-    setDependencyVersions(composerConfig, dependencyVersions);
+    setDependencyVersions(composerConfig, dependencyVersions, vendor);
 
     return (transform && transform[name] || []).reduce((config, transformFn) => transformFn(config), composerConfig)
   }, version);
@@ -587,7 +601,7 @@ async function determineMetaPackageFromRepoDir(url, dir, ref, release) {
  * @returns {Promise<{}>}
  */
 async function createMetaPackageFromRepoDir(url, dir, ref, options) {
-  const {release, dependencyVersions, transform} = Object.assign({
+  const {release, dependencyVersions, transform, vendor} = Object.assign({
     release: undefined,
     dependencyVersions: {}
   }, (options || {}));
@@ -601,7 +615,7 @@ async function createMetaPackageFromRepoDir(url, dir, ref, options) {
   // Ensure version is set on composer config because not all repos provide the version in composer.json (e.g.
   // page-builder) and it is required by satis to be able to use artifact repositories.
   composerConfig.version = version;
-  setDependencyVersions(composerConfig, dependencyVersions);
+  setDependencyVersions(composerConfig, dependencyVersions, vendor);
 
   composerConfig = (transform && transform[name] || []).reduce((config, transformFn) => transformFn(config), composerConfig);
 
