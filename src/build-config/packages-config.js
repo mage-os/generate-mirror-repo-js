@@ -359,4 +359,17 @@ module.exports = {
     ],
     packageMetaFromDirs: [],
   },
+  'php-compatibility-fork': {
+    repoUrl: 'https://github.com/mage-os/mirror-PHPCompatibilityFork',
+
+    packageDirs: [],
+    packageIndividual: [
+      {
+        label: 'Magento fork of PHPCompatibility/PHPCompatibility',
+        dir: '',
+        excludes: ['.github/'],
+      }
+    ],
+    packageMetaFromDirs: [],
+  },
 };

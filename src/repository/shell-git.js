@@ -214,7 +214,9 @@ module.exports = {
   async listTags(url) {
     const dir = await initRepo(url);
     const out = await exec(`git tag`, {cwd: dir});
-    return out.trim().split("\n");
+    const result = out.trim();
+    // no tags? return empty array
+    return result.length === 0 ? [] : result.split("\n");
   },
   async checkout(url, ref) {
     validateRefIsSecure(ref);
