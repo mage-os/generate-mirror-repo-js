@@ -630,7 +630,7 @@ const mirrorBuildConfig = {
     fromTag: '1.16.0'
   },
   'php-compatibility-fork': {
-    repoUrl: 'https://github.com/mage-os/mageos-PHPCompatibilityFork',
+    repoUrl: 'https://github.com/mage-os/mirror-PHPCompatibilityFork',
     fromTag: 'v0.1.0'
   },
 }
