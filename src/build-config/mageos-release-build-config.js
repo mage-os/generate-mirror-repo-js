@@ -109,6 +109,12 @@ const releaseBuildConfig = {
     ref: 'main',
     fromTag: '1.0.0',
   },
+
+  'php-compatibility-fork': {
+    repoUrl: 'https://github.com/mage-os/mageos-PHPCompatibilityFork',
+    ref: 'develop',
+    fromTag: '1.0.0',
+  },
 };
 
 module.exports = {

@@ -15,10 +15,11 @@ const {buildConfig: releaseInstructions} = require('./../build-config/mageos-rel
 const {processMirrorInstruction} = require("../mirror-build-tools");
 
 const options = parseOptions(
-  `$outputDir $gitRepoDir $repoUrl $mageosVendor $mageosRelease $upstreamRelease @help|h`,
+  `$outputDir $gitRepoDir $repoUrl $mageosVendor $mageosRelease $upstreamRelease @skipHistory @help|h`,
   process.argv
 );
 
+const skipHistory = options.skipHistory;
 
 if (options.help) {
   console.log(`Build Mage-OS release packages from github.com/mage-os git repositories.
@@ -61,23 +62,25 @@ if (upstreamRelease && ! mageosRelease) {
 
 (async () => {
   try {
-    console.log(`Building previous ${mageosVendor} releases`)
-    for (const instructions of releaseInstructions) {
-      // set vendor for product-community-edition and project-community-edition meta packages
-      if (instructions.magentoCommunityEditionProject || instructions.magentoCommunityEditionMetapackage) {
-        instructions.vendor = mageosVendor
+    if (! skipHistory) {
+      console.log(`Building previous ${mageosVendor} releases`)
+      for (const instructions of releaseInstructions) {
+        // set vendor for product-community-edition and project-community-edition meta packages
+        if (instructions.magentoCommunityEditionProject || instructions.magentoCommunityEditionMetapackage) {
+          instructions.vendor = mageosVendor
+        }
+        if (instructions.magentoCommunityEditionMetapackage) {
+          // update product package magento dependencies taken from the root composer.json to given vendor
+          const productPackage = `${mageosVendor}/product-community-edition`;
+          instructions.transform = instructions.transform || {}
+          instructions.transform[productPackage] = instructions.transform[productPackage] || []
+          instructions.transform[productPackage].push((composerConfig) => {
+            updateComposerConfigFromMagentoToMageOs(composerConfig, composerConfig.version, {}, mageosVendor)
+            return composerConfig
+          })
+        }
+        await processMirrorInstruction(instructions)
       }
-      if (instructions.magentoCommunityEditionMetapackage) {
-        // update product package magento dependencies taken from the root composer.json to given vendor
-        const productPackage = `${mageosVendor}/product-community-edition`;
-        instructions.transform = instructions.transform || {}
-        instructions.transform[productPackage] = instructions.transform[productPackage] || []
-        instructions.transform[productPackage].push((composerConfig) => {
-          updateComposerConfigFromMagentoToMageOs(composerConfig, composerConfig.version, {}, mageosVendor)
-          return composerConfig
-        })
-      }
-      await processMirrorInstruction(instructions)
     }
 
     if (mageosRelease) {

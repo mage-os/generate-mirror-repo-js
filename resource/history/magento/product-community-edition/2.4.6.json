@@ -1,6 +1,6 @@
 {
     "require": {
-        "adobe-commerce/adobe-ims-metapackage": "2.2.0",
+        "adobe-commerce/adobe-ims-metapackage": "^2.2",
         "magento/adobe-stock-integration": "2.1.5",
         "magento/inventory-metapackage": "1.2.6",
         "magento/google-shopping-ads": "4.0.1",
