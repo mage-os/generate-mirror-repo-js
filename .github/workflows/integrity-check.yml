@@ -8,7 +8,7 @@ on:
         required: true
         type: string
     secrets:
-      composer_auth:
+      COMPOSER_AUTH:
         required: true
 jobs:
   compute-matrix:
@@ -40,7 +40,7 @@ jobs:
           install-directory: ${{ github.workspace }}/mageos
           magento-version: ${{ matrix.magento }}
           composer-version: ${{ matrix.composer }}
-          composer-auth: ${{ secrets.composer_auth }}
+          composer-auth: ${{ secrets.COMPOSER_AUTH }}
           php-version: ${{ matrix.php }}
           sample-data: 'true'
 
@@ -51,7 +51,7 @@ jobs:
           install-directory: ${{ github.workspace }}/magento
           magento-version: ${{ matrix.magento }}
           composer-version: ${{ matrix.composer }}
-          composer-auth: ${{ secrets.composer_auth }}
+          composer-auth: ${{ secrets.COMPOSER_AUTH }}
           php-version: ${{ matrix.php }}
           sample-data: 'true'
 
