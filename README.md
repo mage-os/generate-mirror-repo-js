@@ -1,5 +1,3 @@
-[![Build, Deploy & check Integrity of preview-mirror](https://github.com/mage-os/generate-mirror-repo-js/actions/workflows/build-preview-mirror.yml/badge.svg)](https://github.com/mage-os/generate-mirror-repo-js/actions/workflows/build-preview-mirror.yml)
-
 # Mage-OS Composer Repository Generator
 
 ## Background
