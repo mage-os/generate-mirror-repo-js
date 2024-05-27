@@ -76,10 +76,10 @@ while (!feof(STDIN)) {
                 ?? null;
             if ($depVersion === null) {
                 $version = \Composer\InstalledVersions::getVersion($package);
-                $depVersion = substr($version, 0, strrpos($version, '.'));
+                $depVersion = '^' . substr($version, 0, strrpos($version, '.'));
             }
             $done[$package] = true;
-            echo "\"$package\": \"^$depVersion\"\n";
+            echo "\"$package\": \"$depVersion\"\n";
         } catch (OutOfBoundsException $exception) {
             // ignore package
         }
