@@ -16,12 +16,12 @@ function fsExists(dirOrFile) {
 }
 
 async function setupWorkDir(dir, workDir) {
-  return new Promise(resolve => {
-    console.log(`Preparing temporary copy in ${workDir}`);
-    return fsExists(workDir)
-      ? resolve()
-      : fs.cp(dir, workDir, {recursive: true, filter: f => ! f.endsWith('/.git') && ! f.includes('/.git/'),}).then(() => resolve());
-  });
+  if (fsExists(workDir)) {
+    console.log(`Removing existing temporary workdir at ${workDir}`);
+    await fs.rm(workDir, {recursive: true})
+  }
+  console.log(`Preparing temporary copy in ${workDir}`);
+  return fs.cp(dir, workDir, {recursive: true, filter: f => ! f.endsWith('/.git') && ! f.includes('/.git/'),})
 }
 
 async function composerInstall() {
