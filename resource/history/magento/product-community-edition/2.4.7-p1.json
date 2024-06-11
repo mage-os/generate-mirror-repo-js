@@ -1,0 +1,8 @@
+{
+    "require": {
+        "magento/inventory-metapackage": "1.2.7-p1",
+        "magento/page-builder": "1.7.4-p1",
+        "magento/security-package": "1.1.6-p1",
+        "adobe-commerce/os-extensions-metapackage": "~1.0"
+    }
+}
