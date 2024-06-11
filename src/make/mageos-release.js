@@ -1,5 +1,7 @@
 const repo = require('./../repository');
 const parseOptions = require('parse-options');
+const fs = require('fs');
+const path = require('path');
 const {
   getPackageVersionMap,
   prepRelease,
@@ -33,6 +35,7 @@ Options:
   --repoUrl=         Composer repository URL to use in base package (default: https://repo.mage-os.org/)
   --mageosVendor=    Composer release vendor-name (default: mage-os)
   --mageosRelease=   Target Mage-OS release version
+  --releaseRefsFile= JS file exporting a map with the git repo refs to use for the release
   --upstreamRelease= Upstream Magento Open Source release to use for package compatibility
 `);
   process.exit(1);
@@ -49,9 +52,10 @@ if (options.repoUrl) {
   setMageosPackageRepoUrl(options.repoUrl);
 }
 
-const mageosRelease = options.mageosRelease || ''
-const mageosVendor = options.mageosVendor || 'mage-os'
-const upstreamRelease = options.upstreamRelease || ''
+const mageosRelease = options.mageosRelease || '';
+const mageosVendor = options.mageosVendor || 'mage-os';
+const upstreamRelease = options.upstreamRelease || '';
+const releaseRefsFile = options.releaseRefsFile || path.join(__dirname, `./../build-config/${mageosVendor}-release-refs/${mageosRelease}.js`);
 
 mageosRelease && validateVersionString(mageosRelease, 'mageosRelease');
 upstreamRelease && validateVersionString(upstreamRelease, 'upstreamRelease');
@@ -59,6 +63,11 @@ upstreamRelease && validateVersionString(upstreamRelease, 'upstreamRelease');
 if (upstreamRelease && ! mageosRelease) {
   throw new Error(`An upstream release may only be specified when building a new release`)
 }
+
+const releaseRefs = fs.existsSync(releaseRefsFile)
+  ? require(releaseRefsFile)
+  : {};
+
 
 (async () => {
   try {
@@ -90,6 +99,12 @@ if (upstreamRelease && ! mageosRelease) {
         : {}
 
       for (const instruction of releaseInstructions) {
+        if (releaseRefs['*']) {
+          instruction.ref = releaseRefs['*'];
+        }
+        if (releaseRefs[instruction.key]) {
+          instruction.ref = releaseRefs[instruction.key];
+        }
         const workBranch = await prepRelease(mageosRelease, mageosVendor, instruction, upstreamVersionMap)
         await repo.addUpdated(instruction.repoUrl, `'*composer.json'`)
         await repo.commit(instruction.repoUrl, workBranch, `Release ${mageosRelease}`)

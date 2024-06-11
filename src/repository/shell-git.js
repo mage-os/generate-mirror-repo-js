@@ -105,7 +105,7 @@ async function cloneRepo(url, dir, ref) {
 
   clearWorkingCopyStat(dir)
 
-  return exec(`git clone --depth 15 --quiet --no-single-branch ${url} ${dir}`)
+  return exec(`git clone --depth=1 --quiet --no-single-branch ${url} ${dir}`);
 }
 
 async function currentTag(dir) {
@@ -134,9 +134,15 @@ async function initRepo(url, ref) {
 
   if (ref) {
     if (await currentTag(dir) !== ref && await currentBranch(dir) !== ref && await currentCommit(dir) !== ref) {
-      //console.log(`checking out ref "${ref}"`)
       clearWorkingCopyStat(dir)
-      await exec(`git checkout --force --quiet ${ref}`, {cwd: dir})
+
+      try {
+        await exec(`git checkout --force --quiet ${ref}`, {cwd: dir});
+      } catch (exception) {
+        // In case the shallow clone doesn't include the ref, try fetching it
+        await exec(`git fetch --quiet --depth=1 ${url} ${ref}`, {cwd: dir});
+        await exec(`git checkout --force --quiet ${ref}`, {cwd: dir});
+      }
     }
   }
 

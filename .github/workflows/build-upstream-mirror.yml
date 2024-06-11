@@ -42,4 +42,4 @@ jobs:
     with:
       repo: ${{ inputs.repo }}
     secrets:
-      composer_auth: ${{ secrets.composer_auth }}
+      COMPOSER_AUTH: ${{ secrets.COMPOSER_AUTH }}

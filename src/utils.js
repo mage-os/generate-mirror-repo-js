@@ -51,7 +51,7 @@ function mergeBuildConfigs(a, b) {
       })
       delete b[key][type];
     })
-    acc.push(Object.assign({}, (a[key] || {}), b[key]));
+    acc.push(Object.assign({key}, (a[key] || {}), b[key]));
     return acc;
   }, [])
 }

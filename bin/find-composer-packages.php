@@ -24,6 +24,15 @@ if (! file_exists($argv[1])) {
 }
 
 $loader = require($argv[1]);
+$rootComposerFile = realpath(dirname($argv[1]) . '/../composer.json');
+
+if (! file_exists($rootComposerFile)) {
+    fwrite(STDERR, sprintf("ERROR: Unable to find root composer.json file \"%s\"\n", $rootComposerFile));
+    exit(2);
+}
+
+$rootComposerConfig = json_decode(file_get_contents($rootComposerFile), true);
+
 
 // Get length of file path (returned by $loader) up to package dir inside composer
 $needle = 'vendor/composer/../';
@@ -62,10 +71,15 @@ while (!feof(STDIN)) {
             continue;
         }
         try {
-            $version = \Composer\InstalledVersions::getVersion($package);
+            $depVersion = $rootComposerConfig['require'][$package]
+                ?? $rootComposerConfig['require-dev'][$package]
+                ?? null;
+            if ($depVersion === null) {
+                $version = \Composer\InstalledVersions::getVersion($package);
+                $depVersion = '^' . substr($version, 0, strrpos($version, '.'));
+            }
             $done[$package] = true;
-            $depVersion = substr($version, 0, strrpos($version, '.'));
-            echo "\"$package\": \"^$depVersion\"\n";
+            echo "\"$package\": \"$depVersion\"\n";
         } catch (OutOfBoundsException $exception) {
             // ignore package
         }
