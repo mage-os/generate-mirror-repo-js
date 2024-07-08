@@ -55,14 +55,14 @@ function trimDir(dir) {
  * @param {String} ref
  */
 function validateRefIsSecure(ref) {
-  if (ref.substring(0, 1) === '-' || ref.includes(' ') || ref.includes('`') || ref.includes('$')) {
+  if (!ref || ref.substring(0, 1) === '-' || ref.includes(' ') || ref.includes('`') || ref.includes('$')) {
     throw new Error(`Rejecting the ref "${ref}" as potentially insecure`)
   }
   return ref;
 }
 
 function validateBranchIsSecure(branch) {
-  if (branch.substring(0, 1) === '-' || branch.includes(' ') || branch.includes('`') || branch.includes('$')) {
+  if (!branch || branch.substring(0, 1) === '-' || branch.includes(' ') || branch.includes('`') || branch.includes('$')) {
     throw new Error(`Rejecting the branch "${branch}" as potentially insecure`)
   }
   return branch;
