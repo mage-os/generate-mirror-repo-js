@@ -123,6 +123,67 @@ Two things are required:
 docker build -t magece/mirror-repo-js .
 ```
 
+---
+
+## Internal Mage-OS Mirror Build
+
+This steps describe how the Mage-OS Mirror can be updated.
+
+1. Get latest versions of composer.json files: https://github.com/mage-os/magento2-base-composer-json
+2. magento-os-package-splitter-js
+    1. Update ressource/history/magento
+        1. magento2-base
+        2. product-community-edition
+        3. project-community-edition (don't forget this. If the file is missing there is a template which sometimes let the build succeed. It should always be updated.)
+    2. Add a json file for each new version
+    3. Add the modified (not core packages) to the json file
+    4. Add ZIP files which are not available as source in Github: node src/make-mirror-js --output=output/mirror (Packages are then commited into the repository)
+3. Test local mirror: https://gist.github.com/Vinai/c411ddaa61c6c77f7086d7b16795d27a
+4. Create Merge Request
+5. Login as CI User
+6. Add new versions to the Supported Version Matrix of the Github Action
+    1. individual.json
+        1. Change release and eol dates
+    2. Run Tests
+    3. npm build
+7. Manually run Github Action: Test mirror build (Integrity)
+8. Manually run Github Action: Installation Test
+9. Run Integration Test from Infrastructure Repository
+10. Merge changes to main branch to release
+11. Manually run workflow to update satis
+
+---
+
+## Create a new Mage-OS Release
+
+1. src/make/mageos-release.js
+    Example: `node --outputDir=output/mageos-release/packages --mageosVendor=mage-os --mageosRelease=1.0.2 --upstreamRelease=2.4.6-p4`
+
+    - All package get the same release number.
+    - ``--upstreamRelease``: Takes packages of Magento Open Source (from Mage-OS Mirror). Used to define "Composer Package replace" version to prevent conflicts of external Magento module dependencies.
+    - Steps
+        - Requires packages-config.js
+        - Clone all required repos
+            - Replace all dependencies
+ 
+Diagram:
+
+```mermaid
+graph TD
+    A(Start) --> B(Load Configuration)
+    B --> C(Parse Options)
+    C --> D(Map Package Versions)
+    D --> E(Prepare for Release)
+    E --> F(Validate Version Strings)
+    F --> G(Update Config from Magento to MageOS)
+    G --> H(Set Archive & Repository URLs)
+    H --> I(Load Release Instructions)
+    I --> J(Process Build Instructions)
+    J --> K(Execute Release)
+    classDef default fill:#f9f,stroke:#333,stroke-width:2px;
+    class A,K default;
+```
+
 ## Copyright 2022 Vinai Kopp, Mage-OS
 
 Distributed under the terms of the 3-Clause BSD Licence.
