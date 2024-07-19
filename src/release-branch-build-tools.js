@@ -25,8 +25,8 @@ async function getPackagesForBuildInstruction(instructions) {
 
 
   // use the latest tag in branch ref
-  const baseVersionsOnRef = await getLatestTag(repoUrl);
-  console.log(`Basing ${repoUrl} package versions on those from tag ${baseVersionsOnRef}`);
+  const baseVersionsOnRef = await getLatestTag(repoUrl) || instructions.ref || 'HEAD';
+  console.log(`Basing ${repoUrl} package versions on those from reference ${baseVersionsOnRef}`);
 
   for (const packageDir of (instructions.packageDirs || [])) {
     const {label, dir, excludes} = Object.assign({excludes: []}, packageDir);
