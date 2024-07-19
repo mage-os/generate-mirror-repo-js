@@ -169,14 +169,17 @@ function updateComposerPluginConfigForMageOs(composerConfig, vendor) {
  * This also happens for the "replace" section, before the given replaceVersionMap is merged.
  */
 function updateComposerConfigFromMagentoToMageOs(composerConfig, releaseVersion, replaceVersionMap, vendor) {
+  const originalPackageName = composerConfig.name
+
   composerConfig.version = releaseVersion
   composerConfig.name = setMageOsVendor(composerConfig.name, vendor)
+  
   updateComposerDepsFromMagentoToMageOs(composerConfig, vendor)
   updateComposerDepsVersionForMageOs(composerConfig, releaseVersion, vendor)
   updateComposerPluginConfigForMageOs(composerConfig, vendor)
 
-  if (replaceVersionMap[composerConfig.name]) {
-    composerConfig.replace = {[composerConfig.name]: replaceVersionMap[composerConfig.name]}
+  if (replaceVersionMap[originalPackageName]) {
+    composerConfig.replace = {[originalPackageName]: replaceVersionMap[originalPackageName]}
   }
 }
 
