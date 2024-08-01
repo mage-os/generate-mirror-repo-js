@@ -64,10 +64,11 @@ const branchBuildConfig = {
     repoUrl: 'https://github.com/mage-os/mirror-magento2-sample-data.git',
     ref: '2.4-develop',
   },
-  'commerce-data-export': {
-    repoUrl: 'https://github.com/mage-os/mirror-commerce-data-export.git',
-    ref: 'main'
-  },
+  // Keep disabled until someone takes up maintenance of commerce-data-export tags
+  // 'commerce-data-export': {
+  //   repoUrl: 'https://github.com/mage-os/mirror-commerce-data-export.git',
+  //   ref: 'main'
+  // },
   'magento-coding-standard': {
     repoUrl: 'https://github.com/mage-os/mirror-magento-coding-standard.git',
     ref: 'develop'
