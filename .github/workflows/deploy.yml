@@ -66,11 +66,11 @@ jobs:
       - uses: actions/checkout@v3
       - uses: shivammathur/setup-php@v2
         with:
-          php-version: 8.1
-          tools: composer:2.2
+          php-version: 8.3
+          tools: composer:2.7
       - uses: actions/setup-node@v3
         with:
-          node-version: 16
+          node-version: 20
           cache: 'npm'
       - run: curl -L https://github.com/mage-os/php-dependency-list/raw/main/php-classes.phar -o /usr/local/bin/php-classes.phar && chmod +x /usr/local/bin/php-classes.phar
         name: "Install PHP source code dependency analyzer and make executable (used by nightly build script for base package)"
