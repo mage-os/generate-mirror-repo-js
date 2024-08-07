@@ -18,14 +18,14 @@ inputs:
   composer-version:
     description: 'The version of Composer to use.'
     required: true
-    default: '1'
+    default: '2'
   composer-auth:
     description: 'Composer authentication object.'
     required: false
   php-version:
     description: 'The version of PHP to use.'
     required: true
-    default: '8.1'
+    default: '8.3'
   sample-data:
     description: 'Whether or not to install sample data.'
     required: true
