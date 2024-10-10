@@ -5,7 +5,7 @@
  * Download all packages referenced in a given composer.lock file that were installed from repo.magento.com but are not present in a given directory.
  *
  * Example:
- * ./bin/fetch-non-buildable-packages.php ../m2-install/composer.lock output/mirror/packages resource/additional-packages
+ * ./bin/download-missing-packages-from-repo-magento-com.php ../m2-install/composer.lock output/mirror/packages resource/additional-packages
  *
  * Usage:
  * 1. Build all mirror packages using the repo-generator script into package-dir
