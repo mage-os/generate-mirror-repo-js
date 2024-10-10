@@ -1,5 +1,5 @@
 
-FROM composer/satis as build
+FROM composer/satis AS build
 
 RUN apk add nodejs npm jq
 
