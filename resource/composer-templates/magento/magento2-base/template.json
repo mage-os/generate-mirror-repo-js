@@ -455,6 +455,10 @@
         "lib/web/tiny_mce_5"
       ],
       [
+        "lib/web/tiny_mce_7",
+        "lib/web/tiny_mce_7"
+      ],
+      [
         "lib/web/underscore.js",
         "lib/web/underscore.js"
       ],
