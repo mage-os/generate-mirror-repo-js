@@ -21,7 +21,7 @@ on:
           - /var/www/mirror.mage-os.org/html/
   push:
     branches:
-    - main
+      - main
 
 jobs:
   deploy:
@@ -29,17 +29,18 @@ jobs:
     name: "generate & deploy"
     if: contains('["vinai", "rhoerr", "fballiano", "mage-os-ci"]', github.actor)
     with:
-      repo: ${{ inputs.repo }}
-      remote_dir: ${{ inputs.remote_dir }}
+      repo: ${{ (github.event_name == 'workflow_dispatch' && inputs.repo) || 'https://preview-mirror.mage-os.org/' }}
+      remote_dir: ${{ (github.event_name == 'workflow_dispatch' && inputs.remote_dir) || '/var/www/preview-mirror.mage-os.org/html/' }}
       entrypoint: src/make/mirror.js
       delete: true
     secrets:
       SERVER_SSH_KEY: ${{ secrets.SERVER_SSH_KEY }}
       REMOTE_USER: ${{ secrets.REMOTE_USER }}
+
   integrity-check:
     needs: [deploy]
     uses: ./.github/workflows/integrity-check.yml
     with:
-      repo: ${{ inputs.repo }}
+      repo: ${{ (github.event_name == 'workflow_dispatch' && inputs.repo) || 'https://preview-mirror.mage-os.org/' }}
     secrets:
       COMPOSER_AUTH: ${{ secrets.COMPOSER_AUTH }}
