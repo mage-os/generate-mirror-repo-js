@@ -1,4 +1,9 @@
 name: Build, deploy & check Mirror
+env:
+  PREVIEW_REPO: 'https://preview-mirror.mage-os.org/'
+  PROD_REPO: 'https://mirror.mage-os.org/'
+  PREVIEW_REMOTE_DIR: '/var/www/preview-mirror.mage-os.org/html/'
+  PROD_REMOTE_DIR: '/var/www/mirror.mage-os.org/html/'
 
 on:
   workflow_dispatch:
@@ -6,22 +11,22 @@ on:
       repo:
         description: 'The composer repository url'
         required: true
-        default: 'https://preview-mirror.mage-os.org/'
+        default: ${{ env.PREVIEW_REPO }}
         type: choice
         options:
-          - https://preview-mirror.mage-os.org/
-          - https://mirror.mage-os.org/
+          - ${{ env.PREVIEW_REPO }}
+          - ${{ env.PROD_REPO }}
       remote_dir:
         description: 'The deploy target directory on the repo host'
         required: true
-        default: '/var/www/preview-mirror.mage-os.org/html/'
+        default: ${{ env.PREVIEW_REMOTE_DIR }}
         type: choice
         options:
-          - /var/www/preview-mirror.mage-os.org/html/
-          - /var/www/mirror.mage-os.org/html/
+          - ${{ env.PREVIEW_REMOTE_DIR }}
+          - ${{ env.PROD_REMOTE_DIR }}
   push:
     branches:
-    - main
+      - main
 
 jobs:
   deploy:
@@ -29,17 +34,18 @@ jobs:
     name: "generate & deploy"
     if: contains('["vinai", "rhoerr", "fballiano", "mage-os-ci"]', github.actor)
     with:
-      repo: ${{ inputs.repo }}
-      remote_dir: ${{ inputs.remote_dir }}
+      repo: ${{ (github.event_name == 'workflow_dispatch' && inputs.repo) || env.PREVIEW_REPO }}
+      remote_dir: ${{ (github.event_name == 'workflow_dispatch' && inputs.remote_dir) || env.PREVIEW_REMOTE_DIR }}
       entrypoint: src/make/mirror.js
       delete: true
     secrets:
       SERVER_SSH_KEY: ${{ secrets.SERVER_SSH_KEY }}
       REMOTE_USER: ${{ secrets.REMOTE_USER }}
+
   integrity-check:
     needs: [deploy]
     uses: ./.github/workflows/integrity-check.yml
     with:
-      repo: ${{ inputs.repo }}
+      repo: ${{ (github.event_name == 'workflow_dispatch' && inputs.repo) || env.PREVIEW_REPO }}
     secrets:
       COMPOSER_AUTH: ${{ secrets.COMPOSER_AUTH }}
