@@ -1,9 +1,4 @@
 name: Build, deploy & check Mirror
-env:
-  PREVIEW_REPO: 'https://preview-mirror.mage-os.org/'
-  PROD_REPO: 'https://mirror.mage-os.org/'
-  PREVIEW_REMOTE_DIR: '/var/www/preview-mirror.mage-os.org/html/'
-  PROD_REMOTE_DIR: '/var/www/mirror.mage-os.org/html/'
 
 on:
   workflow_dispatch:
@@ -11,19 +6,19 @@ on:
       repo:
         description: 'The composer repository url'
         required: true
-        default: ${{ env.PREVIEW_REPO }}
+        default: 'https://preview-mirror.mage-os.org/'
         type: choice
         options:
-          - ${{ env.PREVIEW_REPO }}
-          - ${{ env.PROD_REPO }}
+          - 'https://preview-mirror.mage-os.org/'
+          - 'https://mirror.mage-os.org/'
       remote_dir:
         description: 'The deploy target directory on the repo host'
         required: true
-        default: ${{ env.PREVIEW_REMOTE_DIR }}
+        default: '/var/www/preview-mirror.mage-os.org/html/'
         type: choice
         options:
-          - ${{ env.PREVIEW_REMOTE_DIR }}
-          - ${{ env.PROD_REMOTE_DIR }}
+          - '/var/www/preview-mirror.mage-os.org/html/'
+          - '/var/www/mirror.mage-os.org/html/'
   push:
     branches:
       - main
@@ -34,8 +29,8 @@ jobs:
     name: "generate & deploy"
     if: contains('["vinai", "rhoerr", "fballiano", "mage-os-ci"]', github.actor)
     with:
-      repo: ${{ (github.event_name == 'workflow_dispatch' && inputs.repo) || env.PREVIEW_REPO }}
-      remote_dir: ${{ (github.event_name == 'workflow_dispatch' && inputs.remote_dir) || env.PREVIEW_REMOTE_DIR }}
+      repo: ${{ (github.event_name == 'workflow_dispatch' && inputs.repo) || 'https://preview-mirror.mage-os.org/' }}
+      remote_dir: ${{ (github.event_name == 'workflow_dispatch' && inputs.remote_dir) || '/var/www/preview-mirror.mage-os.org/html/' }}
       entrypoint: src/make/mirror.js
       delete: true
     secrets:
@@ -46,6 +41,6 @@ jobs:
     needs: [deploy]
     uses: ./.github/workflows/integrity-check.yml
     with:
-      repo: ${{ (github.event_name == 'workflow_dispatch' && inputs.repo) || env.PREVIEW_REPO }}
+      repo: ${{ (github.event_name == 'workflow_dispatch' && inputs.repo) || 'https://preview-mirror.mage-os.org/' }}
     secrets:
       COMPOSER_AUTH: ${{ secrets.COMPOSER_AUTH }}
