@@ -6,19 +6,19 @@ on:
       repo:
         description: 'The composer repository url'
         required: true
-        default: 'https://preview-mirror.mage-os.org/'
+        default: https://preview-mirror.mage-os.org/
         type: choice
         options:
-          - 'https://preview-mirror.mage-os.org/'
-          - 'https://mirror.mage-os.org/'
+          - https://preview-mirror.mage-os.org/
+          - https://mirror.mage-os.org/
       remote_dir:
         description: 'The deploy target directory on the repo host'
         required: true
-        default: '/var/www/preview-mirror.mage-os.org/html/'
+        default: /var/www/preview-mirror.mage-os.org/html/
         type: choice
         options:
-          - '/var/www/preview-mirror.mage-os.org/html/'
-          - '/var/www/mirror.mage-os.org/html/'
+          - /var/www/preview-mirror.mage-os.org/html/
+          - /var/www/mirror.mage-os.org/html/
   push:
     branches:
       - main
