@@ -58,6 +58,12 @@ runs:
       working-directory: ${{ inputs.install-directory }}
       if: ${{ endsWith(inputs.magento-version, '2.4.4') }}
 
+    - name: Fixup symfony yaml and deprecation-contracts for 2.4.4-p*
+      run: composer update symfony/yaml:5.3.14 -W
+      shell: bash
+      working-directory: ${{ inputs.install-directory }}
+      if: ${{ startsWith(inputs.magento-version, '2.4.4-p') }}
+
     - name: Fixup composer plugins
       run: |
         composer config --no-interaction allow-plugins.dealerdirect/phpcodesniffer-composer-installer true
