@@ -37,6 +37,7 @@ Options:
   --mageosRelease=   Target Mage-OS release version
   --releaseRefsFile= JS file exporting a map with the git repo refs to use for the release
   --upstreamRelease= Upstream Magento Open Source release to use for package compatibility
+  --skipHistory      Skip rebuilding of historic releases
 `);
   process.exit(1);
 }

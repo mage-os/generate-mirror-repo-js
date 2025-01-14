@@ -211,7 +211,7 @@ async function buildMageOsProductCommunityEditionMetapackage(releaseVersion, ins
 
           // Add upstreamRelease to composer extra data for reference
           composerConfig.extra = composerConfig.extra || {};
-          composerConfig.extra.magento_version = replaceVersionMap[`${vendor}/product-community-edition`];
+          composerConfig.extra.magento_version = replaceVersionMap['replaceVersionMap']['magento/product-community-edition'];
 
           return composerConfig
         }
