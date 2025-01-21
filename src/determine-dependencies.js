@@ -79,6 +79,11 @@ module.exports = {
 
         await new Promise(resolve => {
           const classesInPhp = childProcess.spawn('php-classes.phar', [], options);
+          classesInPhp.on('error', error => {
+            if (error.code === 'ENOENT') {
+              console.log('Error: Missing `php-classes.phar`. Please see the README for install directions.');
+            }
+          });
           classesInPhp.on('close', status => resolve());
 
           // Pipe file contents to php-classes.phar separated by a zero byte
