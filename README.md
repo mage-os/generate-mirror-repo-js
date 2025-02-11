@@ -123,6 +123,43 @@ Two things are required:
 docker build -t magece/mirror-repo-js .
 ```
 
+## Process of building a new mirror release
+
+A new mirror release gets created when Magento releases a new version.
+The process is composed of a series of steps across 3 repositories of the mage-os organization.
+
+### 1. magento2-base-composer-json
+
+- Fork and clone https://github.com/mage-os/magento2-base-composer-json,
+  then create a new branch that you'll use to create a pull request. 
+- Run the `add-release.sh` script for every release, eg:
+  ```sh
+  ./add-release.sh 2.4.7-p4
+  ./add-release.sh 2.4.6-p9
+  ./add-release.sh 2.4.5-p11
+  ./add-release.sh 2.4.4-p12
+  ```
+- Add, commit and push all the newly created files.
+
+For a practical example [check this PR](https://github.com/mage-os/magento2-base-composer-json/pull/7).
+
+### 2. github-actions
+
+- Fork and clone https://github.com/mage-os/github-actions,
+  then create a new branch that you'll use to create a pull request.
+- Update the supported versions matrix editing
+  [src/versions/magento-open-source/individual.json](https://github.com/mage-os/github-actions/blob/main/supported-version/src/versions/magento-open-source/individual.json).  
+  Remember that, when inserting a new version like 2.4.6-p9, you´ll have to change the _end of life_
+  date of the previous version (2.4.6-p8) to _one day earlier_ of the release date of the next version.
+  [Check this example commit](https://github.com/mage-os/github-actions/pull/262/files#diff-0655b3d6263a5375945b0a6bbab191703f8ee83f9535a48e2871d8afec4cb2fc)
+  and this screenshot to better understand what needs to be done:  
+  [TODO INSERT IMAGE FROM GITHUB]
+  
+
+For a practical example [check this PR](https://github.com/mage-os/github-actions/pull/262).
+
+### 3. generate-mirror-repo-js
+
 ## Copyright 2022 Vinai Kopp, Mage-OS
 
 Distributed under the terms of the 3-Clause BSD Licence.
