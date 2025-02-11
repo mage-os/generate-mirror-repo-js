@@ -28,7 +28,7 @@ jobs:
     runs-on: ubuntu-latest
     name: "Push git tags from repo working copies"
     steps:
-      - uses: actions/download-artifact@v3
+      - uses: actions/download-artifact@v4
         with:
           name: release-build-working-copies-${{ env.mageos_release }}
       - run: tar -xf release-build-working-copies-${{ env.mageos_release }}.tar
