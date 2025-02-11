@@ -161,7 +161,7 @@ For a practical example [check this PR](https://github.com/mage-os/magento2-base
   date of the previous version (2.4.6-p8) to _one day earlier_ of the release date of the next version.
   [Check this example commit](https://github.com/mage-os/github-actions/pull/262/files#diff-0655b3d6263a5375945b0a6bbab191703f8ee83f9535a48e2871d8afec4cb2fc)
   and this screenshot to better understand what needs to be done:  
-  [TODO INSERT IMAGE FROM GITHUB]
+  <img width=500 src="https://github.com/user-attachments/assets/2860e539-e76e-4c8f-89c6-a8c4f1331778" />
 - Check if `magento-open-source/composite.json` needs updating
   (it only happens when a new "non patch" release is published, like 2.4.8).
 - Now "build" the project with
@@ -197,7 +197,8 @@ the PR will have to be merged on a development branch.
 Then go to the _actions_ for this repo:  and run the
 [build, deploy & check mirror](https://github.com/mage-os/generate-mirror-repo-js/actions/workflows/build-upstream-mirror.yml)
 selecting the new dev branch and the rest of the parameters as shown in this image:  
-[TODO INSERT IMAGE FROM GITHUB]
+<img width="323" src="https://github.com/user-attachments/assets/31eb1eaf-5c2a-4d0b-8475-9e9f7c9239a8" />
+
 
 For a practical example [check this PR](https://github.com/mage-os/generate-mirror-repo-js/pull/191)
 and [this second one to merge the temporary dev branch into `main`](https://github.com/mage-os/generate-mirror-repo-js/pull/194).
