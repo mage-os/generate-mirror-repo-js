@@ -221,7 +221,12 @@ and [this second one to merge the temporary dev branch into `main`](https://gith
 - Run `npm run test` and make sure that all tests are green.
 - Commit, push and open a PR on mage-os/github-actions.
 
-For a practical example [check this PR](https://github.com/mage-os/github-actions/pull/262).
+For a practical example [check this PR](https://github.com/mage-os/github-actions/pull/263).
+
+### 3. generate-mirror-repo-js
+
+- Fork and clone https://github.com/mage-os/generate-mirror-repo-js,
+  then create a new branch that you'll use to create a pull request.
 
 ## Copyright 2022 Vinai Kopp, Mage-OS
 
