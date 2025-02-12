@@ -125,7 +125,7 @@ docker build -t magece/mirror-repo-js .
 
 ## Process of building a new mirror release
 
-A new mirror release gets created when Magento releases a new version.
+A new mirror release gets created when Magento releases a new version.  
 The process is composed of a series of steps across 3 repositories of the mage-os organization.
 
 ### 0. Preliminary check
@@ -166,7 +166,7 @@ For a practical example [check this PR](https://github.com/mage-os/magento2-base
   (it only happens when a new "non patch" release is published, like 2.4.8).
 - Now "build" the project with
   - In the root of the project: `npm install`
-  - In the supported-version folder: `npm run build
+  - In the supported-version folder: `npm run build`
 - Edit `src/kind/get-currently-supported.spec.ts`
 - Run `npm run test` and make sure that all tests are green.
 - Commit, push and open a PR on mage-os/github-actions.
@@ -199,9 +199,29 @@ Then go to the _actions_ for this repo:  and run the
 selecting the new dev branch and the rest of the parameters as shown in this image:  
 <img width="323" src="https://github.com/user-attachments/assets/31eb1eaf-5c2a-4d0b-8475-9e9f7c9239a8" />
 
-
 For a practical example [check this PR](https://github.com/mage-os/generate-mirror-repo-js/pull/191)
 and [this second one to merge the temporary dev branch into `main`](https://github.com/mage-os/generate-mirror-repo-js/pull/194).
+
+## Process of building a new MageOS release
+
+### 1. github-actions
+
+- Fork and clone https://github.com/mage-os/github-actions,
+  then create a new branch that you'll use to create a pull request.
+- Update the supported versions matrix editing
+  [src/versions/mage-os/individual.json](https://github.com/mage-os/github-actions/blob/main/supported-version/src/versions/mage-os/individual.json).  
+  Remember that, when inserting a new version like 1.0.6, you´ll have to change the _end of life_
+  date of the previous version (1.0.5) to _one day earlier_ of the release date of the next version.
+  [Check this example commit](https://github.com/mage-os/github-actions/pull/263/commits/79c0bf654462288ccff7aae572b3a24e89e3256b)
+- Check if `mage-os/composite.json` needs updating.
+- Now "build" the project with
+  - In the root of the project: `npm install`
+  - In the supported-version folder: `npm run build`
+- Edit `src/kind/get-currently-supported.spec.ts`
+- Run `npm run test` and make sure that all tests are green.
+- Commit, push and open a PR on mage-os/github-actions.
+
+For a practical example [check this PR](https://github.com/mage-os/github-actions/pull/262).
 
 ## Copyright 2022 Vinai Kopp, Mage-OS
 
