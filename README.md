@@ -227,6 +227,11 @@ For a practical example [check this PR](https://github.com/mage-os/github-action
 
 - Fork and clone https://github.com/mage-os/generate-mirror-repo-js,
   then create a new branch that you'll use to create a pull request.
+- create `resource/history/mage-os/product-community-edition/VERSIONNUMBER.js` and `resource/history/mage-os/project-community-edition/VERSIONNUMBER.js`
+  simply copying the previous ones and updating the numbering inside.
+- create `resource/history/mage-os/magento2-base/versionnumber.js` copying the base composer.json file (from `resource/history/magento/magento2-base` folder)
+  of the Magento release that MageOS is based on (eg: MageOS 1.0.6 is based on Magento 2.4.7-p4, so `resource/history/mage-os/magento2-base/1.0.6.js`
+  will be a copy of `resource/history/magento/magento2-base/2.4.7-p4.json`) but remember to change, inside of the new json file, the version number.
 
 ## Copyright 2022 Vinai Kopp, Mage-OS
 
