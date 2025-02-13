@@ -258,14 +258,12 @@ before announcing the release.
 
 - Fork and clone https://github.com/mage-os/generate-mirror-repo-js,
   then create a new branch that you'll use to create a pull request.
-- create `resource/history/mage-os/product-community-edition/VERSIONNUMBER.js` and `resource/history/mage-os/project-community-edition/VERSIONNUMBER.js`
+- Create `resource/history/mage-os/product-community-edition/VERSIONNUMBER.js` and `resource/history/mage-os/project-community-edition/VERSIONNUMBER.js`
   simply copying the previous ones and updating the numbering inside.
 - Install the newly released version with `composer create-project --repository-url=https://repo.mage-os.org/ mage-os/project-community-edition`
-- create `resource/history/mage-os/magento2-base/VERSIONNUMBER.js` copying the base composer.json file
+- Create `resource/history/mage-os/magento2-base/VERSIONNUMBER.js` copying the base composer.json file
   (from `project-community-edition/vendor/mage-os/magento2-base/composer.json` folder).
-  
-
-  https://github.com/mage-os/generate-mirror-repo-js/pull/196
+- Create a PR with only the thre json files [like this one](https://github.com/mage-os/generate-mirror-repo-js/pull/196).
 
 ## Copyright 2022 Vinai Kopp, Mage-OS
 
