@@ -202,7 +202,7 @@ selecting the new dev branch and the rest of the parameters as shown in this ima
 For a practical example [check this PR](https://github.com/mage-os/generate-mirror-repo-js/pull/191)
 and [this second one to merge the temporary dev branch into `main`](https://github.com/mage-os/generate-mirror-repo-js/pull/194).
 
-## Process of building a new MageOS release
+## Process of building a new Mage-OS release
 
 ### 1. github-actions
 
@@ -264,6 +264,14 @@ before announcing the release.
 - Create `resource/history/mage-os/magento2-base/VERSIONNUMBER.js` copying the base composer.json file
   (from `project-community-edition/vendor/mage-os/magento2-base/composer.json` folder).
 - Create a PR with only the thre json files [like this one](https://github.com/mage-os/generate-mirror-repo-js/pull/196).
+
+### 4. Announce the release
+
+- Go to https://github.com/mage-os/mageos-magento2/tags and open the new tag
+- Click 'Create release from tag' to create a GitHub release
+- Update the release info based on the Mage-OS pull requests and contributors ([see an example](https://github.com/mage-os/mageos-magento2/releases/tag/1.0.5))
+- Create a Wordpress update post on mage-os.org, based on [an existing release post](https://mage-os.org/releases/release-mage-os-distribution-1-0-5/), with the new release info incorporated.
+- Share the new release info on Discord #announcements and LinkedIn.
 
 ## Copyright 2022 Vinai Kopp, Mage-OS
 
