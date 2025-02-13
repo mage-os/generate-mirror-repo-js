@@ -223,15 +223,49 @@ and [this second one to merge the temporary dev branch into `main`](https://gith
 
 For a practical example [check this PR](https://github.com/mage-os/github-actions/pull/263).
 
-### 3. generate-mirror-repo-js
+### 2. Generate a test release
+
+Execute the [Build, deploy & check Release](https://github.com/mage-os/generate-mirror-repo-js/actions/workflows/build-mageos-release.yml)
+on the [generate-mirror-repo-js](https://github.com/mage-os/generate-mirror-repo-js), use these parameters as reference:
+
+<img width="309" src="https://github.com/user-attachments/assets/34e2d5cf-175b-4f7a-98c4-26d2fc460e9e" />
+
+**Important**:
+- select the "preview" URL/folder in the first two combobox
+- fill the version numbers and **do not** check the "push new release tag to repos"
+
+After the workflow has finished, you can go https://preview-repo.mage-os.org and check that everything is ok, you should also
+install the newly generated version with `composer create-project --repository-url=https://preview-repo.mage-os.org/ mage-os/project-community-edition`
+and check that everything is ok before tagging the official release.
+
+
+### 3. Generate the official release
+
+Execute the [Build, deploy & check Release](https://github.com/mage-os/generate-mirror-repo-js/actions/workflows/build-mageos-release.yml)
+on the [generate-mirror-repo-js](https://github.com/mage-os/generate-mirror-repo-js), use these parameters as reference:
+
+<img width="310" src="https://github.com/user-attachments/assets/e6ae22f7-ad77-4017-a9ac-74224e14b82b" />
+
+**Important**:
+- select the production URL/folder in the first two combobox (the ones without the "preview" prefix)
+- fill the version numbers and check the "push new release tag to repos"
+
+After the workflow has finished, you can go https://repo.mage-os.org and check that everything is ok, you should also
+install the newly generated version with `composer create-project --repository-url=https://repo.mage-os.org/ mage-os/project-community-edition`
+before announcing the release.
+
+### 3. Update generate-mirror-repo-js
 
 - Fork and clone https://github.com/mage-os/generate-mirror-repo-js,
   then create a new branch that you'll use to create a pull request.
 - create `resource/history/mage-os/product-community-edition/VERSIONNUMBER.js` and `resource/history/mage-os/project-community-edition/VERSIONNUMBER.js`
   simply copying the previous ones and updating the numbering inside.
-- create `resource/history/mage-os/magento2-base/versionnumber.js` copying the base composer.json file (from `resource/history/magento/magento2-base` folder)
-  of the Magento release that MageOS is based on (eg: MageOS 1.0.6 is based on Magento 2.4.7-p4, so `resource/history/mage-os/magento2-base/1.0.6.js`
-  will be a copy of `resource/history/magento/magento2-base/2.4.7-p4.json`) but remember to change, inside of the new json file, the version number.
+- Install the newly released version with `composer create-project --repository-url=https://repo.mage-os.org/ mage-os/project-community-edition`
+- create `resource/history/mage-os/magento2-base/VERSIONNUMBER.js` copying the base composer.json file
+  (from `project-community-edition/vendor/mage-os/magento2-base/composer.json` folder).
+  
+
+  https://github.com/mage-os/generate-mirror-repo-js/pull/196
 
 ## Copyright 2022 Vinai Kopp, Mage-OS
 
