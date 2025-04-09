@@ -204,6 +204,19 @@ and [this second one to merge the temporary dev branch into `main`](https://gith
 
 ## Process of building a new Mage-OS release
 
+### 0. Preliminary check
+
+First we need to make sure that all `mageos-` have been updated with latest changes from upstream, we can force the updates with:
+
+- Go to this link:  https://github.com/orgs/mage-os/repositories?q=fork%3Atrue+archived%3Afalse+mageos-
+- Click on every repository and, for every repository
+- Click the "Actions" tab
+- Run the merge-upstream-changes action
+
+Then, for every repo, we have to merge every development branch into our `release/1.x`.  
+At the moment we don't have an automated process to do that, but you can check https://github.com/mage-os/github-actions/pull/284 in order to generate the list of commands to do that.  
+Note that, after creating all the PRs for every repo, if they don't have any conflicts, they should be merged as they are. But in case they have conflicts, then you should close the PR and manually re-create it via a forked repository in your personal account.
+
 ### 1. github-actions
 
 - Fork and clone https://github.com/mage-os/github-actions,
