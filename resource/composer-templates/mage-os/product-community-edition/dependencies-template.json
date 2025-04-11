@@ -1,5 +1,6 @@
 {
   "dependencies": {
+    "creatuity/magento2-interceptors": "https://github.com/creatuity/magento2-interceptors.git",
     "mage-os/security-package": "https://github.com/mage-os/mageos-security-package.git",
     "mage-os/inventory-metapackage": "https://github.com/mage-os/mageos-inventory.git",
     "mage-os/page-builder": "https://github.com/mage-os/mageos-magento2-page-builder"
