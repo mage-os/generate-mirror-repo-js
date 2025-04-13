@@ -43,10 +43,11 @@ function mergeBuildConfigs(a, b) {
       repoInstruction[type].map(bx => {
         const idField = bx.dir ? 'dir' : 'label'
         const targetIdx = (a[key]?.[type] || []).findIndex(ax => ax[idField] === bx[idField])
+        a[key] = a[key] || {};
         if (targetIdx > -1) {
           a[key][type][targetIdx] = Object.assign(a[key][type][targetIdx], bx)
         } else {
-          a[key][type].push(bx)
+          a[key][type] = (a[key]?.[type] || []).concat([bx])
         }
       })
       delete b[key][type];
