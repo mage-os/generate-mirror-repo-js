@@ -139,6 +139,7 @@ function setMageOsDependencyVersion(obj, dependencyType, releaseVersion, vendor)
   const packageNames = Object.keys(obj)
   packageNames.forEach(packageName => {
     if (packageName.match(mageOsPackage)) {
+      // @TODO: Allow vendor packages to be flagged as independently packaged. In that case, use the latest tagged version, not the current release or fallback version.
       obj[packageName] = dependencyType === 'suggest' && packageName.endsWith('-sample-data')
         ? `Sample Data version: ${releaseVersion}`
         : releaseVersion;
