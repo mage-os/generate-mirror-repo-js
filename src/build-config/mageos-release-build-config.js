@@ -114,32 +114,32 @@ const releaseBuildConfig = {
     ref: 'release/1.x',
     fromTag: '1.0.0',
   },
-  // 'theme-adminhtml-m137': {
-  //   repoUrl: 'https://github.com/mage-os-lab/theme-adminhtml-m137.git',
-  //   ref: 'main',
-  //   fronTag: '1.0.0',
-  //   packageDirs: [],
-  //   packageIndividual: [
-  //     {
-  //       label: 'theme-adminhtml-m137',
-  //       dir: ''
-  //     }
-  //   ],
-  //   packageMetaFromDirs: [],
-  // },
-  // 'module-theme-adminhtml-switcher': {
-  //   repoUrl: 'https://github.com/mage-os-lab/module-theme-adminhtml-switcher.git',
-  //   ref: 'main',
-  //   fronTag: '1.0.0',
-  //   packageDirs: [],
-  //   packageIndividual: [
-  //     {
-  //       label: 'module-theme-adminhtml-switcher',
-  //       dir: ''
-  //     }
-  //   ],
-  //   packageMetaFromDirs: [],
-  // },
+  'theme-adminhtml-m137': {
+    repoUrl: 'https://github.com/mage-os-lab/theme-adminhtml-m137.git',
+    ref: 'main',
+    fromTag: '1.0.0',
+    packageDirs: [],
+    packageIndividual: [
+      {
+        label: 'theme-adminhtml-m137',
+        dir: ''
+      }
+    ],
+    packageMetaFromDirs: [],
+  },
+  'module-theme-adminhtml-switcher': {
+    repoUrl: 'https://github.com/mage-os-lab/module-theme-adminhtml-switcher.git',
+    ref: 'main',
+    fromTag: '1.0.0',
+    packageDirs: [],
+    packageIndividual: [
+      {
+        label: 'module-theme-adminhtml-switcher',
+        dir: ''
+      }
+    ],
+    packageMetaFromDirs: [],
+  },
   // 'mageos-async-events-sinks': {
   //   repoUrl: 'https://github.com/mage-os/mageos-async-events-sinks.git',
   //   ref: 'main',
