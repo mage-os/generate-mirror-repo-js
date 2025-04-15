@@ -38,10 +38,12 @@ jobs:
       - run: |
           for working_copy in $(ls -d repositories/*/.git); do
             cd $(dirname $working_copy)
-            echo Processing repository $(basename $(pwd))
-            ORIG=$(git remote -v | grep push | awk '{print $2}')
-            NEW=${ORIG/https:\/\/github.com/https:\/\/mage-os-ci:${{ env.github_pat }}@github.com}
-            git push $NEW "${{ env.mageos_release }}"
+            if git remote -v | grep -qE 'https://github.com/mage-os/'; then
+              echo Processing repository $(basename $(pwd))
+              ORIG=$(git remote -v | grep push | awk '{print $2}')
+              NEW=${ORIG/https:\/\/github.com/https:\/\/mage-os-ci:${{ env.github_pat }}@github.com}
+              git push $NEW "${{ env.mageos_release }}"
+            fi
             cd -
           done
         name: "Push ${{ inputs.mageos_release }} to each origin for all repositories"
