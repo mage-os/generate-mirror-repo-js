@@ -41,7 +41,7 @@ const releaseBuildConfig = {
   },
   'magento-allure-phpunit': {
     repoUrl: 'https://github.com/mage-os/mageos-magento-allure-phpunit.git',
-    ref: 'main'
+    ref: 'release/1.x',
     fromTag: '1.1.0',
   },
   'magento-composer-installer': {
@@ -116,7 +116,7 @@ const releaseBuildConfig = {
   },
   'magento-zf-db': {
     repoUrl: 'https://github.com/mage-os/mageos-magento-zf-db.git',
-    ref: '2.21.x'
+    ref: 'release/1.x',
     fromTag: '1.1.0',
   },
   'php-compatibility-fork': {
