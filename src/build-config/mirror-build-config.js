@@ -589,6 +589,10 @@ const mirrorBuildConfig = {
     // See https://github.com/magento/composer-dependency-version-audit-plugin/blob/0.1.2/composer.json#L5
     fromTag: '0.1.2',
   },
+  'magento-allure-phpunit': {
+    repoUrl: 'https://github.com/mage-os/mirror-magento-allure-phpunit.git',
+    fromTag: '3.0.2',
+  },
   'magento2-sample-data': {
     repoUrl: 'https://github.com/mage-os/mirror-magento2-sample-data.git',
     fromTag: '2.3.7-p3',
@@ -628,6 +632,10 @@ const mirrorBuildConfig = {
   'magento-zend-memory': {
     repoUrl: 'https://github.com/mage-os/mirror-magento-zend-memory.git',
     fromTag: '1.16.0'
+  },
+  'magento-zf-db': {
+    repoUrl: 'https://github.com/mage-os/mirror-magento-zf-db.git',
+    fromTag: '3.21.0'
   },
   'php-compatibility-fork': {
     repoUrl: 'https://github.com/mage-os/mirror-PHPCompatibilityFork',
