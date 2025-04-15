@@ -69,6 +69,10 @@ const branchBuildConfig = {
   //   repoUrl: 'https://github.com/mage-os/mageos-commerce-data-export.git',
   //   ref: 'main'
   // },
+  'magento-allure-phpunit': {
+    repoUrl: 'https://github.com/mage-os/mageos-magento-allure-phpunit.git',
+    ref: 'main'
+  },
   'magento-coding-standard': {
     repoUrl: 'https://github.com/mage-os/mageos-magento-coding-standard.git',
     ref: 'develop'
@@ -104,6 +108,10 @@ const branchBuildConfig = {
   'magento-zend-memory': {
     repoUrl: 'https://github.com/mage-os/mageos-magento-zend-memory.git',
     ref: 'main'
+  },
+  'magento-zf-db': {
+    repoUrl: 'https://github.com/mage-os/mageos-magento-zf-db.git',
+    ref: '2.21.x'
   },
 };
 
