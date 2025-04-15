@@ -114,6 +114,18 @@ module.exports = {
     ],
     packageMetaFromDirs: [],
   },
+  'magento-allure-phpunit': {
+    repoUrl: 'https://github.com/mage-os/mirror-magento-allure-phpunit.git',
+
+    packageDirs: [],
+    packageIndividual: [
+      {
+        label: 'PHPUnit Allure Adapter',
+        dir: '',
+      },
+    ],
+    packageMetaFromDirs: [],
+  },
   'page-builder': {
     repoUrl: 'https://github.com/mage-os/mirror-magento2-page-builder.git',
 
@@ -354,6 +366,18 @@ module.exports = {
     packageIndividual: [
       {
         label: 'Magento fork of Zend_Memory',
+        dir: ''
+      }
+    ],
+    packageMetaFromDirs: [],
+  },
+  'magento-zf-db': {
+    repoUrl: 'https://github.com/mage-os/mirror-magento-zf-db.git',
+
+    packageDirs: [],
+    packageIndividual: [
+      {
+        label: 'Magento fork of Zend_Db',
         dir: ''
       }
     ],
