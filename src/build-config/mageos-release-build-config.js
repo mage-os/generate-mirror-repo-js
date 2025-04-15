@@ -39,6 +39,11 @@ const releaseBuildConfig = {
     ref: 'release/1.x',
     fromTag: '1.0.0',
   },
+  'magento-allure-phpunit': {
+    repoUrl: 'https://github.com/mage-os/mageos-magento-allure-phpunit.git',
+    ref: 'main'
+    fromTag: '1.1.0',
+  },
   'magento-composer-installer': {
     repoUrl: 'https://github.com/mage-os/mageos-magento-composer-installer.git',
     ref: 'release/1.x',
@@ -108,6 +113,11 @@ const releaseBuildConfig = {
     repoUrl: 'https://github.com/mage-os/mageos-magento-zend-memory.git',
     ref: 'release/1.x',
     fromTag: '1.0.0',
+  },
+  'magento-zf-db': {
+    repoUrl: 'https://github.com/mage-os/mageos-magento-zf-db.git',
+    ref: '2.21.x'
+    fromTag: '1.1.0',
   },
   'php-compatibility-fork': {
     repoUrl: 'https://github.com/mage-os/mageos-PHPCompatibilityFork.git',
