@@ -120,6 +120,7 @@ function chooseNameAndVersion(magentoName, composerJson, ref, givenVersion) {
 function setDependencyVersions(composerConfig, dependencyVersions, vendor) {
   for (const dependencyType of ['require', 'require-dev', 'suggest']) {
     for (const dep in (composerConfig[dependencyType] || {})) {
+      // @TODO: Allow vendor packages to be flagged as independently packaged. In that case, use the latest tagged version, not the current release or fallback version.
       if (dependencyVersions[dep] || (vendor && dep.startsWith(vendor) && dependencyVersions['*'])) {
         // The "Sample Data version:" prefix is used by sampledata:deploy to identify packages to require.
         // See \Magento\SampleData\Model\Dependency::getSampleDataPackages
@@ -268,6 +269,7 @@ async function createPackageForRef(url, moduleDir, ref, options) {
    *    dependencyVersions: set as {'*': releaseVersion}
    *    => use dependencyVersions
    */
+  // @TODO: Change mageos release version handling for independently packaged packages
   ({
     name,
     version
