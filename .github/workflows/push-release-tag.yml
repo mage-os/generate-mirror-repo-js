@@ -36,7 +36,7 @@ jobs:
       - run: git config --global user.email "info@mage-os.org" && git config --global user.name "Mage-OS CI"
         name: "Configure git identity"
       - run: |
-          for working_copy in $(ls -d repositories/*/.git); do
+          for working_copy in $(ls -d repositories/{mage-os,mage-os-lab}/.git); do
             cd $(dirname $working_copy)
             echo Processing repository $(basename $(pwd))
             ORIG=$(git remote -v | grep push | awk '{print $2}')
