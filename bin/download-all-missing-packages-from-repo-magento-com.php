@@ -8,7 +8,6 @@
  * 2. Uses composer to create a project with each version
  * 3. Uses the download-missing-packages-from-repo-magento-com.php script to download missing packages
  * 4. Removes the project directory
- * 5. Adds the downloaded packages to git
  */
 
 // Set error reporting
