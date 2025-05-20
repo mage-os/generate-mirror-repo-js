@@ -65,11 +65,6 @@ foreach ($latestVersions as $version) {
     $command = "rm -rf project-community-edition";
     passthru($command);
 
-    // Add downloaded packages to git
-    echo "Adding downloaded packages (if any) to git...\n";
-    $command = "git add resource/additional-packages";
-    passthru($command);
-
     echo "\n\n";
 }
 

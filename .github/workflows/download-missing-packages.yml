@@ -1,0 +1,68 @@
+name: Download missing packages from repo.magento.com
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 0 * * *'
+
+jobs:
+  download-packages:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          tools: composer:v2
+
+      - name: Configure Git
+        run: |
+          git config user.name "GitHub Actions Bot"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Run download script
+        run: php bin/download-all-missing-packages-from-repo-magento-com.php
+        env:
+          COMPOSER_AUTH: ${{ secrets.COMPOSER_AUTH }}
+
+      - name: Check for changes
+        id: git-check
+        run: |
+          git add resource/additional-packages
+          if git diff --staged --quiet; then
+            echo "No changes detected in resource/additional-packages"
+            echo "changes=false" >> $GITHUB_OUTPUT
+          else
+            echo "Changes detected in resource/additional-packages"
+            echo "changes=true" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Create Pull Request
+        if: steps.git-check.outputs.changes == 'true'
+        run: |
+          # Create a new branch with timestamp
+          BRANCH_NAME="update-packages-$(date +%Y%m%d-%H%M%S)"
+          git checkout -b $BRANCH_NAME
+
+          # Commit changes
+          git commit -m "Add new packages from repo.magento.com"
+
+          # Push to the repository
+          git push origin $BRANCH_NAME
+
+          # Create PR using GitHub CLI
+          gh pr create \
+            --title "Add new packages from repo.magento.com" \
+            --body "This PR adds new packages downloaded from repo.magento.com by the automated workflow. Please rebuild the mirror after merging." \
+            --repo "mage-os/generate-mirror-repo-js" \
+            --base main \
+            --head $BRANCH_NAME
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
