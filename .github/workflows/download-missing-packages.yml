@@ -24,6 +24,11 @@ jobs:
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
+        with:
+          cache: 'npm'
+
+      - name: Install Node.js dependencies
+        run: npm install
 
       - name: Configure Git
         run: |
