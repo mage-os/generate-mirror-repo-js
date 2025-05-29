@@ -81,6 +81,11 @@ async function getPackageVersionsForBuildInstructions(buildInstructions, suffix)
 }
 
 function addSuffixToVersion(version, buildSuffix) {
+  // Don't add suffix to dev- branch versions
+  if (version.startsWith('dev-')) {
+    return version;
+  }
+
   const match = version.match(/(?<versions>(?:[\d]+\.?){1,4})(?<suffix>-[^+]+)?(?<legacy>\+.+)?/)
   if (match) {
     return `${match.groups.versions}-a${buildSuffix}${match.groups.legacy ? match.groups.legacy : ''}`
@@ -100,6 +105,11 @@ function transformVersionsToNightlyBuildVersion(baseVersion, buildSuffix) {
 }
 
 function calcNightlyBuildPackageBaseVersion(version) {
+  // Handle dev- branch versions (e.g., dev-develop, dev-master)
+  if (version.startsWith('dev-')) {
+    return version; // Return as-is, it's already a valid Composer branch version
+  }
+
   if (! version.match(/^v?(?:\d+\.){0,3}\d+(?:-[a-z]\w*|)$/i)) {
     throw Error(`Unable to determine branch release version for input version "${version}"`)
   }
