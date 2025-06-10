@@ -90,43 +90,79 @@ async function createMetaPackagesFromRepoDir(url, tagSpec, path, fixVersions, tr
 async function createPackagesSinceTag(url, tagsSpec, modulesPath, excludes, fixVersions, transform, concurrency = 10) {
   const tags = await listTagsFrom(url, tagsSpec);
   console.log(`Versions to process: ${tags.join(', ')}`);
-  const built = [];
-  for (const tag of tags) {
-    console.log(`Processing ${tag}`);
-    try {
-      await createPackagesForRef(url, modulesPath, tag, {excludes, dependencyVersions: (fixVersions?.[tag] ?? {}), transform, concurrency});
-      built.push(tag)
-    } catch (exception) {
-      console.log(exception.message || exception);
-    }
+  
+  // Use full concurrency for versions to maximize throughput
+  // Since git operations are serialized anyway, more parallel versions = better utilization
+  console.log(`Processing ${tags.length} versions with concurrency ${concurrency}...`);
+  
+  const results = await parallelMap(
+    tags,
+    async (tag) => {
+      console.log(`Starting processing of ${tag}`);
+      try {
+        await createPackagesForRef(url, modulesPath, tag, {excludes, dependencyVersions: (fixVersions?.[tag] ?? {}), transform, concurrency});
+        console.log(`✓ Completed processing of ${tag}`);
+        return { success: true, tag };
+      } catch (exception) {
+        console.log(`✗ Failed processing of ${tag}: ${exception.message || exception}`);
+        return { success: false, tag, error: exception.message || exception };
+      }
+    },
+    concurrency
+  );
+  
+  const built = results.filter(r => r.success).map(r => r.tag);
+  const failed = results.filter(r => !r.success);
+  
+  if (failed.length > 0) {
+    console.log(`Failed versions: ${failed.map(f => f.tag).join(', ')}`);
   }
+  
   return built;
 }
 
 async function createPackageSinceTag(url, tagsSpec, modulesPath, excludes, composerJsonPath, emptyDirsToAdd, fixVersions, transform) {
   const tags = await listTagsFrom(url, tagsSpec);
   console.log(`Versions to process: ${tags.join(', ')}`);
-  const built = [];
-  for (const tag of tags) {
-    console.log(`Processing ${tag}`);
-    let composerJsonFile = '';
-    // Note: if the composerJsonFile ends with the "template.json" the composer dependencies will be calculated
-    // This is only used for non-mirror magento2-base-package builds
-    if (composerJsonPath && composerJsonPath.length) {
-      composerJsonFile = (composerJsonPath || '')
-        .replace('composer-templates', 'history')
-        .replace('template.json', `${tag}.json`);
-      composerJsonFile = fs.existsSync(composerJsonFile)
-        ? composerJsonFile
-        : composerJsonPath;
-    }
-    try {
-      await createPackageForRef(url, modulesPath, tag, {excludes, composerJsonPath: composerJsonFile, emptyDirsToAdd, dependencyVersions: (fixVersions?.[tag] ?? {}), transform});
-      built.push(tag);
-    } catch (exception) {
-      console.log(exception.message || exception);
-    }
+  
+  // Use concurrency of 10 for version processing
+  const versionConcurrency = 10;
+  console.log(`Processing ${tags.length} versions with concurrency ${versionConcurrency}...`);
+  
+  const results = await parallelMap(
+    tags,
+    async (tag) => {
+      console.log(`Starting processing of ${tag}`);
+      let composerJsonFile = '';
+      // Note: if the composerJsonFile ends with the "template.json" the composer dependencies will be calculated
+      // This is only used for non-mirror magento2-base-package builds
+      if (composerJsonPath && composerJsonPath.length) {
+        composerJsonFile = (composerJsonPath || '')
+          .replace('composer-templates', 'history')
+          .replace('template.json', `${tag}.json`);
+        composerJsonFile = fs.existsSync(composerJsonFile)
+          ? composerJsonFile
+          : composerJsonPath;
+      }
+      try {
+        await createPackageForRef(url, modulesPath, tag, {excludes, composerJsonPath: composerJsonFile, emptyDirsToAdd, dependencyVersions: (fixVersions?.[tag] ?? {}), transform});
+        console.log(`✓ Completed processing of ${tag}`);
+        return { success: true, tag };
+      } catch (exception) {
+        console.log(`✗ Failed processing of ${tag}: ${exception.message || exception}`);
+        return { success: false, tag, error: exception.message || exception };
+      }
+    },
+    versionConcurrency
+  );
+  
+  const built = results.filter(r => r.success).map(r => r.tag);
+  const failed = results.filter(r => !r.success);
+  
+  if (failed.length > 0) {
+    console.log(`Failed versions: ${failed.map(f => f.tag).join(', ')}`);
   }
+  
   return built;
 }
 

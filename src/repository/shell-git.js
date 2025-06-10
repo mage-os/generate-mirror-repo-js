@@ -167,29 +167,50 @@ async function currentCommit(dir) {
   return memoizeWorkingCopyStat(dir, 'commit', cmd)
 }
 
-async function initRepo(url, ref) {
+async function initRepoWithoutCheckout(url) {
   const dir = fullRepoPath(url);
+  
+  // Only serialize the initial clone operation
+  if (!fs.existsSync(dir)) {
+    return serializedGitOperation(dir, async () => {
+      if (!fs.existsSync(dir)) { // Double-check after acquiring lock
+        await cloneRepo(url, dir);
+      }
+      await relaxRepoOwnerPermissions(dir);
+      return dir;
+    });
+  }
+  
+  await relaxRepoOwnerPermissions(dir);
+  return dir;
+}
 
-  return serializedGitOperation(dir, async () => {
-    if (! fs.existsSync(dir)) {
-      await cloneRepo(url, dir, ref);
+async function initRepo(url, ref) {
+  const dir = await initRepoWithoutCheckout(url);
+
+  if (ref) {
+    // Check if we already have this ref checked out
+    const cachedRef = refCheckoutCache[dir];
+    if (cachedRef === ref) {
+      return dir;
     }
 
-    await relaxRepoOwnerPermissions(dir);
-
-    if (ref) {
-      // Check if we already have this ref checked out
-      const cachedRef = refCheckoutCache[dir];
-      if (cachedRef === ref) {
-        return dir;
-      }
-
-      // Only check current state if we don't have cached info
-      if (!cachedRef && await currentTag(dir) === ref || await currentBranch(dir) === ref || await currentCommit(dir) === ref) {
+    // Only check current state if we don't have cached info
+    if (!cachedRef) {
+      const [currentTagResult, currentBranchResult, currentCommitResult] = await Promise.all([
+        currentTag(dir).catch(() => null),
+        currentBranch(dir).catch(() => null), 
+        currentCommit(dir).catch(() => null)
+      ]);
+      
+      if (currentTagResult === ref || currentBranchResult === ref || currentCommitResult === ref) {
         refCheckoutCache[dir] = ref;
         return dir;
       }
+    }
 
+    // Serialize only the checkout operation
+    return serializedGitOperation(dir, async () => {
       clearWorkingCopyStat(dir);
 
       try {
@@ -201,10 +222,11 @@ async function initRepo(url, ref) {
         await exec(`git checkout --force --quiet ${ref}`, {cwd: dir});
         refCheckoutCache[dir] = ref;
       }
-    }
+      return dir;
+    });
+  }
 
-    return dir;
-  });
+  return dir;
 }
 
 
@@ -251,7 +273,17 @@ module.exports = {
   },
   async listFiles(url, pathInRepo, ref, excludes) {
     if (ref !== undefined && ref !== null) validateRefIsSecure(ref);
-    const dir = await initRepo(url, ref);
+    
+    // Ensure repo exists but don't serialize the listing operation
+    const dir = await initRepoWithoutCheckout(url);
+    
+    // Check if we need to checkout a different ref
+    const cachedRef = refCheckoutCache[dir];
+    if (ref && cachedRef !== ref) {
+      // Only checkout if different ref needed
+      await initRepo(url, ref);
+    }
+    
     if (! fs.existsSync(path.join(dir, pathInRepo))) return [];
     const excludeStrings = excludes.map(exclude => typeof exclude === 'function' ? exclude(ref) : exclude).filter(exclude => exclude.length > 0);
     const fileNames = await listFileNames(dir, pathInRepo, excludeStrings || []);
@@ -281,7 +313,7 @@ module.exports = {
       return tagCache.get(url);
     }
     
-    const dir = await initRepo(url);
+    const dir = await initRepoWithoutCheckout(url);
     
     // Fetch latest tags if not recently fetched
     try {

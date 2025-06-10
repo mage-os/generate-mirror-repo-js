@@ -457,21 +457,32 @@ async function createPackagesForRef(url, modulesPath, ref, options) {
 
   report(`Found ${modules.length} modules`);
 
-  let n = 0;
   const built = {};
   const errors = [];
+  let completed = 0;
+
+  console.log(`Starting parallel processing of ${modules.length} modules with concurrency ${concurrency}...`);
 
   // Process packages in parallel with concurrency control
   const results = await parallelMap(
     modules,
     async (moduleDir, index) => {
-      const current = (++n).toString().padStart(modules.length.toString().length, ' ');
-      report(`${current}/${modules.length} Packaging [${ref}] ${(lastTwoDirs(moduleDir, '_'))}`);
+      const moduleNumber = index + 1;
+      const moduleName = lastTwoDirs(moduleDir, '_');
+      
+      report(`[${moduleNumber}/${modules.length}] Starting ${moduleName} [${ref}]`);
+      const startTime = Date.now();
+      
       try {
         const packageToVersion = await createPackageForRef(url, moduleDir, ref, configOptions);
+        const duration = Date.now() - startTime;
+        completed++;
+        report(`[${moduleNumber}/${modules.length}] ✓ Completed ${moduleName} in ${duration}ms (${completed}/${modules.length} done)`);
         return { success: true, packages: packageToVersion };
       } catch (exception) {
-        report(`Error: ${exception.message}`);
+        const duration = Date.now() - startTime;
+        completed++;
+        report(`[${moduleNumber}/${modules.length}] ✗ Failed ${moduleName} in ${duration}ms: ${exception.message}`);
         return { success: false, error: exception.message };
       }
     },
