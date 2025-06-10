@@ -4,10 +4,13 @@ const {determineSourceDependencies} = require('./determine-dependencies');
 const JSZip = require('jszip');
 const repo = require("./repository");
 const {lastTwoDirs, httpSlurp, compareVersions} = require('./utils');
+const {parallelMap, batchProcess} = require('./parallel-utils');
 
 let archiveBaseDir = 'packages';
 
 let mageosPackageRepoUrl = 'https://repo.mage-os.org/';
+
+let compressionLevel = 6; // Default compression level
 
 const stableMtime = '2022-02-22 22:02:22.000Z';
 
@@ -76,8 +79,27 @@ function archiveFilePath(name, version) {
 async function writePackage(packageFilepath, files) {
   ensureArchiveDirectoryExists(packageFilepath);
   const zip = zipFileWith(files);
-  const stream = await zip.generateNodeStream({streamFiles: false, platform: 'UNIX'});
-  stream.pipe(fs.createWriteStream(packageFilepath));
+  
+  return new Promise((resolve, reject) => {
+    // Use compression settings optimized for speed vs size balance
+    const stream = zip.generateNodeStream({
+      streamFiles: false, 
+      platform: 'UNIX',
+      compression: 'DEFLATE',
+      compressionOptions: {
+        level: compressionLevel, // Configurable compression (1=fastest, 9=best compression)
+        chunkSize: 1024 * 32 // 32KB chunks for better performance
+      }
+    });
+    
+    const writeStream = fs.createWriteStream(packageFilepath);
+    
+    stream.on('error', reject);
+    writeStream.on('error', reject);
+    writeStream.on('finish', resolve);
+    
+    stream.pipe(writeStream);
+  });
 }
 
 async function getComposerJson(url, moduleDir, ref, composerJsonPath) {
@@ -428,31 +450,48 @@ async function findModulesToBuild(url, modulesPath, ref, excludes) {
  * @returns {Promise<{}>}
  */
 async function createPackagesForRef(url, modulesPath, ref, options) {
-  const defaults = {excludes: [], dependencyVersions: {}};
+  const defaults = {excludes: [], dependencyVersions: {}, concurrency: 10};
   let configOptions = Object.assign(defaults, (options || {}));
-  const {excludes} = configOptions;
+  const {excludes, concurrency} = configOptions;
   const modules = await findModulesToBuild(url, modulesPath, ref, excludes);
 
   report(`Found ${modules.length} modules`);
 
   let n = 0;
   const built = {};
+  const errors = [];
 
-  // Synchronously build all packages for the given ref because building them async causes JS to go OOM
+  // Process packages in parallel with concurrency control
+  const results = await parallelMap(
+    modules,
+    async (moduleDir, index) => {
+      const current = (++n).toString().padStart(modules.length.toString().length, ' ');
+      report(`${current}/${modules.length} Packaging [${ref}] ${(lastTwoDirs(moduleDir, '_'))}`);
+      try {
+        const packageToVersion = await createPackageForRef(url, moduleDir, ref, configOptions);
+        return { success: true, packages: packageToVersion };
+      } catch (exception) {
+        report(`Error: ${exception.message}`);
+        return { success: false, error: exception.message };
+      }
+    },
+    concurrency
+  );
 
-  for (const moduleDir of modules) {
-    const current = (++n).toString().padStart(modules.length.toString().length, ' ');
-    report(`${current}/${modules.length} Packaging [${ref}] ${(lastTwoDirs(moduleDir, '_'))}`);
-    try {
-      const packageToVersion = await createPackageForRef(url, moduleDir, ref, configOptions);
-      Object.assign(built, packageToVersion);
-    } catch (exception) {
-      report(exception.message);
+  // Collect results
+  results.forEach(result => {
+    if (result.success) {
+      Object.assign(built, result.packages);
+    } else {
+      errors.push(result.error);
     }
-  }
+  });
+
   if (Object.keys(built).length === 0) {
-    throw {message: `No packages built for ${ref}`};
+    throw {message: `No packages built for ${ref}. Errors: ${errors.join(', ')}`};
   }
+  
+  report(`Built ${Object.keys(built).length} packages, ${errors.length} errors`);
   return built;
 }
 
@@ -640,6 +679,9 @@ module.exports = {
   },
   setMageosPackageRepoUrl(newMirrorUrl) {
     mageosPackageRepoUrl = newMirrorUrl;
+  },
+  setCompressionLevel(level) {
+    compressionLevel = Math.max(1, Math.min(9, level)); // Clamp between 1-9
   },
   createPackageForRef,
   createPackagesForRef,

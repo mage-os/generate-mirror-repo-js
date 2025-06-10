@@ -2,6 +2,7 @@ const fs = require('fs');
 const repo = require('./repository');
 const {isVersionGreaterOrEqual} = require('./utils');
 const zip = require('jszip');
+const {parallelMap} = require('./parallel-utils');
 const {
   createPackagesForRef,
   createPackageForRef,
@@ -86,14 +87,14 @@ async function createMetaPackagesFromRepoDir(url, tagSpec, path, fixVersions, tr
   return built;
 }
 
-async function createPackagesSinceTag(url, tagsSpec, modulesPath, excludes, fixVersions, transform) {
+async function createPackagesSinceTag(url, tagsSpec, modulesPath, excludes, fixVersions, transform, concurrency = 10) {
   const tags = await listTagsFrom(url, tagsSpec);
   console.log(`Versions to process: ${tags.join(', ')}`);
   const built = [];
   for (const tag of tags) {
     console.log(`Processing ${tag}`);
     try {
-      await createPackagesForRef(url, modulesPath, tag, {excludes, dependencyVersions: (fixVersions?.[tag] ?? {}), transform});
+      await createPackagesForRef(url, modulesPath, tag, {excludes, dependencyVersions: (fixVersions?.[tag] ?? {}), transform, concurrency});
       built.push(tag)
     } catch (exception) {
       console.log(exception.message || exception);
@@ -157,7 +158,7 @@ async function replacePackageFiles(name, version, files) {
 async function processMirrorInstruction(instructions) {
   let tags = [];
 
-  const {repoUrl, fromTag, skipTags, extraRefToRelease, fixVersions, vendor = null, transform = null} = instructions;
+  const {repoUrl, fromTag, skipTags, extraRefToRelease, fixVersions, vendor = null, transform = null, concurrency = 10} = instructions;
   const tagsSpec = {fromTag, skipTags}
 
   await Promise.all(
@@ -165,9 +166,9 @@ async function processMirrorInstruction(instructions) {
   );
 
   for (const packageDir of (instructions.packageDirs || [])) {
-    const {label, dir, excludes} = Object.assign({excludes: []}, packageDir);
+    const {label, dir, excludes, concurrency = 10} = Object.assign({excludes: []}, packageDir);
     console.log(`Packaging ${label}`);
-    tags = await createPackagesSinceTag(repoUrl, tagsSpec, dir, excludes, fixVersions, transform)
+    tags = await createPackagesSinceTag(repoUrl, tagsSpec, dir, excludes, fixVersions, transform, concurrency)
     console.log(label, tags);
   }
 

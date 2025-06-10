@@ -13,8 +13,13 @@ let report = console.log;
  * We use initializedRepositories to memoize which one already have been used to minimize having to shell out.
  */
 const initializedRepositories = {};
+const tagCache = new Map(); // Cache for git tags to avoid repeated fetches
+const gitConfigCache = new Set(); // Track which repos have git config set
 
 const memoizedWorkingCopyStats = {}
+const refCheckoutCache = {} // Cache to track which ref is checked out in each repo
+const gitOperationQueue = new Map() // Queue to prevent concurrent operations on same repo
+
 async function memoizeWorkingCopyStat(dir, type, cmd) {
   if (memoizedWorkingCopyStats[dir] === undefined) memoizedWorkingCopyStats[dir] = {}
   if (memoizedWorkingCopyStats[dir][type] === undefined) memoizedWorkingCopyStats[dir][type] = await cmd()
@@ -23,6 +28,19 @@ async function memoizeWorkingCopyStat(dir, type, cmd) {
 
 function clearWorkingCopyStat(dir) {
   delete memoizedWorkingCopyStats[dir]
+  delete refCheckoutCache[dir]
+}
+
+// Ensure git operations on the same repository are serialized
+async function serializedGitOperation(dir, operation) {
+  if (!gitOperationQueue.has(dir)) {
+    gitOperationQueue.set(dir, Promise.resolve());
+  }
+  
+  const promise = gitOperationQueue.get(dir).then(() => operation());
+  gitOperationQueue.set(dir, promise);
+  
+  return promise;
 }
 
 function dirForRepoUrl(url) {
@@ -55,7 +73,10 @@ function trimDir(dir) {
  * @param {String} ref
  */
 function validateRefIsSecure(ref) {
-  if (!ref || ref.substring(0, 1) === '-' || ref.includes(' ') || ref.includes('`') || ref.includes('$')) {
+  if (ref === undefined || ref === null) {
+    return ref; // Allow undefined/null refs for initial cloning
+  }
+  if (ref.substring(0, 1) === '-' || ref.includes(' ') || ref.includes('`') || ref.includes('$')) {
     throw new Error(`Rejecting the ref "${ref}" as potentially insecure`)
   }
   return ref;
@@ -105,7 +126,30 @@ async function cloneRepo(url, dir, ref) {
 
   clearWorkingCopyStat(dir)
 
-  return exec(`git clone --depth=1 --quiet --no-single-branch ${url} ${dir}`);
+  // Use optimized shallow clone with better depth control
+  const cloneCmd = ref 
+    ? `git clone --depth=1 --quiet --branch=${ref} ${url} ${dir}` // Clone specific branch/tag
+    : `git clone --depth=50 --quiet --no-single-branch ${url} ${dir}`; // Clone with reasonable depth for all branches
+  
+  try {
+    await exec(cloneCmd);
+    
+    // Pre-fetch tags for future use if this is a full clone
+    if (!ref) {
+      try {
+        await exec(`git fetch --tags --depth=1`, {cwd: dir});
+      } catch (e) {
+        // Tag fetching is optional, don't fail the whole operation
+        report(`Warning: Could not fetch tags for ${url}: ${e.message}`);
+      }
+    }
+    
+    return;
+  } catch (error) {
+    // Fallback to basic clone if optimized clone fails
+    report(`Optimized clone failed, falling back to basic clone: ${error.message}`);
+    return exec(`git clone --depth=1 --quiet --no-single-branch ${url} ${dir}`);
+  }
 }
 
 async function currentTag(dir) {
@@ -126,27 +170,41 @@ async function currentCommit(dir) {
 async function initRepo(url, ref) {
   const dir = fullRepoPath(url);
 
-  if (! fs.existsSync(dir)) {
-    await cloneRepo(url, dir, ref);
-  }
+  return serializedGitOperation(dir, async () => {
+    if (! fs.existsSync(dir)) {
+      await cloneRepo(url, dir, ref);
+    }
 
-  await relaxRepoOwnerPermissions(dir);
+    await relaxRepoOwnerPermissions(dir);
 
-  if (ref) {
-    if (await currentTag(dir) !== ref && await currentBranch(dir) !== ref && await currentCommit(dir) !== ref) {
-      clearWorkingCopyStat(dir)
+    if (ref) {
+      // Check if we already have this ref checked out
+      const cachedRef = refCheckoutCache[dir];
+      if (cachedRef === ref) {
+        return dir;
+      }
+
+      // Only check current state if we don't have cached info
+      if (!cachedRef && await currentTag(dir) === ref || await currentBranch(dir) === ref || await currentCommit(dir) === ref) {
+        refCheckoutCache[dir] = ref;
+        return dir;
+      }
+
+      clearWorkingCopyStat(dir);
 
       try {
         await exec(`git checkout --force --quiet ${ref}`, {cwd: dir});
+        refCheckoutCache[dir] = ref;
       } catch (exception) {
         // In case the shallow clone doesn't include the ref, try fetching it
         await exec(`git fetch --quiet --depth=1 ${url} ${ref}`, {cwd: dir});
         await exec(`git checkout --force --quiet ${ref}`, {cwd: dir});
+        refCheckoutCache[dir] = ref;
       }
     }
-  }
 
-  return dir;
+    return dir;
+  });
 }
 
 
@@ -185,14 +243,14 @@ async function createBranch(url, branch, ref) {
 
 module.exports = {
   async listFolders(url, pathInRepo, ref) {
-    validateRefIsSecure(ref);
+    if (ref !== undefined && ref !== null) validateRefIsSecure(ref);
     const dir = await initRepo(url, ref);
     if (! fs.existsSync(path.join(dir, pathInRepo))) return [];
     const out = await exec(`ls -1 -d ${path.join(pathInRepo, '*/')}`, {cwd: dir});
     return out.trim().split("\n").map(trimDir);
   },
   async listFiles(url, pathInRepo, ref, excludes) {
-    validateRefIsSecure(ref);
+    if (ref !== undefined && ref !== null) validateRefIsSecure(ref);
     const dir = await initRepo(url, ref);
     if (! fs.existsSync(path.join(dir, pathInRepo))) return [];
     const excludeStrings = excludes.map(exclude => typeof exclude === 'function' ? exclude(ref) : exclude).filter(exclude => exclude.length > 0);
@@ -207,25 +265,42 @@ module.exports = {
     });
   },
   async readFile(url, filepath, ref) {
-    validateRefIsSecure(ref);
+    if (ref !== undefined && ref !== null) validateRefIsSecure(ref);
     const dir = await initRepo(url, ref);
     return fs.readFileSync(path.join(dir, filepath), 'utf8');
   },
   async lastCommitTimeForFile(url, filepath, ref) {
-    validateRefIsSecure(ref);
+    if (ref !== undefined && ref !== null) validateRefIsSecure(ref);
     const dir = await initRepo(url, ref);
     const timestamp = exec(`git log -1 --pretty="format:%at" ${filepath}`, {cwd: dir})
     return new Date(parseInt(timestamp) * 1000); // convert seconds to JS timestamp ms
   },
   async listTags(url) {
+    // Check cache first
+    if (tagCache.has(url)) {
+      return tagCache.get(url);
+    }
+    
     const dir = await initRepo(url);
+    
+    // Fetch latest tags if not recently fetched
+    try {
+      await exec(`git fetch --tags --quiet`, {cwd: dir});
+    } catch (e) {
+      // Non-fatal, continue with existing tags
+    }
+    
     const out = await exec(`git tag`, {cwd: dir});
     const result = out.trim();
-    // no tags? return empty array
-    return result.length === 0 ? [] : result.split("\n");
+    const tags = result.length === 0 ? [] : result.split("\n");
+    
+    // Cache the result
+    tagCache.set(url, tags);
+    
+    return tags;
   },
   async checkout(url, ref) {
-    validateRefIsSecure(ref);
+    if (ref !== undefined && ref !== null) validateRefIsSecure(ref);
     return initRepo(url, ref);
   },
   async createBranch(url, branch, ref) {
@@ -234,8 +309,8 @@ module.exports = {
     return createBranch(url, branch, ref);
   },
   async createTagForRef(url, ref, tag, message, details) {
-    validateRefIsSecure(ref);
-    validateRefIsSecure(tag);
+    if (ref !== undefined && ref !== null) validateRefIsSecure(ref);
+    if (tag !== undefined && tag !== null) validateRefIsSecure(tag);
     const dir = await initRepo(url);
     const messageForTag = (message || '').replaceAll("'", '');
     const tags = await this.listTags(url);
@@ -249,12 +324,18 @@ module.exports = {
       }
       throw (details || `Tag ${tag} already exists on repo ${url}`);
     }
-    await exec(`git config user.email "info@mage-os.org"`, {cwd: dir});
-    await exec(`git config user.name "Mage-OS CI"`, {cwd: dir});
+    
+    // Only set git config once per repository
+    if (!gitConfigCache.has(dir)) {
+      await exec(`git config user.email "info@mage-os.org"`, {cwd: dir});
+      await exec(`git config user.name "Mage-OS CI"`, {cwd: dir});
+      gitConfigCache.add(dir);
+    }
+    
     await exec(`git tag -a ${tag} ${ref} -m '${messageForTag}'`, {cwd: dir});
   },
   async pull(url, ref) {
-    validateRefIsSecure(ref)
+    if (ref !== undefined && ref !== null) validateRefIsSecure(ref)
     const dir = await initRepo(url, ref)
     await exec(`git pull --ff-only --quiet origin ${ref}`, {cwd: dir})
     return dir
@@ -266,13 +347,23 @@ module.exports = {
   },
   async commit(url, branch, message) {
     const dir = await initRepo(url, branch)
-    await exec(`git config user.email "info@mage-os.org"`, {cwd: dir});
-    await exec(`git config user.name "Mage-OS CI"`, {cwd: dir});
+    
+    // Only set git config once per repository
+    if (!gitConfigCache.has(dir)) {
+      await exec(`git config user.email "info@mage-os.org"`, {cwd: dir});
+      await exec(`git config user.name "Mage-OS CI"`, {cwd: dir});
+      gitConfigCache.add(dir);
+    }
+    
     await exec(`git commit --no-gpg-sign -m'${ (message || '').replaceAll("'", '"') }'`, {cwd: dir})
     return dir
   },
   clearCache() {
-    // noop
+    tagCache.clear();
+    gitConfigCache.clear();
+    Object.keys(memoizedWorkingCopyStats).forEach(key => delete memoizedWorkingCopyStats[key]);
+    Object.keys(refCheckoutCache).forEach(key => delete refCheckoutCache[key]);
+    gitOperationQueue.clear();
   },
   setStorageDir(dir) {
     repoBaseDir = dir
