@@ -1,9 +1,11 @@
 const fs = require('fs');
 const path = require('path');
 const childProcess = require('child_process');
+const { acquireWorktree, releaseWorktree } = require('./worktree-pool');
 
 let repoBaseDir;
 let report = console.log;
+let useWorktrees = true; // Enable worktrees by default for parallel checkouts
 
 /*
  * Repositories may need to be cloned or may already exist. They may be mounted in a container from a variety of
@@ -185,7 +187,23 @@ async function initRepoWithoutCheckout(url) {
   return dir;
 }
 
+async function initRepoWithWorktree(url, ref) {
+  // Use worktrees for parallel checkouts of the same repository
+  if (!repoBaseDir) {
+    throw new Error('Repository base directory not set. Call setStorageDir() first.');
+  }
+  const dir = await acquireWorktree(url, ref, repoBaseDir);
+  await relaxRepoOwnerPermissions(dir);
+  return dir;
+}
+
 async function initRepo(url, ref) {
+  // If worktrees are enabled and a specific ref is requested, use worktree
+  if (useWorktrees && ref) {
+    return initRepoWithWorktree(url, ref);
+  }
+  
+  // Otherwise use traditional approach
   const dir = await initRepoWithoutCheckout(url);
 
   if (ref) {
@@ -399,6 +417,9 @@ module.exports = {
   },
   setStorageDir(dir) {
     repoBaseDir = dir
+  },
+  enableWorktrees(enable = true) {
+    useWorktrees = enable;
   },
   testing: {
     dirForRepoUrl,
