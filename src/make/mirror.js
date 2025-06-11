@@ -6,7 +6,7 @@ const {buildConfig: mirrorInstructions} = require('./../build-config/mirror-buil
 
 
 const options = parseOptions(
-  `$outputDir $gitRepoDir $repoUrl @help|h`,
+  `$outputDir $gitRepoDir $repoUrl $versions @help|h`,
   process.argv
 );
 
@@ -21,6 +21,8 @@ Options:
   --outputDir=   Dir to contain the built packages (default: packages)
   --gitRepoDir=  Dir to clone repositories into (default: repositories)
   --repoUrl=     Composer repository URL to use in base package (default: https://repo.mage-os.org/)
+  --versions=    Comma-separated list of versions to build (e.g. 2.4.5-p13,2.4.6-p11)
+                 If not specified, all versions will be built
 `);
   process.exit(1);
 }
@@ -39,8 +41,13 @@ if (options.repoUrl) {
 
 (async () => {
   try {
+    const versionFilter = options.versions ? options.versions.split(',').map(v => v.trim()) : null;
+    if (versionFilter) {
+      console.log(`Building only selected versions: ${versionFilter.join(', ')}`);
+    }
+    
     for (const instruction of mirrorInstructions) {
-      await processMirrorInstruction(instruction);
+      await processMirrorInstruction(instruction, versionFilter);
     }
     await copyAdditionalPackages(archiveDir);
   } catch (exception) {

@@ -19,6 +19,11 @@ on:
         options:
           - /var/www/preview-mirror.mage-os.org/html/
           - /var/www/mirror.mage-os.org/html/
+      versions:
+        description: 'Comma-separated list of versions to build (e.g. 2.4.5-p13,2.4.6-p11). Leave empty to build all versions'
+        required: false
+        default: ''
+        type: string
   push:
     branches:
       - main
@@ -32,7 +37,8 @@ jobs:
       repo: ${{ (github.event_name == 'workflow_dispatch' && inputs.repo) || 'https://preview-mirror.mage-os.org/' }}
       remote_dir: ${{ (github.event_name == 'workflow_dispatch' && inputs.remote_dir) || '/var/www/preview-mirror.mage-os.org/html/' }}
       entrypoint: src/make/mirror.js
-      delete: true
+      delete: ${{ inputs.versions == '' }}
+      versions: ${{ inputs.versions || '' }}
     secrets:
       SERVER_SSH_KEY: ${{ secrets.SERVER_SSH_KEY }}
       REMOTE_USER: ${{ secrets.REMOTE_USER }}

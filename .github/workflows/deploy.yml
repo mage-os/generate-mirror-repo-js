@@ -38,6 +38,11 @@ on:
         required: false
         default: false
         type: boolean
+      versions:
+        description: 'Comma-separated list of versions to build (e.g. 2.4.5-p13,2.4.6-p11)'
+        required: false
+        default: ''
+        type: string
 
     secrets:
       SERVER_SSH_KEY:
@@ -56,6 +61,7 @@ env:
   mageos_release: ${{ inputs.mageos_release }}
   mageos_release_arg: ${{ inputs.mageos_release != '' && format('--mageosRelease="{0}"', inputs.mageos_release) || '' }}
   upstream_release_arg: ${{ inputs.upstream_release != '' && format('--upstreamRelease="{0}"', inputs.upstream_release) || '' }}
+  versions_arg: ${{ inputs.versions != '' && format('--versions="{0}"', inputs.versions) || '' }}
   publish_tag: ${{ inputs.publish_tag }}
 
 jobs:
@@ -88,7 +94,7 @@ jobs:
       - run: npm ci
       - run: |
           node ${{ env.entrypoint }} --outputDir=build/packages --gitRepoDir=generate-repo/repositories --repoUrl="${{ env.repo }}" \
-            ${{ env.mageos_release_arg }} ${{ env.upstream_release_arg }}
+            ${{ env.mageos_release_arg }} ${{ env.upstream_release_arg }} ${{ env.versions_arg }}
         name: "Generate the packages for the composer repo"
       - run: node bin/set-satis-homepage-url.js --satisConfig=satis.json --repoUrl="${{ env.repo }}" > /tmp/satis.json
         name: "Configure satis repository URL so composer knows where to download packages from"
