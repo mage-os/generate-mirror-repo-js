@@ -106,8 +106,15 @@ jobs:
         name: "Add generator version number to Satis HTML"
       - run: cd satis && bin/satis build /tmp/satis.json ../build && cd -
         name: "Run satis"
+        if: ${{ inputs.versions == '' }}
       - run: cd satis && node ../bin/set-satis-output-url-prefix.js --satisOutputDir=../build --repoUrl="${{ env.repo }}" && cd -
         name: "Fix path to packages in the packages.json satis created"
+        if: ${{ inputs.versions == '' }}
+      
+      # For partial builds, merge with existing repository metadata
+      - run: node bin/merge-partial-build.js --repoUrl="${{ env.repo }}" --buildDir=build
+        name: "Merge partial build with existing repository"
+        if: ${{ inputs.versions != '' }}
 
       - uses: easingthemes/ssh-deploy@v4
         name: "Rsync over SSH"
