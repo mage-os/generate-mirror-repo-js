@@ -283,8 +283,10 @@ async function createPackageForRef(url, moduleDir, ref, options) {
   // build the package even if it already exists - this is important as a workaround against inconsistencies in upstream
   // release tagging of adobe-ims
   if (fs.existsSync(packageFilepath)) {
-    //fs.unlinkSync(packageFilepath)
-    //return packageWithVersion;
+    // the package version was already built while processing an earlier tag, so we skip the generation. The content
+    // _should_ be the same. However, it sometimes changes due to mistakes in the upstream processes, but in those cases
+    // upstream uses the earliest version of the package, so we do the same to be consistent.
+    return packageWithVersion;
   }
 
   const files = (await repo.listFiles(url, moduleDir, ref, excludes))
