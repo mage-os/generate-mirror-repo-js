@@ -22,8 +22,22 @@ const mirrorBuildConfig = {
             : {}
           composerJson.require = {...composerJson.require, ...patch}
           return composerJson;
+        },
+      ],
+      'magento/project-community-edition': [
+        // Magento 2.4.8 forked allure-framework/allure-phpunit to magento/magento-allure-phpunit, because PHP 8.4 compat
+        // Later, Allure created a new version with support for PHP 8.4
+        // I believe that Magento tried to switch back to allure-framework/allure-phpunit but forgot to remove
+        // magento/magento-allure-phpunit from the dev-dependencies list in the package. It is removed in githab though.
+        // We add it in again here for consistency with the upstream release.
+        composerJson => {
+          const patch = composerJson.version === '2.4.8-p1'
+            ? {'magento/magento-allure-phpunit': '^3.0.2'}
+            : {}
+            composerJson['require-dev'] = {...composerJson['require-dev'], ...patch}
+          return composerJson;
         }
-      ]
+      ],
     },
     // After package generation, the files for these specific module versions will be replaced.
     packageReplacements: [
