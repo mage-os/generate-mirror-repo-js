@@ -204,6 +204,9 @@ and [this second one to merge the temporary dev branch into `main`](https://gith
 
 ## Process of building a new Mage-OS release
 
+When deciding on a new version number for a Mage-OS release, 
+see [our version numbering RFC](https://github.com/mage-os/mageos-magento2/issues/138#event-18190625013).
+
 ### 0. Preliminary check
 
 First we need to make sure that all `mageos-` have been updated with latest changes from upstream, we can force the updates with:
