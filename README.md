@@ -157,13 +157,11 @@ For a practical example [check this PR](https://github.com/mage-os/magento2-base
   then create a new branch that you'll use to create a pull request.
 - Update the supported versions matrix editing
   [src/versions/magento-open-source/individual.json](https://github.com/mage-os/github-actions/blob/main/supported-version/src/versions/magento-open-source/individual.json).  
-  Remember that, when inserting a new version like 2.4.6-p9, you´ll have to change the _end of life_
-  date of the previous version (2.4.6-p8) to _one day earlier_ of the release date of the next version.
-  [Check this example commit](https://github.com/mage-os/github-actions/pull/262/files#diff-0655b3d6263a5375945b0a6bbab191703f8ee83f9535a48e2871d8afec4cb2fc)
-  and this screenshot to better understand what needs to be done:  
-  <img width=500 src="https://github.com/user-attachments/assets/2860e539-e76e-4c8f-89c6-a8c4f1331778" />
+  Remember that, when inserting a new version like 2.4.8-p2, you´ll have to change the _end of life_
+  date of the previous version (2.4.6-p1) to _the same day_ of the release date of the next version.
+  [Check this example commit](https://github.com/mage-os/github-actions/pull/295/files).
 - Check if `magento-open-source/composite.json` needs updating
-  (it only happens when a new "non patch" release is published, like 2.4.8).
+  (it only happens when a new "non patch" release is published, like 2.4.9).
 - Now "build" the project with
   - In the root of the project: `npm install`
   - In the supported-version folder: `npm run build`
@@ -177,20 +175,17 @@ For a practical example [check this PR](https://github.com/mage-os/github-action
 
 - Fork and clone https://github.com/mage-os/generate-mirror-repo-js,
   then create a new branch that you'll use to create a pull request.
-- Install latest magento version with  
-  `composer create-project --repository-url=https://repo.magento.com/ magento/project-community-edition`
-- "Build" the mirror with  
-  `rm -rf repositories; node src/make/mirror.js --outputDir=build`
-- Download all missing packages with  
-  `./bin/download-missing-packages-from-repo-magento-com.php project-community-edition/composer.lock build resource/additional-packages`
-- Commit and push the new files in `resource/additional-packages`.
 - Copy all the `composer.json` files for all releases with something like
   ```sh
   cp ../mageos-magento2-base-composer-json/2.4.7-p4/magento2-base/composer.json resource/history/magento/magento2-base/2.4.7-p4.json
   cp ../mageos-magento2-base-composer-json/2.4.7-p4/product-community-edition/composer.json resource/history/magento/product-community-edition/2.4.7-p4.json
   cp ../mageos-magento2-base-composer-json/2.4.7-p4/project-community-edition/composer.json resource/history/magento/project-community-edition/2.4.7-p4.json
   ```
-- Commit and push all the `composer.json` files.
+- "Build" the mirror with  
+  `rm -rf repositories; node src/make/mirror.js --outputDir=build`
+- Download all missing packages with  
+  `./bin/download-missing-packages-from-repo-magento-com.php project-community-edition/composer.lock build resource/additional-packages`
+- Commit and push the new files in `resource`.
 
 When creating the PR on `generate-mirror-repo-js`, in order for all the checks to run,
 the PR will have to be merged on a development branch.
