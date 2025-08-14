@@ -1,5 +1,5 @@
 const packagesConfig = require('./packages-config');
-const {mergeBuildConfigs} = require('../utils');
+const {mergeBuildConfigs, compareVersions} = require('../utils');
 
 const mirrorBuildConfig = {
   'magento2': {
@@ -13,28 +13,40 @@ const mirrorBuildConfig = {
       }
     },
     transform: {
-      // Upstream correctly sets the module version to 100.3.7-p3 in the git tag, but in the actual upstream 2.3.7-p3
-      // release they used 100.3.7 as the dependency.
       'magento/product-community-edition': [
         composerJson => {
-          const patch = composerJson.version === '2.3.7-p3'
-            ? {'magento/module-bundle': '100.3.7'}
-            : {}
-          composerJson.require = {...composerJson.require, ...patch}
+          if (composerJson.version === '2.3.7-p3') {
+            // Upstream correctly sets the module version to 100.3.7-p3 in the git tag, but in the actual upstream 2.3.7-p3
+            // release they used 100.3.7 as the dependency.
+            composerJson.require = {
+              ...composerJson.require,
+              'magento/module-bundle': '100.3.7',
+            }
+          }
+          if (composerJson.version.startsWith('2.4.7-') && compareVersions(composerJson.version, '2.4.7-p6') >= 0) {
+            // Upstream retroactively disallows use of 2.4.7-p6+ with Braintree 4.7
+            composerJson.conflict = {
+              ...(composerJson.conflict || {}),
+              'paypal/module-braintree': '>=4.7.0',
+            }
+          }
           return composerJson;
         },
       ],
       'magento/project-community-edition': [
-        // Magento 2.4.8 forked allure-framework/allure-phpunit to magento/magento-allure-phpunit, because PHP 8.4 compat
-        // Later, Allure created a new version with support for PHP 8.4
-        // I believe that Magento tried to switch back to allure-framework/allure-phpunit but forgot to remove
-        // magento/magento-allure-phpunit from the dev-dependencies list in the package. It is removed in githab though.
-        // We add it in again here for consistency with the upstream release.
         composerJson => {
-          const patch = composerJson.version === '2.4.8-p1'
-            ? {'magento/magento-allure-phpunit': '^3.0.2'}
-            : {}
-            composerJson['require-dev'] = {...composerJson['require-dev'], ...patch}
+          if (composerJson.version.startsWith('2.4.8-p')) {
+            // Magento 2.4.8 forked allure-framework/allure-phpunit to magento/magento-allure-phpunit, because PHP 8.4 compat
+            // Later, Allure created a new version with support for PHP 8.4
+            // For 2.4.8-p1+ it appears upstream tried to switch back to allure-framework/allure-phpunit but forgot to remove
+            // magento/magento-allure-phpunit from the dev-dependencies list in the package. It is removed in github though.
+            // We replace it here to match the upstream release.
+            composerJson['require-dev'] = {
+              ...(composerJson['require-dev'] || {}),
+              'magento/magento-allure-phpunit': '^3.0.2',
+            }
+            delete composerJson['require-dev']['allure-framework/allure-phpunit'];
+          }
           return composerJson;
         }
       ],
