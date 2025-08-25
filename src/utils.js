@@ -1,6 +1,7 @@
 const compareVersions = require("compare-versions");
 const http = require('https');
 const {URL} = require('url');
+const packageDefinition = require('./package-definition');
 const packagesConfig = require("./build-config/packages-config");
 
 /**
@@ -33,7 +34,7 @@ function compareTags(a, b) {
 
 /**
  * Merge given build configurations, prioritizing values from the second parameter
- * @returns {*[]}
+ * @returns {Array<packageDefinition>}
  */
 function mergeBuildConfigs(a, b) {
   return Object.keys(b).reduce((acc, key) => {
@@ -52,7 +53,12 @@ function mergeBuildConfigs(a, b) {
       })
       delete b[key][type];
     })
-    acc.push(Object.assign({key}, (a[key] || {}), b[key]));
+
+    acc.push(
+      new packageDefinition(
+        Object.assign({key}, (a[key] || {}), b[key])
+      )
+    );
     return acc;
   }, [])
 }

@@ -12,30 +12,31 @@ const {
   determineMagentoCommunityEditionProject,
   getLatestTag
 } = require('./package-modules');
+const packageDefinition = require("./package-definition");
 
 /**
- * @param {{repoUrl:String}} instructions
+ * @param {packageDefinition} instruction
  * @returns {Promise<{}>}
  */
-async function getPackagesForBuildInstruction(instructions) {
+async function getPackagesForBuildInstruction(instruction) {
   const packages = {}
   let toBeBuilt = {};
 
-  const {repoUrl} = instructions;
+  const {repoUrl} = instruction;
 
 
   // use the latest tag in branch ref
-  const baseVersionsOnRef = await getLatestTag(repoUrl) || instructions.ref || 'HEAD';
+  const baseVersionsOnRef = await getLatestTag(repoUrl) || instruction.ref || 'HEAD';
   console.log(`Basing ${repoUrl} package versions on those from reference ${baseVersionsOnRef}`);
 
-  for (const packageDir of (instructions.packageDirs || [])) {
+  for (const packageDir of (instruction.packageDirs || [])) {
     const {label, dir, excludes} = Object.assign({excludes: []}, packageDir);
     console.log(`Inspecting ${label}`);
     toBeBuilt = await determinePackagesForRef(repoUrl, dir, baseVersionsOnRef, {excludes});
     Object.assign(packages, toBeBuilt);
   }
 
-  for (const individualPackage of (instructions.packageIndividual || [])) {
+  for (const individualPackage of (instruction.packageIndividual || [])) {
     const defaults = {excludes: [], composerJsonPath: '', emptyDirsToAdd: []};
     const {label, dir, excludes, composerJsonPath, emptyDirsToAdd} = Object.assign(defaults, individualPackage);
     console.log(`Inspecting ${label}`);
@@ -43,20 +44,20 @@ async function getPackagesForBuildInstruction(instructions) {
     Object.assign(packages, toBeBuilt);
   }
 
-  for (const packageMeta of (instructions.packageMetaFromDirs || [])) {
+  for (const packageMeta of (instruction.packageMetaFromDirs || [])) {
     const {label, dir} = packageMeta;
     console.log(`Inspecting ${label}`);
     toBeBuilt = await determineMetaPackageFromRepoDir(repoUrl, dir, baseVersionsOnRef, undefined);
     Object.assign(packages, toBeBuilt);
   }
 
-  if (instructions.magentoCommunityEditionMetapackage) {
+  if (instruction.magentoCommunityEditionMetapackage) {
     console.log('Inspecting Magento Community Edition Product Metapackage');
     toBeBuilt = await determineMagentoCommunityEditionMetapackage(repoUrl, baseVersionsOnRef);
     Object.assign(packages, toBeBuilt);
   }
 
-  if (instructions.magentoCommunityEditionProject) {
+  if (instruction.magentoCommunityEditionProject) {
     console.log('Inspecting Magento Community Edition Project');
     toBeBuilt = await determineMagentoCommunityEditionProject(repoUrl, baseVersionsOnRef);
     Object.assign(packages, toBeBuilt);
@@ -71,10 +72,10 @@ function getReleaseDateString() {
   return `${d.getFullYear()}${(d.getMonth() + 1).toString().padStart(2, '0')}${d.getDate().toString().padStart(2, '0')}`;
 }
 
-async function getPackageVersionsForBuildInstructions(buildInstructions, suffix) {
+async function getPackageVersionsForBuildInstructions(instructions, suffix) {
   console.log(`Determining package versions`);
   let packages = {};
-  for (const instruction of buildInstructions) {
+  for (const instruction of instructions) {
     Object.assign(packages, await getPackagesForBuildInstruction(instruction));
   }
   return transformVersionsToNightlyBuildVersions(packages, suffix);
@@ -117,7 +118,7 @@ function calcNightlyBuildPackageBaseVersion(version) {
 }
 
 /**
- * @param {{}} instruction
+ * @param {packageDefinition} instruction
  * @param {{}} dependencyVersions
  * @param {String} fallbackVersion
  * @returns {Promise<{}>}
@@ -170,7 +171,7 @@ async function processBuildInstruction(instruction, dependencyVersions, fallback
 }
 
 /**
- * @param {Array<{}>} instructions
+ * @param {Array<packageDefinition>} instructions
  * @returns {Promise<void>}
  */
 async function processBuildInstructions(instructions) {

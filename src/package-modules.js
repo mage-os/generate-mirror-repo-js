@@ -496,7 +496,7 @@ async function createMagentoCommunityEditionMetapackage(url, ref, options) {
       version
     });
 
-    for (const k of ['autoload', 'autoload-dev', 'config', 'conflict', 'extra', 'minimum-stability', 'replace', 'require-dev', 'suggest']) {
+    for (const k of ['autoload', 'autoload-dev', 'config', /* 'conflict', */ 'extra', 'minimum-stability', 'replace', 'require-dev', 'suggest']) {
       delete composerConfig[k];
     }
     setDependencyVersions(composerConfig, dependencyVersions, vendor);
