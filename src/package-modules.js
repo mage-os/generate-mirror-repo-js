@@ -4,6 +4,8 @@ const {determineSourceDependencies} = require('./determine-dependencies');
 const JSZip = require('jszip');
 const repo = require("./repository");
 const {lastTwoDirs, httpSlurp, compareVersions} = require('./utils');
+const repositoryBuildDefinition = require('./type/repository-build-definition');
+const packageDefinition = require('./type/package-definition');
 
 let archiveBaseDir = 'packages';
 
@@ -80,34 +82,49 @@ async function writePackage(packageFilepath, files) {
   stream.pipe(fs.createWriteStream(packageFilepath));
 }
 
-async function getComposerJson(url, moduleDir, ref, composerJsonPath) {
-  if (!composerJsonPath || !composerJsonPath.length) {
-    return readComposerJson(url, moduleDir, ref)
+/**
+ * @param {repositoryBuildDefinition} instruction 
+ * @param {packageDefinition} package 
+ * @returns {String}
+ * @TODO: Change all references to this method
+ */
+async function getComposerJson(instruction, package/* url, moduleDir, ref, composerJsonPath */) {
+  if (!package.composerJsonPath || !package.composerJsonPath.length) {
+    return readComposerJson(instruction.repoUrl, package.dir, instruction.ref)
   }
-  if (composerJsonPath.slice(0, 4) === 'http') {
-    return httpSlurp(composerJsonPath);
+  if (package.composerJsonPath.slice(0, 4) === 'http') {
+    return httpSlurp(package.composerJsonPath);
   }
-  return fs.readFileSync(composerJsonPath, 'utf8');
+  return fs.readFileSync(package.composerJsonPath, 'utf8');
 }
 
-function chooseNameAndVersion(magentoName, composerJson, ref, givenVersion) {
+// @TODO: Refactor?
+/**
+ * @param {repositoryBuildDefinition} instruction 
+ * @param {packageDefinition} package 
+ * @param {*} magentoName 
+ * @param {*} composerJson 
+ * @param {*} givenVersion 
+ * @returns 
+ */
+function chooseNameAndVersion(instruction, package, magentoName, composerJson, givenVersion) {
   const composerConfig = JSON.parse(composerJson);
   let {version, name} = composerConfig;
   version = givenVersion || version;
   if (!name) {
     throw {
       kind: 'NAME_UNKNOWN',
-      message: `Unable find package name in composer.json for ${ref}, skipping ${magentoName}`,
+      message: `Unable find package name in composer.json for ${instruction.ref}, skipping ${magentoName}`,
       name,
-      ref,
+      ref: instruction.ref,
     }
   }
   if (!version) {
     throw {
       kind: 'VERSION_UNKNOWN',
-      message: `Unable find package version in ${name} composer.json for ${ref}, skipping ${magentoName}`,
+      message: `Unable find package version in ${name} composer.json for ${instruction.ref}, skipping ${magentoName}`,
       name,
-      ref,
+      ref: instruction.ref,
     }
   }
   return {name, version};
@@ -141,24 +158,24 @@ function setDependencyVersions(composerConfig, dependencyVersions, vendor) {
  * Options:
  *   excludes: Array of path prefixes relative to repo root to exclude from the package
  *
- * @param {String} url The URL of the source git repository
- * @param {String} moduleDir The path to the module to package. Can be '' to use the full repo
- * @param {String} ref Git ref to check out (string of tag or branch)
- * @param {{excludes:Array|undefined}} options
+ * @param {repositoryBuildDefinition} instruction 
+ * @param {packageDefinition} package 
+//  * @param {String} url The URL of the source git repository
+//  * @param {String} moduleDir The path to the module to package. Can be '' to use the full repo
+//  * @param {String} ref Git ref to check out (string of tag or branch)
+//  * @param {{excludes:Array|undefined}} options
  * @returns {Promise<{}>}
  */
-async function determinePackageForRef(url, moduleDir, ref, options) {
-  const defaults = {composerJsonPath: undefined, emptyDirsToAdd: []};
-  const {composerJsonPath} = Object.assign(defaults, (options || {}));
-  const magentoName = lastTwoDirs(moduleDir) || '';
+async function determinePackageForRef(instruction, package/* url, moduleDir, ref, options */) {
+  const magentoName = lastTwoDirs(package.dir) || '';
 
   try {
-    const composerJson = await getComposerJson(url, moduleDir, ref, composerJsonPath);
+    const composerJson = await getComposerJson(instruction, package);
 
     if (composerJson.trim() === '404: Not Found') {
       throw {message: `Unable to find composer.json for ${ref}, skipping ${magentoName}`}
     }
-    const {name, version} = chooseNameAndVersion(magentoName, composerJson, ref);
+    const {name, version} = chooseNameAndVersion(magentoName, composerJson, instruction.ref);
 
     return {[name]: version}
   } catch (exception) {
@@ -168,7 +185,7 @@ async function determinePackageForRef(url, moduleDir, ref, options) {
     if (exception.kind === 'VERSION_UNKNOWN') {
       return {[exception.name]: exception.ref}
     }
-    console.log(`Unable to determine name and/or version for ${magentoName || url} in ${ref}: ${exception.message || exception}`);
+    console.log(`Unable to determine name and/or version for ${magentoName || instruction.repoUrl} in ${instruction.ref}: ${exception.message || exception}`);
     return {};
   }
 }
@@ -181,20 +198,21 @@ async function determinePackageForRef(url, moduleDir, ref, options) {
  * Options:
  *   excludes: Array of path prefixes relative to repo root to exclude from the package
  *
- * @param {String} url The URL of the source git repository
- * @param {String} modulesPath The path to the module to package. Can be '' to use the full repo
- * @param {String} ref Git ref to check out (string of tag or branch)
- * @param {{excludes:Array|undefined}} options
+ * @param {repositoryBuildDefinition} instruction 
+ * @param {packageDefinition} package 
+//  * @param {String} url The URL of the source git repository
+//  * @param {String} modulesPath The path to the module to package. Can be '' to use the full repo
+//  * @param {String} ref Git ref to check out (string of tag or branch)
+//  * @param {{excludes:Array|undefined}} options
  * @returns {Promise<{}>}
  */
-async function determinePackagesForRef(url, modulesPath, ref, options) {
-  const {excludes} = Object.assign({excludes: []}, (options || {}));
-  const modules = await findModulesToBuild(url, modulesPath, ref, excludes);
-
+async function determinePackagesForRef(instruction, package/* url, modulesPath, ref, options */) {
+  const modules = await findModulesToBuild(instruction, package);
   const packages = {};
 
   for (const moduleDir of modules) {
-    Object.assign(packages, await determinePackageForRef(url, moduleDir, ref, options));
+    let subpackage = new packageDefinition({dir: moduleDir});
+    Object.assign(packages, await determinePackageForRef(instruction, subpackage));
   }
   return packages;
 }
@@ -207,40 +225,36 @@ async function determinePackagesForRef(url, modulesPath, ref, options) {
  *   release: Release version to use in composer.json version tag and in the package archive name. Defaults to ref
  *   dependencyVersions: composer package:version dependency map. Dependencies for packages in the map will be set to the given versions
  *
- * @param {String} url The URL of the source git repository
- * @param {String} moduleDir The path to the module to package. Can be '' to use the full repo
- * @param {String} ref Git ref to check out (string of tag or branch)
+ * @param {repositoryBuildDefinition} instruction 
+ * @param {packageDefinition} package 
+//  * @param {String} url The URL of the source git repository
+//  * @param {String} moduleDir The path to the module to package. Can be '' to use the full repo
+//  * @param {String} ref Git ref to check out (string of tag or branch)
  * @param {{excludes:Array|undefined, composerJsonPath:String|undefined, emptyDirsToAdd:Array|undefined, dependencyVersions:{}|undefined}, fallbackVersion:String|undefined, transform:Function[]|undefined} options
  * @returns {Promise<{}>}
  */
-async function createPackageForRef(url, moduleDir, ref, options) {
+async function createPackageForRef(instruction, package, /* url, moduleDir, ref, */ options) {
   const defaults = {
-    excludes: [],
-    composerJsonPath: undefined,
-    emptyDirsToAdd: [],
-    release: undefined,
+    // release: undefined,
     dependencyVersions: {},
-    fallbackVersion: undefined
+    fallbackVersion: undefined,
+    origRef: undefined
   };
   const {
-    excludes,
-    composerJsonPath,
-    emptyDirsToAdd,
     dependencyVersions,
     fallbackVersion,
-    transform,
-    origRef,
-    vendor
+    origRef
   } = Object.assign(defaults, (options || {}));
 
+  let excludes = package.excludes;
   if (!excludes.includes('composer.json')) excludes.push('composer.json');
   if (!excludes.includes('.git/')) excludes.push('.git/');
-  let magentoName = lastTwoDirs(moduleDir) || '';
 
-  const composerJson = await getComposerJson(url, moduleDir, ref, composerJsonPath);
+  let magentoName = lastTwoDirs(package.dir) || '';
+  const composerJson = await getComposerJson(instruction, package);
 
   if (composerJson.trim() === '404: Not Found') {
-    throw {message: `Unable to find composer.json for ${ref}, skipping ${magentoName}`}
+    throw {message: `Unable to find composer.json for ${instruction.ref}, skipping ${magentoName}`}
   }
 
   let composerConfig = JSON.parse(composerJson);
@@ -273,7 +287,7 @@ async function createPackageForRef(url, moduleDir, ref, options) {
   ({
     name,
     version
-  } = chooseNameAndVersion(magentoName, composerJson, ref, (dependencyVersions[composerConfig.name] ?? fallbackVersion)));
+  } = chooseNameAndVersion(instruction, package, magentoName, composerJson, (dependencyVersions[composerConfig.name] ?? fallbackVersion)));
   const packageWithVersion = {[name]: version};
 
   // Use fixed date for stable package checksum generation
@@ -289,9 +303,9 @@ async function createPackageForRef(url, moduleDir, ref, options) {
     return packageWithVersion;
   }
 
-  const files = (await repo.listFiles(url, moduleDir, ref, excludes))
+  const files = (await repo.listFiles(instruction.repoUrl, package.dir, instruction.ref, package.excludes))
     .filter(file => {
-      const isExcluded = (excludes || []).find(exclude => {
+      const isExcluded = (package.excludes || []).find(exclude => {
         return typeof exclude === 'function'
           ? exclude(ref, file.filepath)
           : file.filepath === exclude || file.filepath.startsWith(exclude)
@@ -305,9 +319,9 @@ async function createPackageForRef(url, moduleDir, ref, options) {
 
   if ((composerJsonPath || '').endsWith('template.json')) {
     // the origRef that ref is based on needs to be checked out for composer isntall, because only magento/* packages are available through the mirror repo
-    const dir = await repo.checkout(url, origRef || ref);
+    const dir = await repo.checkout(instruction.repoUrl, origRef || instruction.ref);
     const deps = await determineSourceDependencies(dir, files);
-    origRef && await repo.checkout(url, ref);
+    origRef && await repo.checkout(instruction.repoUrl, instruction.ref);
     composerConfig.require = {};
     Object.keys(deps).sort().forEach(dependency => {
       const dependencyName = vendor && dependency.startsWith('magento/')
@@ -318,11 +332,11 @@ async function createPackageForRef(url, moduleDir, ref, options) {
   }
   setDependencyVersions(composerConfig, dependencyVersions, vendor);
 
-  composerConfig = (transform && transform[name] || []).reduce((config, transformFn) => transformFn(config), composerConfig);
+  composerConfig = (instruction.transform && instruction.transform[name] || []).reduce((config, transformFn) => transformFn(config), composerConfig);
 
   const filesInZip = files.map(file => {
     file.mtime = mtime;
-    file.filepath = file.filepath.slice(moduleDir ? moduleDir.length + 1 : 0);
+    file.filepath = file.filepath.slice(package.dir ? package.dir.length + 1 : 0);
     return file;
   });
 
@@ -332,7 +346,7 @@ async function createPackageForRef(url, moduleDir, ref, options) {
     mtime,
     isExecutable: false
   });
-  for (const d of (emptyDirsToAdd || [])) {
+  for (const d of (package.emptyDirsToAdd || [])) {
     filesInZip.push({filepath: d, contentBuffer: false, mtime, isExecutable: false});
   }
   filesInZip.sort((a, b) => ('' + a.filepath).localeCompare('' + b.filepath));
@@ -359,15 +373,16 @@ function isInAdditionalPackages(name, version) {
 }
 
 /**
- * @param {String} url The URL of the source git repository
- * @param {String} ref Git ref to check out (string of tag or branch)
+ * @param {repositoryBuildDefinition} instruction 
+//  * @param {String} url The URL of the source git repository
+//  * @param {String} ref Git ref to check out (string of tag or branch)
  * @param {String} name The composer name to use in the composer.json and for the package archive
- * @param {Function} transform Transformation fn, takes the source composer.json config, returns updated composer config
  * @param {String|undefined} release Release version to use in the package archive name. Defaults to ref
+ * @param {Function} transform Transformation fn, takes the source composer.json config, returns updated composer config
  * @returns {Promise: <{packageFilepath: String, files: {filepath:String, mtime: Date, contentBugger: Buffer, isExecutable: Boolean}}>}
  */
-async function createComposerJsonOnlyPackage(url, ref, name, transform, release) {
-  const refComposerConfig = JSON.parse(await readComposerJson(url, '', ref));
+async function createComposerJsonOnlyPackage(instruction, name, release, transform) {
+  const refComposerConfig = JSON.parse(await readComposerJson(instruction.repoUrl, '', instruction.ref));
 
   const composerConfig = await transform(refComposerConfig);
   const files = [{
@@ -377,7 +392,7 @@ async function createComposerJsonOnlyPackage(url, ref, name, transform, release)
     isExecutable: false,
   }];
 
-  const packageFilepath = archiveFilePath(name, release || ref);
+  const packageFilepath = archiveFilePath(name, release || instruction.ref);
   return {packageFilepath, files}
 }
 
@@ -406,13 +421,18 @@ async function getAdditionalDependencies(packageName, ref) {
     : await getLatestDependencies(`${__dirname}/../resource/composer-templates/${packageName}`);
 }
 
-async function findModulesToBuild(url, modulesPath, ref, excludes) {
-  const folders = await repo.listFolders(url, modulesPath, ref);
+/**
+ * @param {repositoryBuildDefinition} instruction 
+ * @param {packageDefinition} package 
+ * @returns Array<String>
+ */
+async function findModulesToBuild(instruction, package) {
+  const folders = await repo.listFolders(instruction.repoUrl, package.dir, instruction.ref);
   return folders
-    .filter(dir => dir !== '.')
-    .filter(dir => {
+    .filter(folder => folder !== '.')
+    .filter(folder => {
       const isExcluded = (excludes || []).find(exclude => {
-        return dir === rtrim(exclude, '/') || dir.startsWith(exclude)
+        return folder === rtrim(exclude, '/') || folder.startsWith(exclude)
       })
       return !isExcluded;
     });
@@ -420,20 +440,15 @@ async function findModulesToBuild(url, modulesPath, ref, excludes) {
 
 /**
  * Options:
- *   excludes: Array of path prefixes relative to repo root to exclude from the package
  *   dependencyVersions: composer package:version dependency map. Dependencies for packages in the map will be set to the given versions
  *
- * @param {String} url The URL of the source git repository
- * @param {String} modulesPath The path to the module to package. Can be '' to use the full repo
- * @param {String} ref Git ref to check out (string of tag or branch)
- * @param {{excludes:Array|undefined,  dependencyVersions:{}|undefined}} options
+ * @param {repositoryBuildDefinition} instruction 
+ * @param {packageDefinition} package 
+ * @param {{}} dependencyVersions
  * @returns {Promise<{}>}
  */
-async function createPackagesForRef(url, modulesPath, ref, options) {
-  const defaults = {excludes: [], dependencyVersions: {}};
-  let configOptions = Object.assign(defaults, (options || {}));
-  const {excludes} = configOptions;
-  const modules = await findModulesToBuild(url, modulesPath, ref, excludes);
+async function createPackagesForRef(instruction, package, dependencyVersions) {
+  const modules = await findModulesToBuild(instruction, package);
 
   report(`Found ${modules.length} modules`);
 
@@ -446,7 +461,7 @@ async function createPackagesForRef(url, modulesPath, ref, options) {
     const current = (++n).toString().padStart(modules.length.toString().length, ' ');
     report(`${current}/${modules.length} Packaging [${ref}] ${(lastTwoDirs(moduleDir, '_'))}`);
     try {
-      const packageToVersion = await createPackageForRef(url, moduleDir, ref, configOptions);
+      const packageToVersion = await createPackageForRef(instruction, package, {dependencyVersions});
       Object.assign(built, packageToVersion);
     } catch (exception) {
       report(exception.message);
@@ -470,21 +485,18 @@ async function determineMagentoCommunityEditionMetapackage(repoUrl, ref, release
  *
  * @param {String} url The URL of the source git repository
  * @param {String} ref Git ref to check out (string of tag or branch)
+ * @param {{}} dependencyVersions
  * @param {{release:String|undefined, dependencyVersions:{}, transform:Function[]|undefined, vendor:String}} options
  * @returns {Promise<{}>}
  */
-async function createMagentoCommunityEditionMetapackage(url, ref, options) {
-  const {release, dependencyVersions, transform, vendor} = Object.assign({
-    release: undefined,
-    dependencyVersions: {},
-    vendor: 'magento'
-  }, (options || {}))
+async function createMagentoCommunityEditionMetapackage(instruction, dependencyVersions) {
   const packageName = `${vendor}/product-community-edition`
+  // @TODO: Here down
   const version = release || dependencyVersions[packageName] || ref;
   const {
     packageFilepath,
     files
-  } = await createComposerJsonOnlyPackage(url, ref, packageName, async (refComposerConfig) => {
+  } = await createComposerJsonOnlyPackage(instruction, packageName, release || version, async (refComposerConfig) => {
 
     const additionalDependencies = await getAdditionalDependencies(packageName, ref) // read release-history or dependencies-template for product metapackage
 
@@ -502,7 +514,7 @@ async function createMagentoCommunityEditionMetapackage(url, ref, options) {
     setDependencyVersions(composerConfig, dependencyVersions, vendor);
 
     return (transform && transform[packageName] || []).reduce((config, transformFn) => transformFn(config), composerConfig);
-  }, release || version);
+  });
 
   if (! isInAdditionalPackages(packageName, version)) await writePackage(packageFilepath, files)
 
@@ -535,7 +547,7 @@ async function createMagentoCommunityEditionProject(url, ref, options) {
   const {release, dependencyVersions, minimumStability, transform, vendor, description} = Object.assign(defaults, (options || {}))
   const name = `${vendor}/project-community-edition`;
   const version = release || dependencyVersions[name] || ref;
-  const {packageFilepath, files} = await createComposerJsonOnlyPackage(url, ref, name, async (refComposerConfig) => {
+  const {packageFilepath, files} = await createComposerJsonOnlyPackage(instruction, name, null, async (refComposerConfig) => {
 
     const additionalDependencies = await getAdditionalDependencies(name, ref) // read release history or dependencies-template for project metapackage
 

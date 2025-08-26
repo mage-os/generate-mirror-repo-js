@@ -12,10 +12,10 @@ const {
   determineMagentoCommunityEditionProject,
   getLatestTag
 } = require('./package-modules');
-const packageDefinition = require("./package-definition");
+const repositoryBuildDefinition = require("./type/repository-build-definition");
 
 /**
- * @param {packageDefinition} instruction
+ * @param {repositoryBuildDefinition} instruction
  * @returns {Promise<{}>}
  */
 async function getPackagesForBuildInstruction(instruction) {
@@ -118,7 +118,7 @@ function calcNightlyBuildPackageBaseVersion(version) {
 }
 
 /**
- * @param {packageDefinition} instruction
+ * @param {repositoryBuildDefinition} instruction
  * @param {{}} dependencyVersions
  * @param {String} fallbackVersion
  * @returns {Promise<{}>}
@@ -127,6 +127,7 @@ async function processBuildInstruction(instruction, dependencyVersions, fallback
   const packages = {}
   let built = {};
 
+  // @TODO: no, and release doesn't exist there
   const {repoUrl, ref, release, transform} = instruction;
 
   await repo.pull(repoUrl, ref);
@@ -171,7 +172,7 @@ async function processBuildInstruction(instruction, dependencyVersions, fallback
 }
 
 /**
- * @param {Array<packageDefinition>} instructions
+ * @param {Array<repositoryBuildDefinition>} instructions
  * @returns {Promise<void>}
  */
 async function processBuildInstructions(instructions) {

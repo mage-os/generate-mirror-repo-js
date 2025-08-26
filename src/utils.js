@@ -1,7 +1,7 @@
 const compareVersions = require("compare-versions");
 const http = require('https');
 const {URL} = require('url');
-const packageDefinition = require('./package-definition');
+const repositoryBuildDefinition = require('./type/repository-build-definition');
 const packagesConfig = require("./build-config/packages-config");
 
 /**
@@ -34,7 +34,7 @@ function compareTags(a, b) {
 
 /**
  * Merge given build configurations, prioritizing values from the second parameter
- * @returns {Array<packageDefinition>}
+ * @returns {Array<repositoryBuildDefinition>}
  */
 function mergeBuildConfigs(a, b) {
   return Object.keys(b).reduce((acc, key) => {
@@ -55,7 +55,7 @@ function mergeBuildConfigs(a, b) {
     })
 
     acc.push(
-      new packageDefinition(
+      new repositoryBuildDefinition(
         Object.assign({key}, (a[key] || {}), b[key])
       )
     );

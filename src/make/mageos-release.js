@@ -82,8 +82,8 @@ const releaseRefs = fs.existsSync(releaseRefsFile)
         if (instructions.magentoCommunityEditionMetapackage) {
           // update product package magento dependencies taken from the root composer.json to given vendor
           const productPackage = `${mageosVendor}/product-community-edition`;
-          instructions.transform = instructions.transform || {}
-          instructions.transform[productPackage] = instructions.transform[productPackage] || []
+
+          instructions.transform[productPackage] = instructions.transform[productPackage] || [];
           instructions.transform[productPackage].push((composerConfig) => {
             updateComposerConfigFromMagentoToMageOs(composerConfig, composerConfig.version, {}, mageosVendor)
             return composerConfig
@@ -100,6 +100,7 @@ const releaseRefs = fs.existsSync(releaseRefsFile)
         : {}
 
       for (const instruction of releaseInstructions) {
+        // @TODO: Should this be refactored in some way?
         if (releaseRefs['*']) {
           instruction.ref = releaseRefs['*'];
         }
@@ -110,6 +111,7 @@ const releaseRefs = fs.existsSync(releaseRefsFile)
         await repo.addUpdated(instruction.repoUrl, `'*composer.json'`)
         await repo.commit(instruction.repoUrl, workBranch, `Release ${mageosRelease}`)
         await repo.createTagForRef(instruction.repoUrl, workBranch, mageosRelease, '')
+        // @TODO: Refactor; note atypical key origRef
         await processBuildInstructions(mageosRelease, mageosVendor, {...instruction, ref: mageosRelease, origRef: instruction.ref}, upstreamVersionMap)
       }
     }
