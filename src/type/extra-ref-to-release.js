@@ -1,18 +1,21 @@
 'use strict';
 
+/**
+ * Defines additional untagged git references to build as composer packages.
+ */
 class extraRefToRelease {
   /**
-   * @type String|null Release version number/tag
-  */
-  release = null;
-
-  /**
-   * @type String|null Composer reference (commit hash, branch, tag, etc) to release
+   * @type String|null Git reference (commit hash, branch, tag, etc) to release
    */
   ref = null;
 
   /**
-   * @todo String|null Description (internal)
+   * @type String|null Composer version number to use for the package
+  */
+  release = null;
+
+  /**
+   * @todo String|null Description/reason (internal)
    */
   details = null;
 
@@ -20,8 +23,8 @@ class extraRefToRelease {
    * @param {{release: String, ref: String, details: String}} options 
    */
   constructor(options) {
-    this.release = options.release || this.release;
     this.ref = options.ref || this.ref;
+    this.release = options.release || this.release;
     this.details = options.details || this.details;
   }
 };

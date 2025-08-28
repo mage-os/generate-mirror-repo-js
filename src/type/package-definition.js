@@ -1,5 +1,8 @@
 'use strict';
 
+/**
+ * Defines a composer package from all or part of a git repository.
+ */
 class packageDefinition {
   /**
    * @type String|null Package label (internal)

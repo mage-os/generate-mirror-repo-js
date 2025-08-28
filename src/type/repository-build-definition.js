@@ -4,25 +4,30 @@ const extraRefToRelease = require('./extra-ref-to-release');
 const packageDefinition = require('./package-definition');
 const packageReplacement = require('./package-replacement');
 
+/**
+ * Defines release build instructions for a git repository.
+ */
 class repositoryBuildDefinition {
   /**
-   * @type String|null Repository URL
+   * @type String|null Git Repository URL
    */
   repoUrl = null;
 
   /**
-   * @type Array<packageDefinition> Create packages from all folders within these directories
+   * @type Array<packageDefinition> Create packages from all folders within
+   *  these directories
    */
   packageDirs = [];
 
   /**
-   * @type Array<packageDefinition> Create a single package from each specified folder
+   * @type Array<packageDefinition> Create a single package from each
+   *  specified folder
    */
   packageIndividual = [];
 
   /**
    * @todo How does this work?
-   * @type Array<packageDefinition> Create a metapackage from the specified folder
+   * @type Array<packageDefinition> Create a metapackage from this folder
    */
   packageMetaFromDirs = [];
 
@@ -46,7 +51,7 @@ class repositoryBuildDefinition {
   vendor = null;
 
   /**
-   * @type String|null Composer reference (branch, etc) to use for release generation
+   * @type String|null Git reference (branch, etc) to use for the build
    */
   ref = null;
 
@@ -61,12 +66,14 @@ class repositoryBuildDefinition {
   skipTags = {};
 
   /**
-   * @type {{}} Composer names and callback functions for transformations to apply at build
+   * @type {{}} Composer names and callback functions for transformations to
+   *  apply at build
    */
   transform = {};
 
   /**
-   * @type {{}} For the given release version, set specific composer package versions
+   * @type {{}} For the given release version, set specific composer package
+   *  versions
    */
   fixVersions = {};
 
@@ -76,7 +83,7 @@ class repositoryBuildDefinition {
   packageReplacements = [];
 
   /**
-   * @type Array<extraRefToRelease> Extra untagged composer references to release
+   * @type Array<extraRefToRelease> Extra untagged git references to package
    */
   extraRefToRelease = [];
 
@@ -102,9 +109,6 @@ class repositoryBuildDefinition {
 
     this.packageReplacements = this.initPackageReplacements(options.packageReplacements || []);
     this.extraRefToRelease = this.initExtraRefsToRelease(options.extraRefToRelease || []);
-
-    // @TODO: Add release version?
-    // @TODO: Add dependencyVersions?
   }
 
   /**

@@ -129,39 +129,64 @@ function updateMapFromMagentoToMageOs(obj, vendor) {
   return packageNames.reduce((acc, pkg) => Object.assign(acc, {[setMageOsVendor(pkg, vendor)]: obj[pkg]}), {})
 }
 
-function updateComposerDepsFromMagentoToMageOs(composerConfig, vendor) {
-  composerConfig.name = setMageOsVendor(composerConfig.name, vendor)
+/**
+ * @param {repositoryBuildDefinition} instruction 
+ * @param {buildState} release
+ * @param {{}} composerConfig
+ */
+function updateComposerDepsFromMagentoToMageOs(instruction, release, composerConfig) {
+  composerConfig.name = setMageOsVendor(composerConfig.name, instruction.vendor)
   for (const dependencyType of ['require', 'require-dev', 'suggest', 'replace']) {
-    composerConfig[dependencyType] && (composerConfig[dependencyType] = updateMapFromMagentoToMageOs(composerConfig[dependencyType], vendor))
+    composerConfig[dependencyType] && (composerConfig[dependencyType] = updateMapFromMagentoToMageOs(composerConfig[dependencyType], instruction.vendor))
   }
 }
 
-function setMageOsDependencyVersion(obj, dependencyType, releaseVersion, vendor) {
+/**
+ * @param {repositoryBuildDefinition} instruction 
+ * @param {buildState} release
+ * @param {{}} composerConfigPart
+ * @param {String} dependencyType
+ */
+function setMageOsDependencyVersion(instruction, release, composerConfigPart, dependencyType) {
   const mageOsPackage = new RegExp(`^${vendor}/`)
-  const packageNames = Object.keys(obj)
+  const packageNames = Object.keys(composerConfigPart)
   packageNames.forEach(packageName => {
     if (packageName.match(mageOsPackage)) {
       // @TODO: Allow vendor packages to be flagged as independently packaged. In that case, use the latest tagged version, not the current release or fallback version.
-      obj[packageName] = dependencyType === 'suggest' && packageName.endsWith('-sample-data')
-        ? `Sample Data version: ${releaseVersion}`
-        : releaseVersion;
+      // @TODO: Make sure release.version is actually set, or change this to ref, or instruction.version, or something -- think through this
+      composerConfigPart[packageName] = release.version;
+      
+      if (dependencyType === 'suggest' && packageName.endsWith('-sample-data')) {
+        composerConfigPart[packageName] = `Sample Data version: ${release.version}`;
+      }
     }
   })
-  return obj
+  return composerConfigPart
 }
 
-function updateComposerDepsVersionForMageOs(composerConfig, releaseVersion, vendor) {
+/**
+ * @param {repositoryBuildDefinition} instruction 
+ * @param {buildState} release
+ * @param {{}} composerConfig
+ */
+// @TODO: update MageOs method names to Distribution
+function updateComposerDepsVersionForMageOs(instruction, release, composerConfig) {
   for (const dependencyType of ['require', 'require-dev', 'suggest']) {
-    composerConfig[dependencyType] && (composerConfig[dependencyType] = setMageOsDependencyVersion(composerConfig[dependencyType], dependencyType, releaseVersion, vendor))
+    composerConfig[dependencyType] && (composerConfig[dependencyType] = setMageOsDependencyVersion(instruction, release, composerConfig[dependencyType], dependencyType))
   }
 }
 
-function updateComposerPluginConfigForMageOs(composerConfig, vendor) {
+/**
+ * @param {repositoryBuildDefinition} instruction 
+ * @param {buildState} release
+ * @param {{}} composerConfig
+ */
+function updateComposerPluginConfigForMageOs(instruction, release, composerConfig) {
   if (composerConfig?.['config']?.['allow-plugins']) {
     Object.keys(composerConfig['config']['allow-plugins']).forEach(plugin => {
       const val = composerConfig['config']['allow-plugins'][plugin]
       delete composerConfig['config']['allow-plugins'][plugin]
-      composerConfig['config']['allow-plugins'][setMageOsVendor(plugin, vendor)] = val
+      composerConfig['config']['allow-plugins'][setMageOsVendor(plugin, instruction.vendor)] = val
     })
   }
 }
@@ -170,35 +195,44 @@ function updateComposerPluginConfigForMageOs(composerConfig, vendor) {
  * Replace all occurrences of the magento vendor name with the given vendor in a composer.json
  *
  * This also happens for the "replace" section, before the given replaceVersionMap is merged.
+ *
+ * @param {repositoryBuildDefinition} instruction 
+ * @param {buildState} release
+ * @param {{}} composerConfig
  */
-function updateComposerConfigFromMagentoToMageOs(composerConfig, releaseVersion, replaceVersionMap, vendor) {
+function updateComposerConfigFromMagentoToMageOs(instruction, release, composerConfig/* , releaseVersion, replaceVersionMap, vendor */) {
   const originalPackageName = composerConfig.name
 
-  composerConfig.version = releaseVersion
-  composerConfig.name = setMageOsVendor(composerConfig.name, vendor)
+  composerConfig.version = release.version || release.ref;
+  composerConfig.name = setMageOsVendor(composerConfig.name, instruction.vendor);
   
-  updateComposerDepsFromMagentoToMageOs(composerConfig, vendor)
-  updateComposerDepsVersionForMageOs(composerConfig, releaseVersion, vendor)
-  updateComposerPluginConfigForMageOs(composerConfig, vendor)
+  updateComposerDepsFromMagentoToMageOs(instruction, release, composerConfig/* , instruction.vendor */);
+  updateComposerDepsVersionForMageOs(instruction, release, composerConfig/* , composerConfig.version, vendor */);
+  updateComposerPluginConfigForMageOs(instruction, release, composerConfig/* , vendor */);
 
-  if (replaceVersionMap[originalPackageName]) {
-    composerConfig.replace = {[originalPackageName]: replaceVersionMap[originalPackageName]}
+  if (release.dependencyVersions[originalPackageName]) {
+    composerConfig.replace = {[originalPackageName]: release.dependencyVersions[originalPackageName]}
   }
 }
 
-// @TODO: Do we need to refactor this method?
-async function prepPackageForRelease({label, dir}, repoUrl, ref, releaseVersion, vendor, replaceVersionMap, workingCopyPath) {
-  console.log(`Preparing ${label}`);
+/**
+ * @param {repositoryBuildDefinition} instruction 
+ * @param {packageDefinition} package
+ * @param {buildState} release
+ * @param {*} workingCopyPath 
+ */
+async function prepPackageForRelease(instruction, package, release, /* {label, dir}, repoUrl, ref, releaseVersion, vendor, replaceVersionMap, */ workingCopyPath) {
+  console.log(`Preparing ${package.label}`);
 
-  const composerConfig = JSON.parse(await readComposerJson(repoUrl, dir, ref))
-  updateComposerConfigFromMagentoToMageOs(composerConfig, releaseVersion, replaceVersionMap, vendor)
+  const composerConfig = JSON.parse(await readComposerJson(instruction.repoUrl, package.dir, release.ref))
+  updateComposerConfigFromMagentoToMageOs(instruction, release, composerConfig/* , releaseVersion, replaceVersionMap, vendor */)
 
   // write composerJson to file in repo
-  const file = path.join(workingCopyPath, dir, 'composer.json');
+  const file = path.join(workingCopyPath, package.dir, 'composer.json');
   await fs.writeFile(file, JSON.stringify(composerConfig, null, 2), 'utf8')
 }
 
-
+// @todo: here down!
 async function buildMageOsProductCommunityEditionMetapackage(releaseVersion, instruction, replaceVersionMap, vendor) {
   console.log('Packaging Mage-OS Community Edition Product Metapackage');
 
@@ -225,21 +259,23 @@ async function buildMageOsProductCommunityEditionMetapackage(releaseVersion, ins
 async function buildMageOsProjectCommunityEditionMetapackage(releaseVersion, instruction, replaceVersionMap, vendor, dependencyVersions) {
   console.log('Packaging Mage-OS Community Edition Project');
 
-  return createMagentoCommunityEditionProject(instruction.repoUrl, instruction.ref, {
-    release: releaseVersion,
-    vendor,
-    dependencyVersions,
-    minimumStability: 'stable',
-    description: 'Community built eCommerce Platform for Growth',
-    transform: {
-      [`${vendor}/project-community-edition`]: [
-        (composerConfig) => {
-          updateComposerConfigFromMagentoToMageOs(composerConfig, releaseVersion, replaceVersionMap, vendor)
-          return composerConfig
-        }
-      ]
+  return createMagentoCommunityEditionProject(
+    instruction,
+    release,
+    {
+      minimumStability: 'stable',
+      description: 'Community built eCommerce Platform for Growth',
+      // @TODO: Handle this additional transform
+      transform: {
+        [`${vendor}/project-community-edition`]: [
+          (composerConfig) => {
+            updateComposerConfigFromMagentoToMageOs(composerConfig, releaseVersion, replaceVersionMap, vendor)
+            return composerConfig
+          }
+        ]
+      }
     }
-  })
+  )
 }
 
 

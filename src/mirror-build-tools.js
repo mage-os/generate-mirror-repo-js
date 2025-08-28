@@ -13,6 +13,7 @@ const {
 const repositoryBuildDefinition = require('./type/repository-build-definition');
 const packageDefinition = require('./type/package-definition');
 const packageReplacement = require('./type/package-replacement');
+const buildState = require('./type/build-state');
 
 
 async function listTagsFrom(url, fromTag, skipTags) {
@@ -45,65 +46,73 @@ async function copyAdditionalPackages(archiveDir) {
 }
 
 /**
- * @param {repositoryBuildDefinition} repository 
- * @returns Array<String> Packaged tags
+ * @param {repositoryBuildDefinition} instruction 
+ * @returns {Array<String>} Packaged tags
  */
-async function createMagentoCommunityEditionMetapackagesSinceTag(repository) {
-  const tags = await listTagsFrom(repository.repoUrl, repository.fromTag, repository.skipTags);
+async function createMagentoCommunityEditionMetapackagesSinceTag(instruction) {
+  const tags = await listTagsFrom(instruction.repoUrl, instruction.fromTag, instruction.skipTags);
   console.log(`Versions to process: ${tags.join(', ')}`);
   for (const tag of tags) {
     console.log(`Processing ${tag}`);
-    await createMagentoCommunityEditionMetapackage(repository.repoUrl, tag, {
-      dependencyVersions: (repository.fixVersions?.[tag] ?? {}),
-      transform: repository.transform,
-      vendor: repository.vendor || 'magento'
-    });
-  }
-  return tags;
-}
 
-/**
- * @param {repositoryBuildDefinition} repository 
- * @returns Array<String> Packaged tags
- */
-async function createProjectPackagesSinceTag(repository) {
-  const tags = await listTagsFrom(repository.repoUrl, repository.fromTag, repository.skipTags);
-  console.log(`Versions to process: ${tags.join(', ')}`);
-  for (const tag of tags) {
-    console.log(`Processing ${tag}`);
-    await createMagentoCommunityEditionProject(
-      repository.repoUrl,
-      tag,
-      {
-        dependencyVersions: repository.fixVersions?.[tag] ?? {},
-        transform: repository.transform,
-        vendor: repository.vendor || 'magento'
-      }
+    let release = new buildState({
+      ref: tag,
+      dependencyVersions: (instruction.fixVersions?.[tag] ?? {})
+    });
+
+    await createMagentoCommunityEditionMetapackage(
+      instruction,
+      release
     );
   }
   return tags;
 }
 
 /**
- * @param {repositoryBuildDefinition} repository 
+ * @param {repositoryBuildDefinition} instruction 
+ * @returns {Array<String>} Packaged tags
+ */
+async function createProjectPackagesSinceTag(instruction) {
+  const tags = await listTagsFrom(instruction.repoUrl, instruction.fromTag, instruction.skipTags);
+  console.log(`Versions to process: ${tags.join(', ')}`);
+  for (const tag of tags) {
+    console.log(`Processing ${tag}`);
+
+    let release = new buildState({
+      ref: tag,
+      dependencyVersions: (instruction.fixVersions?.[tag] ?? {})
+    });
+
+    await createMagentoCommunityEditionProject(
+      instruction,
+      release
+    );
+  }
+  return tags;
+}
+
+/**
+ * @param {repositoryBuildDefinition} instruction 
  * @param {packageDefinition} package 
  * @returns {Array<String>} Packaged tags
  */
-async function createMetaPackagesFromRepoDir(repository, package) {
-  const tags = await listTagsFrom(repository.repoUrl, repository.fromTag, repository.skipTags);
+async function createMetaPackagesFromRepoDir(instruction, package) {
+  const tags = await listTagsFrom(instruction.repoUrl, instruction.fromTag, instruction.skipTags);
   console.log(`Versions to process: ${tags.join(', ')}`);
   const built = [];
   for (const tag of tags) {
     console.log(`Processing ${tag}`);
+
+    let release = new buildState({
+      ref: tag,
+      dependencyVersions: (instruction.fixVersions?.[tag] ?? {})
+    });
+
     try {
       await createMetaPackageFromRepoDir(
-        repository.repoUrl,
-        package.dir,
-        tag,
-        {
-          dependencyVersions: (repository.fixVersions?.[tag] ?? {}),
-          transform: repository.transform
-        }
+        instruction,
+        package,
+        release
       );
       built.push(tag);
     } catch (exception) {
@@ -114,27 +123,27 @@ async function createMetaPackagesFromRepoDir(repository, package) {
 }
 
 /**
- * @param {repositoryBuildDefinition} repository 
+ * @param {repositoryBuildDefinition} instruction 
  * @param {packageDefinition} package 
  * @returns {Array<String>} Packaged tags
  */
-async function createPackagesSinceTag(repository, package) {
-  const tags = await listTagsFrom(repository.repoUrl, repository.fromTag, repository.skipTags);
+async function createPackagesSinceTag(instruction, package) {
+  const tags = await listTagsFrom(instruction.repoUrl, instruction.fromTag, instruction.skipTags);
   console.log(`Versions to process: ${tags.join(', ')}`);
   const built = [];
   for (const tag of tags) {
     console.log(`Processing ${tag}`);
+
+    let release = new buildState({
+      ref: tag,
+      dependencyVersions: (instruction.fixVersions?.[tag] ?? {})
+    });
+    
     try {
-      // @TODO Use as is, or refactor?
       await createPackagesForRef(
-        repository.repoUrl,
-        package.modulesPath,
-        tag,
-        {
-          excludes: package.excludes,
-          dependencyVersions: (repository.fixVersions?.[tag] ?? {}),
-          transform: repository.transform
-        }
+        instruction,
+        package,
+        release
       );
       built.push(tag)
     } catch (exception) {
@@ -145,12 +154,12 @@ async function createPackagesSinceTag(repository, package) {
 }
 
 /**
- * @param {repositoryBuildDefinition} repository 
+ * @param {repositoryBuildDefinition} instruction 
  * @param {packageDefinition} package 
- * @returns Array<String> Packaged tags
+ * @returns {Array<String>} Packaged tags
  */
-async function createPackageSinceTag(repository, package) {
-  const tags = await listTagsFrom(url, repository.fromTag, repository.skipTags);
+async function createPackageSinceTag(instruction, package) {
+  const tags = await listTagsFrom(url, instruction.fromTag, instruction.skipTags);
   console.log(`Versions to process: ${tags.join(', ')}`);
   const built = [];
   for (const tag of tags) {
@@ -167,19 +176,17 @@ async function createPackageSinceTag(repository, package) {
         ? composerJsonFile
         : package.composerJsonPath;
     }
+
+    let release = new buildState({
+      ref: tag,
+      dependencyVersions: (instruction.fixVersions?.[tag] ?? {})
+    });
+
     try {
-      // @TODO: Refactor this too?
       await createPackageForRef(
-        repository.repoUrl,
-        package.dir,
-        tag,
-        {
-          excludes: package.excludes,
-          composerJsonPath: composerJsonFile,
-          emptyDirsToAdd: package.emptyDirsToAdd,
-          dependencyVersions: (repository.fixVersions?.[tag] ?? {}),
-          transform: repository.transform
-        }
+        instruction,
+        Object.assign(package, {composerJsonPath: composerJsonFile}),
+        release
       );
       built.push(tag);
     } catch (exception) {
