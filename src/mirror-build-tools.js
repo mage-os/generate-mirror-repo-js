@@ -16,12 +16,22 @@ const packageReplacement = require('./type/package-replacement');
 const buildState = require('./type/build-state');
 
 
+/**
+ * 
+ * @param {String} url 
+ * @param {String} fromTag 
+ * @param {Array<String>} skipTags 
+ * @returns {Promise<Array<String>>}
+ */
 async function listTagsFrom(url, fromTag, skipTags) {
   return (await repo.listTags(url))
     .filter(tag => isVersionGreaterOrEqual(tag, fromTag))
     .filter(tag => skipTags && skipTags[tag] ? skipTags[tag]() : true);
 }
 
+/**
+ * @param {String} archiveDir 
+ */
 async function copyAdditionalPackages(archiveDir) {
   const dir = `${__dirname}/../resource/additional-packages`;
   const dest = `${archiveDir}/additional`
@@ -160,21 +170,24 @@ async function createPackagesSinceTag(instruction, package) {
  */
 async function createPackageSinceTag(instruction, package) {
   const tags = await listTagsFrom(url, instruction.fromTag, instruction.skipTags);
-  console.log(`Versions to process: ${tags.join(', ')}`);
   const built = [];
+
+  console.log(`Versions to process: ${tags.join(', ')}`);
+
   for (const tag of tags) {
     console.log(`Processing ${tag}`);
-    let composerJsonFile = '';
+
     // Note: if the composerJsonFile ends with the "template.json" the composer dependencies will be calculated
     // This is only used for non-mirror magento2-base-package builds
-    // @TODO: Is there somewhere better this should be solved?
     if (package.composerJsonPath && package.composerJsonPath.length) {
-      composerJsonFile = package.composerJsonPath
+      let composerJsonFile = package.composerJsonPath
         .replace('composer-templates', 'history')
         .replace('template.json', `${tag}.json`);
       composerJsonFile = fs.existsSync(composerJsonFile)
         ? composerJsonFile
         : package.composerJsonPath;
+
+      package.composerJsonPath = composerJsonFile;
     }
 
     let release = new buildState({
@@ -185,7 +198,7 @@ async function createPackageSinceTag(instruction, package) {
     try {
       await createPackageForRef(
         instruction,
-        Object.assign(package, {composerJsonPath: composerJsonFile}),
+        package,
         release
       );
       built.push(tag);
@@ -222,7 +235,7 @@ async function replacePackageFiles(package) {
 }
 
 /**
- * @param {repositoryBuildDefinition} instruction Array with build instruction
+ * @param {repositoryBuildDefinition} instruction
  * @returns {Promise<void>}
  */
 async function processMirrorInstruction(instruction) {

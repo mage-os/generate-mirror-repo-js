@@ -26,14 +26,9 @@ class repositoryBuildDefinition {
   packageIndividual = [];
 
   /**
-   * @todo How does this work?
    * @type Array<packageDefinition> Create a metapackage from this folder
    */
   packageMetaFromDirs = [];
-
-  /**
-   * @todo Are these necessary? Are these the right way to handle it?
-   */
 
   /**
    * @type Boolean Whether this package is a Magento project metapackage

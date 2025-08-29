@@ -15,7 +15,7 @@ class extraRefToRelease {
   release = null;
 
   /**
-   * @todo String|null Description/reason (internal)
+   * @type String|null Description/reason (internal)
    */
   details = null;
 
