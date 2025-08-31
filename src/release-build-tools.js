@@ -153,7 +153,6 @@ function setMageOsDependencyVersion(instruction, release, composerConfigPart, de
   packageNames.forEach(packageName => {
     if (packageName.match(mageOsPackage)) {
       // @TODO: Allow vendor packages to be flagged as independently packaged. In that case, use the latest tagged version, not the current release or fallback version.
-      // @TODO: Make sure release.version is actually set, or change this to ref, or instruction.version, or something -- think through this
       composerConfigPart[packageName] = release.version;
       
       if (dependencyType === 'suggest' && packageName.endsWith('-sample-data')) {
@@ -367,7 +366,7 @@ module.exports = {
   /**
    * @param {repositoryBuildDefinition} instruction 
    * @param {buildState} release
-   * @returns {Object<String, String>} A map of built packages:versions
+   * @returns {Object.<String, String>} A map of built packages:versions
    */
   async processBuildInstructions(instruction, release) {
     let packages = {};

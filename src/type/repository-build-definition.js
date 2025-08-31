@@ -41,9 +41,9 @@ class repositoryBuildDefinition {
   magentoCommunityEditionMetapackage = false;
 
   /**
-   * @type String|null Package vendor to use
+   * @type String Package vendor to use
    */
-  vendor = null;
+  vendor = 'magento';
 
   /**
    * @type String|null Git reference (branch, etc) to use for the build
@@ -61,7 +61,7 @@ class repositoryBuildDefinition {
   skipTags = {};
 
   /**
-   * @type {{}} Composer names and callback functions for transformations to
+   * @type {Object.<String,Array>}} Composer names and callback functions for transformations to
    *  apply at build
    */
   transform = {};
@@ -83,7 +83,7 @@ class repositoryBuildDefinition {
   extraRefToRelease = [];
 
   /**
-   * @param {{repoUrl: String, packageDirs: Array, packageIndividual: Array, packageMetaFromDirs: Array, magentoCommunityEditionProject: boolean, magentoCommunityEditionMetapackage: boolean, vendor: String, ref: String, fromTag: String, skipTags: {Object}, transform: {Object}, fixVersions: {Object}, packageReplacements: {Object}, extraRefToRelease: Array}}
+   * @param {{repoUrl: String, packageDirs: Array, packageIndividual: Array, packageMetaFromDirs: Array, magentoCommunityEditionProject: boolean, magentoCommunityEditionMetapackage: boolean, vendor: String, ref: String, fromTag: String, skipTags: {Object}, transform: Object.<String,Array>, fixVersions: {Object}, packageReplacements: {Object}, extraRefToRelease: Array}}
    */
   constructor(options) {
     this.repoUrl = options.repoUrl || this.repoUrl;

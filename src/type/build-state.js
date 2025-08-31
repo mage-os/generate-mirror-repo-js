@@ -27,19 +27,19 @@ class buildState {
   fallbackVersion = null;
 
   /**
-   * @type {Object<string, string>} composer package:version dependency map. Dependencies for
+   * @type {Object.<string, string>} composer package:version dependency map. Dependencies for
    *  packages in the map will be set to the given versions.
    */
   dependencyVersions = {};
 
   /**
-   * @type {Object<string, string>} composer package:version replaces map. Packages in the map will
+   * @type {Object.<string, string>} composer package:version replaces map. Packages in the map will
    *  be set to replace the given versions.
    */
   replaceVersions = {};
 
   /**
-   * @param {{ref: String, origRef: String, version: String, fallbackVersion: String, dependencyVersions: Object<string, string>, replaceVersions: Object<string, string>}}} options 
+   * @param {{ref: String, origRef: String, version: String, fallbackVersion: String, dependencyVersions: Object.<string, string>, replaceVersions: Object.<string, string>}}} options 
    */
   constructor(options) {
     this.ref = options.ref || this.ref;

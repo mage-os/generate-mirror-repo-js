@@ -122,7 +122,7 @@ let release = new buildState({
         await repo.commit(instruction.repoUrl, workBranch, `Release ${mageosRelease}`)
         await repo.createTagForRef(instruction.repoUrl, workBranch, mageosRelease, '')
 
-        release.origReg = instruction.ref;
+        release.origRef = instruction.ref;
         instruction.ref = mageosRelease; // @todo: This seems like a messy/poor approach
         await processBuildInstructions(instruction, release);
       }

@@ -169,7 +169,7 @@ async function createPackagesSinceTag(instruction, package) {
  * @returns {Array<String>} Packaged tags
  */
 async function createPackageSinceTag(instruction, package) {
-  const tags = await listTagsFrom(url, instruction.fromTag, instruction.skipTags);
+  const tags = await listTagsFrom(instruction.repoUrl, instruction.fromTag, instruction.skipTags);
   const built = [];
 
   console.log(`Versions to process: ${tags.join(', ')}`);

@@ -10,9 +10,9 @@ class packageDefinition {
   label = null;
 
   /**
-   * @type String|null Directory, relative to repository root
+   * @type String Directory, relative to repository root
    */
-  dir = null;
+  dir = '';
   
   /**
    * @type String|null Path to composer.json
