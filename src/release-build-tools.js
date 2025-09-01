@@ -243,7 +243,7 @@ async function buildMageOsProductCommunityEditionMetapackage(instruction, releas
     release,
     {
       transform: {
-        [`${vendor}/product-community-edition`]: [
+        [`${instruction.vendor}/product-community-edition`]: [
           (composerConfig) => {
             updateComposerConfigFromMagentoToMageOs(instruction, release, composerConfig)
 

@@ -67,6 +67,7 @@ async function createMagentoCommunityEditionMetapackagesSinceTag(instruction) {
 
     let release = new buildState({
       ref: tag,
+      fallbackVersion: tag,
       dependencyVersions: (instruction.fixVersions?.[tag] ?? {})
     });
 
@@ -90,6 +91,7 @@ async function createProjectPackagesSinceTag(instruction) {
 
     let release = new buildState({
       ref: tag,
+      fallbackVersion: tag,
       dependencyVersions: (instruction.fixVersions?.[tag] ?? {})
     });
 
@@ -115,6 +117,7 @@ async function createMetaPackagesFromRepoDir(instruction, package) {
 
     let release = new buildState({
       ref: tag,
+      fallbackVersion: tag,
       dependencyVersions: (instruction.fixVersions?.[tag] ?? {})
     });
 
@@ -146,6 +149,7 @@ async function createPackagesSinceTag(instruction, package) {
 
     let release = new buildState({
       ref: tag,
+      fallbackVersion: tag,
       dependencyVersions: (instruction.fixVersions?.[tag] ?? {})
     });
     
@@ -192,6 +196,7 @@ async function createPackageSinceTag(instruction, package) {
 
     let release = new buildState({
       ref: tag,
+      fallbackVersion: tag,
       dependencyVersions: (instruction.fixVersions?.[tag] ?? {})
     });
 
