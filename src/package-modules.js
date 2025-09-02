@@ -523,7 +523,6 @@ async function createMagentoCommunityEditionMetapackage(instruction, release, op
         require: Object.assign(
           {},
           refComposerConfig.require,
-          refComposerConfig.replace,
           additionalDependencies,
           {[`${instruction.vendor}/magento2-base`]: version}
         ),
