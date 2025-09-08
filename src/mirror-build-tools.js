@@ -230,7 +230,11 @@ async function replacePackageFiles(package) {
         if (!fs.existsSync(replacementFilePath)) {
           throw {message: `Replacement file does not exist: ${replacementFilePath}`}
         }
-        contents.file(file, fs.readFileSync(replacementFilePath));
+        contents.file(
+          file,
+          fs.readFileSync(replacementFilePath),
+          {date: new Date('2022-02-22 22:02:22.000Z'), unixPermissions: '644'}
+        );
       })
       const stream = contents.generateNodeStream({streamFiles: false, platform: 'UNIX'});
       stream.pipe(fs.createWriteStream(packageFilePath));
