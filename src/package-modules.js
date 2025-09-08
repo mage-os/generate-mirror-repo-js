@@ -90,13 +90,13 @@ async function writePackage(packageFilepath, files) {
  * @returns {String}
  */
 async function getComposerJson(instruction, package, ref) {
-  if (!package.composerJsonPath || !package.composerJsonPath.length) {
+  if (!package.composerJsonFile || !package.composerJsonFile.length) {
     return readComposerJson(instruction.repoUrl, package.dir, ref || instruction.ref)
   }
-  if (package.composerJsonPath.slice(0, 4) === 'http') {
-    return httpSlurp(package.composerJsonPath);
+  if (package.composerJsonFile.slice(0, 4) === 'http') {
+    return httpSlurp(package.composerJsonFile);
   }
-  return fs.readFileSync(package.composerJsonPath, 'utf8');
+  return fs.readFileSync(package.composerJsonFile, 'utf8');
 }
 
 /**
@@ -104,13 +104,14 @@ async function getComposerJson(instruction, package, ref) {
  * @param {packageDefinition} package 
  * @param {*} magentoName 
  * @param {*} composerJson 
- * @param {*} givenVersion 
+ * @param {*} definedVersion 
+ * @param {*} fallbackVersion 
  * @returns 
  */
-function chooseNameAndVersion(instruction, package, magentoName, composerJson, givenVersion) {
-  const composerConfig = JSON.parse(composerJson);
+function chooseNameAndVersion(instruction, package, magentoName, composerJson, definedVersion, fallbackVersion) {
+  let composerConfig = JSON.parse(composerJson);
   let {version, name} = composerConfig;
-  version = givenVersion || version;
+  version = definedVersion || version || fallbackVersion;
   if (!name) {
     throw {
       kind: 'NAME_UNKNOWN',
@@ -165,12 +166,12 @@ async function determinePackageForRef(instruction, package, ref) {
   const magentoName = lastTwoDirs(package.dir) || '';
 
   try {
-    const composerJson = await getComposerJson(instruction, package, ref);
+    let composerJson = await getComposerJson(instruction, package, ref);
 
     if (composerJson.trim() === '404: Not Found') {
       throw {message: `Unable to find composer.json for ${ref || instruction.ref}, skipping ${magentoName}`}
     }
-    const {name, version} = chooseNameAndVersion(instruction, package, magentoName, composerJson, ref || instruction.ref);
+    const {name, version} = chooseNameAndVersion(instruction, package, magentoName, composerJson, null, ref || instruction.ref);
 
     return {[name]: version}
   } catch (exception) {
@@ -253,7 +254,7 @@ async function createPackageForRef(instruction, package, release) {
   ({
     name,
     version
-  } = chooseNameAndVersion(instruction, package, magentoName, composerJson, (release.dependencyVersions[composerConfig.name] ?? release.fallbackVersion)));
+  } = chooseNameAndVersion(instruction, package, magentoName, composerJson, (release.dependencyVersions[composerConfig.name] ?? null), release.fallbackVersion));
   const packageWithVersion = {[name]: version};
 
   // Use fixed date for stable package checksum generation
@@ -283,11 +284,11 @@ async function createPackageForRef(instruction, package, release) {
   // in tagged composer.json files. The version is required for satis to be able to use the artifact repository type.
   composerConfig.version = version;
 
-  if ((package.composerJsonPath || '').endsWith('template.json')) {
+  if ((package.composerJsonFile || '').endsWith('template.json')) {
     // the origRef that ref is based on needs to be checked out for composer install, because only magento/* packages are available through the mirror repo
-    const dir = await repo.checkout(instruction.repoUrl, release.origRef || instruction.ref);
+    const dir = await repo.checkout(instruction.repoUrl, release.origRef || release.ref);
     const deps = await determineSourceDependencies(dir, files);
-    release.origRef && await repo.checkout(instruction.repoUrl, instruction.ref);
+    release.origRef && await repo.checkout(instruction.repoUrl, release.ref);
     composerConfig.require = {};
     Object.keys(deps).sort().forEach(dependency => {
       const dependencyName = instruction.vendor && dependency.startsWith('magento/')
@@ -298,8 +299,8 @@ async function createPackageForRef(instruction, package, release) {
   }
   setDependencyVersions(instruction, release, composerConfig);
 
-  if (instruction.transform?.name) {
-    composerConfig = instruction.transform.name.reduce(
+  if (instruction.transform[name]) {
+    composerConfig = instruction.transform[name].reduce(
       (config, transformFn) => transformFn(config),
       composerConfig
     );
@@ -478,7 +479,7 @@ async function createMagentoCommunityEditionMetapackage(instruction, release, op
       // read release history or dependencies-template for product metapackage
       const additionalDependencies = await getAdditionalDependencies(packageName, release.ref)
 
-      const composerConfig = Object.assign({}, refComposerConfig, {
+      let composerConfig = Object.assign({}, refComposerConfig, {
         name: packageName,
         description: 'eCommerce Platform for Growth (Community Edition)',
         type: 'metapackage',
@@ -555,7 +556,7 @@ async function createMagentoCommunityEditionProject(instruction, release, option
       const additionalDependencies = await getAdditionalDependencies(name, release.ref)
 
       // Build project metapackage composer.json
-      const composerConfig = Object.assign(refComposerConfig, {
+      let composerConfig = Object.assign(refComposerConfig, {
         name: name,
         description: description,
         extra: {'magento-force': 'override'},
@@ -574,14 +575,14 @@ async function createMagentoCommunityEditionProject(instruction, release, option
 
       setDependencyVersions(instruction, release, composerConfig);
 
-      if (instruction?.transform?.name) {
-        composerConfig = instruction.transform.name.reduce(
+      if (instruction?.transform[name]) {
+        composerConfig = instruction.transform[name].reduce(
           (config, transformFn) => transformFn(config),
           composerConfig
         )
       }
-      if (transform?.name) {
-        composerConfig = transform.name.reduce(
+      if (transform[name]) {
+        composerConfig = transform[name].reduce(
           (config, transformFn) => transformFn(config),
           composerConfig
         )
@@ -651,8 +652,8 @@ async function createMetaPackageFromRepoDir(instruction, package, release) {
   composerConfig.version = version;
   setDependencyVersions(instruction, release, composerConfig);
 
-  if (instruction.transform?.name) {
-    composerConfig = instruction.transform.name.reduce(
+  if (instruction.transform[name]) {
+    composerConfig = instruction.transform[name].reduce(
       (config, transformFn) => transformFn(config),
       composerConfig
     );

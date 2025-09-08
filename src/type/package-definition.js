@@ -15,9 +15,14 @@ class packageDefinition {
   dir = '';
   
   /**
-   * @type String|null Path to composer.json
+   * @type String|null Relative path to composer.json
    */
   composerJsonPath = null;
+  
+  /**
+   * @type String|null Absolute path to a specific composer.json
+   */
+  composerJsonFile = null;
 
   /**
    * Git doesn't track empty folders. If the built package needs any, list them here.

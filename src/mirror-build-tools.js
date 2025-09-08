@@ -149,7 +149,6 @@ async function createPackagesSinceTag(instruction, package) {
 
     let release = new buildState({
       ref: tag,
-      fallbackVersion: tag,
       dependencyVersions: (instruction.fixVersions?.[tag] ?? {})
     });
     
@@ -183,6 +182,7 @@ async function createPackageSinceTag(instruction, package) {
 
     // Note: if the composerJsonFile ends with the "template.json" the composer dependencies will be calculated
     // This is only used for non-mirror magento2-base-package builds
+    package.composerJsonFile = null;
     if (package.composerJsonPath && package.composerJsonPath.length) {
       let composerJsonFile = package.composerJsonPath
         .replace('composer-templates', 'history')
@@ -191,12 +191,11 @@ async function createPackageSinceTag(instruction, package) {
         ? composerJsonFile
         : package.composerJsonPath;
 
-      package.composerJsonPath = composerJsonFile;
+      package.composerJsonFile = composerJsonFile;
     }
 
     let release = new buildState({
       ref: tag,
-      fallbackVersion: tag,
       dependencyVersions: (instruction.fixVersions?.[tag] ?? {})
     });
 
