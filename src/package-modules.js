@@ -301,7 +301,7 @@ async function createPackageForRef(instruction, package, release) {
 
   if (instruction.transform[name]) {
     composerConfig = instruction.transform[name].reduce(
-      (config, transformFn) => transformFn(config),
+      (config, transformFn) => transformFn(config, instruction, release),
       composerConfig
     );
   }
@@ -357,7 +357,7 @@ function isInAdditionalPackages(name, version) {
 async function createComposerJsonOnlyPackage(instruction, release, name, version, transform) {
   const refComposerConfig = JSON.parse(await readComposerJson(instruction.repoUrl, '', release.ref));
 
-  const composerConfig = await transform(refComposerConfig);
+  const composerConfig = await transform(refComposerConfig, instruction, release);
   const files = [{
     filepath: 'composer.json',
     mtime: new Date(stableMtime),
@@ -493,20 +493,20 @@ async function createMagentoCommunityEditionMetapackage(instruction, release, op
         version
       });
 
-      for (const k of ['autoload', 'autoload-dev', 'config', /* 'conflict', */ 'extra', 'minimum-stability', 'replace', 'require-dev', 'suggest']) {
+      for (const k of ['autoload', 'autoload-dev', 'config', 'conflict', 'extra', 'minimum-stability', 'replace', 'require-dev', 'suggest']) {
         delete composerConfig[k];
       }
       setDependencyVersions(instruction, release, composerConfig);
 
-      if (instruction.transform?.packageName) {
-        composerConfig = instruction.transform.packageName.reduce(
-          (config, transformFn) => transformFn(config),
+      if (instruction.transform[packageName]) {
+        composerConfig = instruction.transform[packageName].reduce(
+          (config, transformFn) => transformFn(config, instruction, release),
           composerConfig
         );
       }
-      if (transform?.packageName) {
-        composerConfig = transform.packageName.reduce(
-          (config, transformFn) => transformFn(config),
+      if (transform[packageName]) {
+        composerConfig = transform[packageName].reduce(
+          (config, transformFn) => transformFn(config, instruction, release),
           composerConfig
         );
       }
@@ -577,13 +577,13 @@ async function createMagentoCommunityEditionProject(instruction, release, option
 
       if (instruction?.transform[name]) {
         composerConfig = instruction.transform[name].reduce(
-          (config, transformFn) => transformFn(config),
+          (config, transformFn) => transformFn(config, instruction, release),
           composerConfig
         )
       }
       if (transform[name]) {
         composerConfig = transform[name].reduce(
-          (config, transformFn) => transformFn(config),
+          (config, transformFn) => transformFn(config, instruction, release),
           composerConfig
         )
       }
@@ -654,7 +654,7 @@ async function createMetaPackageFromRepoDir(instruction, package, release) {
 
   if (instruction.transform[name]) {
     composerConfig = instruction.transform[name].reduce(
-      (config, transformFn) => transformFn(config),
+      (config, transformFn) => transformFn(config, instruction, release),
       composerConfig
     );
   }

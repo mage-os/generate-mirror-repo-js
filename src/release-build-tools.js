@@ -153,10 +153,11 @@ function setMageOsDependencyVersion(instruction, release, composerConfigPart, de
   packageNames.forEach(packageName => {
     if (packageName.match(mageOsPackage)) {
       // @TODO: Allow vendor packages to be flagged as independently packaged. In that case, use the latest tagged version, not the current release or fallback version.
-      composerConfigPart[packageName] = release.version;
+      // Note: Original code here was just "release.version". The remainder are probably mostly unnecessary. Point for later refinement.
+      composerConfigPart[packageName] = release.version || release.fallbackVersion || release.dependencyVersions[packageName] || release.dependencyVersions['*'];
       
       if (dependencyType === 'suggest' && packageName.endsWith('-sample-data')) {
-        composerConfigPart[packageName] = `Sample Data version: ${release.version}`;
+        composerConfigPart[packageName] = `Sample Data version: ${release.version || release.fallbackVersion}`;
       }
     }
   })
@@ -249,7 +250,7 @@ async function buildMageOsProductCommunityEditionMetapackage(instruction, releas
 
             // Add upstreamRelease to composer extra data for reference
             composerConfig.extra = composerConfig.extra || {};
-            composerConfig.extra.magento_version = release.replaceVersions['replaceVersionMap']['magento/product-community-edition'];
+            composerConfig.extra.magento_version = release.replaceVersions['magento/product-community-edition'];
 
             return composerConfig
           }

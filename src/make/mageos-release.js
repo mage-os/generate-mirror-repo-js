@@ -70,7 +70,7 @@ const releaseRefs = fs.existsSync(releaseRefsFile)
   ? require(releaseRefsFile)
   : {};
 
-let release = new buildState({
+let distroRelease = new buildState({
   version: mageosRelease,
   fallbackVersion: mageosRelease,
   dependencyVersions: {'*': mageosRelease}
@@ -90,7 +90,7 @@ let release = new buildState({
           const productPackage = `${mageosVendor}/product-community-edition`;
 
           instruction.transform[productPackage] = instruction.transform[productPackage] || [];
-          instruction.transform[productPackage].push((composerConfig) => {
+          instruction.transform[productPackage].push((composerConfig, instruction, release) => {
             updateComposerConfigFromMagentoToMageOs(instruction, release, composerConfig)
             return composerConfig
           })
@@ -105,7 +105,7 @@ let release = new buildState({
         ? await getPackageVersionMap(upstreamRelease)
         : {};
       
-      release.replaceVersions = upstreamVersionMap;
+      distroRelease.replaceVersions = upstreamVersionMap;
 
       for (const instruction of releaseInstructions) {
         if (releaseRefs['*']) {
@@ -114,17 +114,16 @@ let release = new buildState({
         if (releaseRefs[instruction.key]) {
           instruction.ref = releaseRefs[instruction.key];
         }
-        // @todo: Does changing this break things? Do we need to track release vendor separately in buildState?
         instruction.vendor = mageosVendor;
 
-        const workBranch = await prepRelease(instruction, release)
+        const workBranch = await prepRelease(instruction, distroRelease)
         await repo.addUpdated(instruction.repoUrl, `'*composer.json'`)
         await repo.commit(instruction.repoUrl, workBranch, `Release ${mageosRelease}`)
         await repo.createTagForRef(instruction.repoUrl, workBranch, mageosRelease, '')
 
-        release.origRef = instruction.ref;
-        instruction.ref = mageosRelease; // @todo: This seems like a messy/poor approach
-        await processBuildInstructions(instruction, release);
+        distroRelease.origRef = instruction.ref;
+        instruction.ref = mageosRelease;
+        await processBuildInstructions(instruction, distroRelease);
       }
     }
   } catch (exception) {
