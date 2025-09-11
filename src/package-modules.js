@@ -142,12 +142,18 @@ function setDependencyVersions(instruction, release, composerConfig) {
     for (const dep in (composerConfig[dependencyType] || {})) {
       // @TODO: Allow vendor packages to be flagged as independently packaged. In that case, use the latest tagged version, not the current release or fallback version.
       if (dependencyVersions[dep] || (instruction.vendor && dep.startsWith(instruction.vendor) && dependencyVersions['*'])) {
-        // The "Sample Data version:" prefix is used by sampledata:deploy to identify packages to require.
-        // See \Magento\SampleData\Model\Dependency::getSampleDataPackages
-        // Package names are for example magento/module-catalog-sample-data or magento/sample-data-media
-        composerConfig[dependencyType][dep] = dependencyType === 'suggest' && (dep.endsWith('-sample-data') || dep.includes('/sample-data-'))
-          ? `Sample Data version: ${dependencyVersions[dep] || dependencyVersions['*']}`
-          : dependencyVersions[dep] || dependencyVersions['*'];
+        composerConfig[dependencyType][dep] = dependencyVersions[dep] || dependencyVersions['*'];
+      }
+
+      // For the sample data package, there's a 'suggest' that needs to include this special text for all versions.
+      // The "Sample Data version:" prefix is used by sampledata:deploy to identify packages to require.
+      // @see \Magento\SampleData\Model\Dependency::getSampleDataPackages()
+      // Package names are for example magento/module-catalog-sample-data or magento/sample-data-media
+      const specialKey = 'Sample Data version: ';
+      if (dependencyType === 'suggest'
+        && (dep.endsWith('-sample-data') || dep.includes('/sample-data-'))
+        && composerConfig.suggest[dep].includes(specialKey) === false) {
+        composerConfig.suggest[dep] = specialKey + composerConfig.suggest[dep];
       }
     }
   }
