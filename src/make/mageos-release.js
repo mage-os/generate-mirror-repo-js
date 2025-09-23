@@ -15,6 +15,7 @@ const {
 } = require("../package-modules");
 const {buildConfig: releaseInstructions} = require('./../build-config/mageos-release-build-config');
 const {processMirrorInstruction} = require("../mirror-build-tools");
+const buildState = require('../type/build-state');
 
 const options = parseOptions(
   `$outputDir $gitRepoDir $repoUrl $mageosVendor $mageosRelease $upstreamRelease @skipHistory @help|h`,
@@ -69,27 +70,32 @@ const releaseRefs = fs.existsSync(releaseRefsFile)
   ? require(releaseRefsFile)
   : {};
 
+let distroRelease = new buildState({
+  version: mageosRelease,
+  fallbackVersion: mageosRelease,
+  dependencyVersions: {'*': mageosRelease}
+});
 
 (async () => {
   try {
     if (! skipHistory) {
       console.log(`Building previous ${mageosVendor} releases`)
-      for (const instructions of releaseInstructions) {
+      for (const instruction of releaseInstructions) {
         // set vendor for product-community-edition and project-community-edition meta packages
-        if (instructions.magentoCommunityEditionProject || instructions.magentoCommunityEditionMetapackage) {
-          instructions.vendor = mageosVendor
+        if (instruction.magentoCommunityEditionProject || instruction.magentoCommunityEditionMetapackage) {
+          instruction.vendor = mageosVendor
         }
-        if (instructions.magentoCommunityEditionMetapackage) {
+        if (instruction.magentoCommunityEditionMetapackage) {
           // update product package magento dependencies taken from the root composer.json to given vendor
           const productPackage = `${mageosVendor}/product-community-edition`;
-          instructions.transform = instructions.transform || {}
-          instructions.transform[productPackage] = instructions.transform[productPackage] || []
-          instructions.transform[productPackage].push((composerConfig) => {
-            updateComposerConfigFromMagentoToMageOs(composerConfig, composerConfig.version, {}, mageosVendor)
+
+          instruction.transform[productPackage] = instruction.transform[productPackage] || [];
+          instruction.transform[productPackage].push((composerConfig, instruction, release) => {
+            updateComposerConfigFromMagentoToMageOs(instruction, release, composerConfig)
             return composerConfig
           })
         }
-        await processMirrorInstruction(instructions)
+        await processMirrorInstruction(instruction)
       }
     }
 
@@ -97,7 +103,9 @@ const releaseRefs = fs.existsSync(releaseRefsFile)
       console.log(`Building new ${mageosVendor} release ${mageosRelease}`)
       const upstreamVersionMap = upstreamRelease
         ? await getPackageVersionMap(upstreamRelease)
-        : {}
+        : {};
+      
+      distroRelease.replaceVersions = upstreamVersionMap;
 
       for (const instruction of releaseInstructions) {
         if (releaseRefs['*']) {
@@ -106,11 +114,16 @@ const releaseRefs = fs.existsSync(releaseRefsFile)
         if (releaseRefs[instruction.key]) {
           instruction.ref = releaseRefs[instruction.key];
         }
-        const workBranch = await prepRelease(mageosRelease, mageosVendor, instruction, upstreamVersionMap)
+        instruction.vendor = mageosVendor;
+
+        const workBranch = await prepRelease(instruction, distroRelease)
         await repo.addUpdated(instruction.repoUrl, `'*composer.json'`)
         await repo.commit(instruction.repoUrl, workBranch, `Release ${mageosRelease}`)
         await repo.createTagForRef(instruction.repoUrl, workBranch, mageosRelease, '')
-        await processBuildInstructions(mageosRelease, mageosVendor, {...instruction, ref: mageosRelease, origRef: instruction.ref}, upstreamVersionMap)
+
+        distroRelease.origRef = instruction.ref;
+        instruction.ref = mageosRelease;
+        await processBuildInstructions(instruction, distroRelease);
       }
     }
   } catch (exception) {

@@ -12,53 +12,48 @@ const {
   determineMagentoCommunityEditionProject,
   getLatestTag
 } = require('./package-modules');
+const repositoryBuildDefinition = require("./type/repository-build-definition");
+const buildState = require("./type/build-state");
 
 /**
- * @param {{repoUrl:String}} instructions
+ * @param {repositoryBuildDefinition} instruction
  * @returns {Promise<{}>}
  */
-async function getPackagesForBuildInstruction(instructions) {
-  const packages = {}
+async function getPackagesForBuildInstruction(instruction) {
+  let packages = {};
   let toBeBuilt = {};
 
-  const {repoUrl} = instructions;
-
-
   // use the latest tag in branch ref
-  const baseVersionsOnRef = await getLatestTag(repoUrl) || instructions.ref || 'HEAD';
-  console.log(`Basing ${repoUrl} package versions on those from reference ${baseVersionsOnRef}`);
+  const baseVersionsOnRef = await getLatestTag(instruction.repoUrl) || instruction.ref || 'HEAD';
+  console.log(`Basing ${instruction.repoUrl} package versions on those from reference ${baseVersionsOnRef}`);
 
-  for (const packageDir of (instructions.packageDirs || [])) {
-    const {label, dir, excludes} = Object.assign({excludes: []}, packageDir);
-    console.log(`Inspecting ${label}`);
-    toBeBuilt = await determinePackagesForRef(repoUrl, dir, baseVersionsOnRef, {excludes});
+  for (const package of (instruction.packageDirs || [])) {
+    console.log(`Inspecting ${package.label}`);
+    toBeBuilt = await determinePackagesForRef(instruction, package, baseVersionsOnRef);
     Object.assign(packages, toBeBuilt);
   }
 
-  for (const individualPackage of (instructions.packageIndividual || [])) {
-    const defaults = {excludes: [], composerJsonPath: '', emptyDirsToAdd: []};
-    const {label, dir, excludes, composerJsonPath, emptyDirsToAdd} = Object.assign(defaults, individualPackage);
-    console.log(`Inspecting ${label}`);
-    toBeBuilt = await determinePackageForRef(repoUrl, dir, baseVersionsOnRef, {excludes, composerJsonPath, emptyDirsToAdd});
+  for (const package of (instruction.packageIndividual || [])) {
+    console.log(`Inspecting ${package.label}`);
+    toBeBuilt = await determinePackageForRef(instruction, package, baseVersionsOnRef);
     Object.assign(packages, toBeBuilt);
   }
 
-  for (const packageMeta of (instructions.packageMetaFromDirs || [])) {
-    const {label, dir} = packageMeta;
-    console.log(`Inspecting ${label}`);
-    toBeBuilt = await determineMetaPackageFromRepoDir(repoUrl, dir, baseVersionsOnRef, undefined);
+  for (const package of (instruction.packageMetaFromDirs || [])) {
+    console.log(`Inspecting ${package.label}`);
+    toBeBuilt = await determineMetaPackageFromRepoDir(instruction.repoUrl, package.dir, baseVersionsOnRef, undefined);
     Object.assign(packages, toBeBuilt);
   }
 
-  if (instructions.magentoCommunityEditionMetapackage) {
+  if (instruction.magentoCommunityEditionMetapackage) {
     console.log('Inspecting Magento Community Edition Product Metapackage');
-    toBeBuilt = await determineMagentoCommunityEditionMetapackage(repoUrl, baseVersionsOnRef);
+    toBeBuilt = await determineMagentoCommunityEditionMetapackage(instruction.repoUrl, baseVersionsOnRef);
     Object.assign(packages, toBeBuilt);
   }
 
-  if (instructions.magentoCommunityEditionProject) {
+  if (instruction.magentoCommunityEditionProject) {
     console.log('Inspecting Magento Community Edition Project');
-    toBeBuilt = await determineMagentoCommunityEditionProject(repoUrl, baseVersionsOnRef);
+    toBeBuilt = await determineMagentoCommunityEditionProject(instruction.repoUrl, baseVersionsOnRef);
     Object.assign(packages, toBeBuilt);
   }
 
@@ -71,10 +66,15 @@ function getReleaseDateString() {
   return `${d.getFullYear()}${(d.getMonth() + 1).toString().padStart(2, '0')}${d.getDate().toString().padStart(2, '0')}`;
 }
 
-async function getPackageVersionsForBuildInstructions(buildInstructions, suffix) {
+/**
+ * @param {repositoryBuildDefinition[]} instructions 
+ * @param {String} suffix 
+ * @returns 
+ */
+async function getPackageVersionsForBuildInstructions(instructions, suffix) {
   console.log(`Determining package versions`);
   let packages = {};
-  for (const instruction of buildInstructions) {
+  for (const instruction of instructions) {
     Object.assign(packages, await getPackagesForBuildInstruction(instruction));
   }
   return transformVersionsToNightlyBuildVersions(packages, suffix);
@@ -117,51 +117,49 @@ function calcNightlyBuildPackageBaseVersion(version) {
 }
 
 /**
- * @param {{}} instruction
- * @param {{}} dependencyVersions
- * @param {String} fallbackVersion
+ * @param {repositoryBuildDefinition} instruction
+ * @param {buildState} release
  * @returns {Promise<{}>}
  */
-async function processBuildInstruction(instruction, dependencyVersions, fallbackVersion) {
-  const packages = {}
+async function processBuildInstruction(instruction, release) {
+  let packages = {};
   let built = {};
 
-  const {repoUrl, ref, release, transform} = instruction;
+  await repo.pull(instruction.repoUrl, instruction.ref);
 
-  await repo.pull(repoUrl, ref);
-
-  for (const packageDir of (instruction.packageDirs || [])) {
-    const {label, dir, excludes} = Object.assign({excludes: []}, packageDir);
-    console.log(`Packaging ${label}`);
-    built = await createPackagesForRef(repoUrl, dir, ref, {excludes, release, fallbackVersion, dependencyVersions, transform});
+  for (const package of (instruction.packageDirs || [])) {
+    console.log(`Packaging ${package.label}`);
+    built = await createPackagesForRef(instruction, package, release);
     Object.assign(packages, built);
   }
 
-  for (const individualPackage of (instruction.packageIndividual || [])) {
-    const defaults = {excludes: [], composerJsonPath: '', emptyDirsToAdd: []};
-    const {label, dir, excludes, composerJsonPath, emptyDirsToAdd} = Object.assign(defaults, individualPackage);
-    console.log(`Packaging ${label}`);
-    built = await createPackageForRef(repoUrl, dir, ref, {excludes, composerJsonPath, emptyDirsToAdd, release, fallbackVersion, dependencyVersions, transform});
+  for (const package of (instruction.packageIndividual || [])) {
+    console.log(`Packaging ${package.label}`);
+    built = await createPackageForRef(instruction, package, release);
     Object.assign(packages, built);
   }
 
-  for (const packageMeta of (instruction.packageMetaFromDirs || [])) {
-    const {label, dir} = packageMeta;
-    console.log(`Packaging ${label}`);
-    built = await createMetaPackageFromRepoDir(repoUrl, dir, ref, {release, dependencyVersions, transform});
+  for (const package of (instruction.packageMetaFromDirs || [])) {
+    console.log(`Packaging ${package.label}`);
+    built = await createMetaPackageFromRepoDir(instruction, package, release);
     Object.assign(packages, built);
   }
 
   if (instruction.magentoCommunityEditionMetapackage) {
     console.log('Packaging Magento Community Edition Product Metapackage');
-    built = await createMagentoCommunityEditionMetapackage(repoUrl, ref, {release, dependencyVersions, transform});
+    built = await createMagentoCommunityEditionMetapackage(instruction, release);
     Object.assign(packages, built);
   }
 
   if (instruction.magentoCommunityEditionProject) {
     console.log('Packaging Magento Community Edition Project');
-    const minimumStability = 'alpha';
-    built = await createMagentoCommunityEditionProject(repoUrl, ref, {release, dependencyVersions, minimumStability, transform});
+    built = await createMagentoCommunityEditionProject(
+      instruction,
+      release,
+      {
+        minimumStability: 'alpha'
+      }
+    );
     Object.assign(packages, built);
   }
 
@@ -170,20 +168,23 @@ async function processBuildInstruction(instruction, dependencyVersions, fallback
 }
 
 /**
- * @param {Array<{}>} instructions
+ * @param {Array<repositoryBuildDefinition>} instructions
  * @returns {Promise<void>}
  */
-async function processBuildInstructions(instructions) {
+async function processNightlyBuildInstructions(instructions) {
   const releaseSuffix = getReleaseDateString();
-  const fallbackVersion = transformVersionsToNightlyBuildVersion('0.0.1', releaseSuffix); // version to use for previously unreleased packages
-  const packageVersions = await getPackageVersionsForBuildInstructions(instructions, releaseSuffix);
+  let release = buildState({
+    fallbackVersion: transformVersionsToNightlyBuildVersion('0.0.1', releaseSuffix), // version to use for previously unreleased packages
+    dependencyVersions: await getPackageVersionsForBuildInstructions(instructions, releaseSuffix),
+  });
+
   for (const instruction of instructions) {
-    await processBuildInstruction(instruction, packageVersions, fallbackVersion);
+    await processBuildInstruction(instruction, release);
   }
 }
 
 module.exports = {
-  processBuildInstructions,
+  processNightlyBuildInstructions,
   getPackageVersionsForBuildInstructions,
   transformVersionsToNightlyBuildVersions,
   calcNightlyBuildPackageBaseVersion,
