@@ -15,6 +15,7 @@ const {
 } = require("../package-modules");
 const {buildConfig: releaseInstructions} = require('./../build-config/mageos-release-build-config');
 const {processMirrorInstruction} = require("../mirror-build-tools");
+const {fetchPackagistList} = require('../packagist');
 const buildState = require('../type/build-state');
 
 const options = parseOptions(
@@ -106,6 +107,8 @@ let distroRelease = new buildState({
         : {};
       
       distroRelease.replaceVersions = upstreamVersionMap;
+
+      await fetchPackagistList(mageosVendor);
 
       for (const instruction of releaseInstructions) {
         if (releaseRefs['*']) {

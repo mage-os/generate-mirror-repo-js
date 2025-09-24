@@ -184,7 +184,6 @@ async function createPackageSinceTag(instruction, package) {
     // This is only used for non-mirror magento2-base-package builds
     package.composerJsonFile = null;
     if (package.composerJsonPath && package.composerJsonPath.length) {
-      // @todo: refactor this so composerJsonFile is stored in release or something so we aren't changing and reverting it on loop
       let composerJsonFile = package.composerJsonPath
         .replace('composer-templates', 'history')
         .replace('template.json', `${tag}.json`);

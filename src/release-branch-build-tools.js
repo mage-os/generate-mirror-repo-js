@@ -14,6 +14,7 @@ const {
 } = require('./package-modules');
 const repositoryBuildDefinition = require("./type/repository-build-definition");
 const buildState = require("./type/build-state");
+const {fetchPackagistList} = require("./packagist");
 
 /**
  * @param {repositoryBuildDefinition} instruction
@@ -177,6 +178,9 @@ async function processNightlyBuildInstructions(instructions) {
     fallbackVersion: transformVersionsToNightlyBuildVersion('0.0.1', releaseSuffix), // version to use for previously unreleased packages
     dependencyVersions: await getPackageVersionsForBuildInstructions(instructions, releaseSuffix),
   });
+
+  // @TODO/future: Mage-OS Nightly probably doesn't handle vendor properly in the first place, and this isn't relevant for upstream nightlies.
+  await fetchPackagistList('mage-os');
 
   for (const instruction of instructions) {
     await processBuildInstruction(instruction, release);
