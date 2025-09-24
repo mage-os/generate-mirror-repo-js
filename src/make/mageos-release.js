@@ -79,6 +79,8 @@ let distroRelease = new buildState({
 
 (async () => {
   try {
+    await fetchPackagistList(mageosVendor);
+
     if (! skipHistory) {
       console.log(`Building previous ${mageosVendor} releases`)
       for (const instruction of releaseInstructions) {
@@ -107,8 +109,6 @@ let distroRelease = new buildState({
         : {};
       
       distroRelease.replaceVersions = upstreamVersionMap;
-
-      await fetchPackagistList(mageosVendor);
 
       for (const instruction of releaseInstructions) {
         if (releaseRefs['*']) {
