@@ -4,6 +4,7 @@ const {determineSourceDependencies} = require('./determine-dependencies');
 const JSZip = require('jszip');
 const repo = require("./repository");
 const {lastTwoDirs, httpSlurp, compareVersions} = require('./utils');
+const {isOnPackagist} = require('./packagist');
 const repositoryBuildDefinition = require('./type/repository-build-definition');
 const packageDefinition = require('./type/package-definition');
 const buildState = require('./type/build-state');
@@ -140,8 +141,13 @@ function setDependencyVersions(instruction, release, composerConfig) {
   const dependencyVersions = release.dependencyVersions;
   for (const dependencyType of ['require', 'require-dev', 'suggest']) {
     for (const dep in (composerConfig[dependencyType] || {})) {
-      // @TODO: Allow vendor packages to be flagged as independently packaged. In that case, use the latest tagged version, not the current release or fallback version.
-      if (dependencyVersions[dep] || (instruction.vendor && dep.startsWith(instruction.vendor) && dependencyVersions['*'])) {
+      if (dependencyVersions[dep]
+        || (instruction.vendor
+          && dep.startsWith(instruction.vendor + '/')
+          && dependencyVersions['*']
+          && !isOnPackagist(instruction.vendor, dep)
+        )
+      ) {
         composerConfig[dependencyType][dep] = dependencyVersions[dep] || dependencyVersions['*'];
       }
 
@@ -256,7 +262,6 @@ async function createPackageForRef(instruction, package, release) {
    *    dependencyVersions: set as {'*': releaseVersion}
    *    => use dependencyVersions
    */
-  // @TODO: Change mageos release version handling for independently packaged packages
   ({
     name,
     version

@@ -10,9 +10,9 @@ const {readComposerJson, createMagentoCommunityEditionMetapackage,
   createMetaPackageFromRepoDir,
   createMagentoCommunityEditionProject
 } = require('./package-modules');
+const {isOnPackagist} = require('./packagist');
 const repositoryBuildDefinition = require('./type/repository-build-definition');
 const packageDefinition = require('./type/package-definition');
-
 
 function fsExists(dirOrFile) {
   try {
@@ -22,7 +22,6 @@ function fsExists(dirOrFile) {
     return false;
   }
 }
-
 
 async function composerCreateMagentoProject(version) {
   console.log(`Determining upstream package versions for release ${version}...`);
@@ -152,9 +151,11 @@ function setMageOsDependencyVersion(instruction, release, composerConfigPart, de
   const packageNames = Object.keys(composerConfigPart)
   packageNames.forEach(packageName => {
     if (packageName.match(mageOsPackage)) {
-      // @TODO: Allow vendor packages to be flagged as independently packaged. In that case, use the latest tagged version, not the current release or fallback version.
-      // Note: Original code here was just "release.version". The remainder are probably mostly unnecessary. Point for later refinement.
-      composerConfigPart[packageName] = release.version || release.fallbackVersion || release.dependencyVersions[packageName] || release.dependencyVersions['*'];
+      // Only set version if the package is not on packagist
+      if (isOnPackagist(instruction.vendor, packageName) === false) {
+        // Note: Original code here was just "release.version". The remainder are probably mostly unnecessary. Point for later refinement.
+        composerConfigPart[packageName] = release.version || release.fallbackVersion || release.dependencyVersions[packageName] || release.dependencyVersions['*'];
+      }
       
       if (dependencyType === 'suggest' && packageName.endsWith('-sample-data')) {
         composerConfigPart[packageName] = `Sample Data version: ${release.version || release.fallbackVersion}`;
