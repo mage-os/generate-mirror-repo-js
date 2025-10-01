@@ -5,19 +5,7 @@ const {mergeBuildConfigs} = require('../utils');
 const branchBuildConfig = {
   'magento2': {
     repoUrl: 'https://github.com/mage-os/mirror-magento2.git',
-    ref: '2.4-develop',
-    transform: {
-      // For magento/elasticsearch-8, remove the elasticsearch/elasticsearch dependency.
-      // See https://github.com/magento/magento2/issues/36687
-      'magento/module-elasticsearch-8': [
-        composerJson => {
-          if (composerJson?.require['elasticsearch/elasticsearch']) {
-            delete composerJson.require['elasticsearch/elasticsearch'];
-          }
-          return composerJson;
-        }
-      ]
-    }
+    ref: '2.4-develop'
   },
   'security-package': {
     repoUrl: 'https://github.com/mage-os/mirror-security-package.git',
