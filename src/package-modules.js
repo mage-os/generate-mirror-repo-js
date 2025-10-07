@@ -112,7 +112,6 @@ async function getComposerJson(instruction, package, ref) {
 function chooseNameAndVersion(instruction, package, magentoName, composerJson, definedVersion, fallbackVersion) {
   let composerConfig = JSON.parse(composerJson);
   let {version, name} = composerConfig;
-
   version = definedVersion || version || fallbackVersion;
   
   // If no version is found and ref looks like a branch name, convert to dev-branch format
