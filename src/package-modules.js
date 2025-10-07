@@ -688,7 +688,6 @@ async function createMetaPackageFromRepoDir(instruction, package, release) {
   if (!name) {
     throw {message: `Unable find package name and in composer.json for metapackage ${release.ref} in ${package.dir}`}
   }
-
   version = release.version || release.dependencyVersions[name] || version || release.ref;
   
   // If no version is found and ref looks like a branch name, convert to dev-branch format
