@@ -405,7 +405,6 @@ async function createComposerJsonOnlyPackage(instruction, release, name, version
 
   // @todo: Check version vs instruction.ref vs release.version here. Is this necessary to track separately? Is this fallback needed?
   const packageFilepath = archiveFilePath(name, version || release.ref);
-
   return {packageFilepath, files}
 }
 
