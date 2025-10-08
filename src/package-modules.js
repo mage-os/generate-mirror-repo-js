@@ -113,12 +113,12 @@ function chooseNameAndVersion(instruction, package, magentoName, composerJson, d
   let composerConfig = JSON.parse(composerJson);
   let {version, name} = composerConfig;
   version = definedVersion || version || fallbackVersion;
-  
-  // If no version is found and ref looks like a branch name, convert to dev-branch format
-  if (!version && ref && !ref.match(/^v?\d+\.\d+/)) {
-    version = `dev-${ref}`;
+
+  // If no version is found and instruction.ref looks like a branch name, convert to dev-branch format
+  if (!version && instruction.ref && !instruction.ref.match(/^v?\d+\.\d+/)) {
+    version = `dev-${instruction.ref}`;
   }
-  
+
   // ALWAYS convert invalid version strings that are branch names to dev-branch format
   // This catches cases where composer.json itself contains "develop" as version
   if (version && !version.match(/^v?\d+\.\d+/) && !version.startsWith('dev-') && version.match(/^[a-zA-Z][a-zA-Z0-9_-]*$/)) {
@@ -393,11 +393,11 @@ async function createComposerJsonOnlyPackage(instruction, release, name, version
   }];
 
   // Convert branch names to proper dev-branch format for Composer
-  let versionForFilename = release || ref;
-  if (!release && ref && !ref.match(/^v?\d+\.\d+/)) {
-    versionForFilename = `dev-${ref}`;
+  let versionForFilename = release.version || release.ref;
+  if (!release.version && release.ref && !release.ref.match(/^v?\d+\.\d+/)) {
+    versionForFilename = `dev-${release.ref}`;
   }
-  
+
   // Also check if versionForFilename looks like a branch name and convert it
   if (versionForFilename && !versionForFilename.match(/^v?\d+\.\d+/) && !versionForFilename.startsWith('dev-')) {
     versionForFilename = `dev-${versionForFilename}`;
@@ -689,10 +689,10 @@ async function createMetaPackageFromRepoDir(instruction, package, release) {
     throw {message: `Unable find package name and in composer.json for metapackage ${release.ref} in ${package.dir}`}
   }
   version = release.version || release.dependencyVersions[name] || version || release.ref;
-  
+
   // If no version is found and ref looks like a branch name, convert to dev-branch format
-  if (!release && !dependencyVersions[name] && !composerConfig.version && ref && !ref.match(/^v?\d+\.\d+/)) {
-    version = `dev-${ref}`;
+  if (!release.version && !release.dependencyVersions[name] && !composerConfig.version && release.ref && !release.ref.match(/^v?\d+\.\d+/)) {
+    version = `dev-${release.ref}`;
   }
 
   // Ensure version is set on composer config because not all repos provide the version in composer.json (e.g.
