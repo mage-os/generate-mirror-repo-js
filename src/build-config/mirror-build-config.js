@@ -670,4 +670,5 @@ const mirrorBuildConfig = {
 }
 
 module.exports = {
-  buildConfig: mergeBuildConfigs(packagesConfig, mirrorBuildConfig)};
+  buildConfig: mergeBuildConfigs(packagesConfig, mirrorBuildConfig)
+};
