@@ -1,4 +1,4 @@
-module.exports = {
+const packageDefs = {
   'magento2': {
     repoUrl: 'https://github.com/mage-os/mirror-magento2.git',
 
@@ -397,3 +397,5 @@ module.exports = {
     packageMetaFromDirs: [],
   },
 };
+
+module.exports = packageDefs;
