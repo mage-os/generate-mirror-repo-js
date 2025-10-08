@@ -184,7 +184,7 @@ async function processBuildInstruction(instruction, release) {
  */
 async function processNightlyBuildInstructions(instructions) {
   const releaseSuffix = getReleaseDateString();
-  let release = buildState({
+  let release = new buildState({
     fallbackVersion: transformVersionsToNightlyBuildVersion('0.0.1', releaseSuffix), // version to use for previously unreleased packages
     dependencyVersions: await getPackageVersionsForBuildInstructions(instructions, releaseSuffix),
   });
@@ -193,6 +193,8 @@ async function processNightlyBuildInstructions(instructions) {
   await fetchPackagistList('mage-os');
 
   for (const instruction of instructions) {
+    // Set the ref for this specific instruction
+    release.ref = instruction.ref;
     await processBuildInstruction(instruction, release);
   }
 }
