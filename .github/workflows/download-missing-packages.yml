@@ -35,13 +35,16 @@ jobs:
           git config user.name "GitHub Actions Bot"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
+      - name: Configure Composer Authentication
+        run: |
+          mkdir -p ~/.composer
+          echo '${{ secrets.COMPOSER_AUTH }}' > ~/.composer/auth.json
+
       - name: Run mirror script
         run: node src/make/mirror.js --outputDir=build
 
       - name: Run download script
         run: php bin/download-all-missing-packages-from-repo-magento-com.php
-        env:
-          COMPOSER_AUTH: ${{ secrets.COMPOSER_AUTH }}
 
       - name: Check for changes
         id: git-check
