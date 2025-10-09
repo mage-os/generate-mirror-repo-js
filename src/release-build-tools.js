@@ -224,6 +224,9 @@ function updateComposerConfigFromMagentoToMageOs(instruction, release, composerC
 async function prepPackageForRelease(instruction, package, release, workingCopyPath) {
   console.log(`Preparing ${package.label}`);
 
+  // Reset value in case it was set during history mirroring
+  package.composerJsonFile = null;
+
   const composerConfig = JSON.parse(await readComposerJson(instruction.repoUrl, package.dir, release.ref));
   updateComposerConfigFromMagentoToMageOs(instruction, release, composerConfig);
 
