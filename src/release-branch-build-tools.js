@@ -156,10 +156,7 @@ async function processBuildInstruction(instruction, release) {
     console.log('Packaging Magento Community Edition Project');
     built = await createMagentoCommunityEditionProject(
       instruction,
-      release,
-      {
-        minimumStability: 'alpha'
-      }
+      release
     );
     Object.assign(packages, built);
   }
