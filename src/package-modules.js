@@ -101,6 +101,30 @@ async function getComposerJson(instruction, package, ref) {
 }
 
 /**
+ * Determine the stability level of a composer version string
+ * @param {string} version - The version string to check (e.g. "2.4.0-beta1", "1.0.0", "dev-master")
+ * @returns {string} - Returns 'dev', 'alpha', 'beta', 'RC', 'stable', or 'patch'
+ */
+function getVersionStability(version) {
+  version = version.toLowerCase();
+  
+  if (version.startsWith('dev-') || version.includes('-dev')) {
+    return 'dev';
+  }
+  if (version.includes('-alpha')) {
+    return 'alpha';
+  }
+  if (version.includes('-beta')) {
+    return 'beta';
+  }
+  if (version.includes('-rc')) {
+    return 'RC';
+  }
+
+  return 'stable';
+}
+
+/**
  * @param {repositoryBuildDefinition} instruction 
  * @param {packageDefinition} package 
  * @param {*} magentoName 
@@ -547,18 +571,18 @@ async function determineMagentoCommunityEditionProject(url, ref, release) {
  *
  * @param {repositoryBuildDefinition} instruction
  * @param {buildState} release
- * @param {{minimumStability:String|undefined, description:String|undefined}} options
+ * @param {{description:String|undefined, transform: Array<String, Function>}} options
  * @returns {Promise<{}>}
  */
 async function createMagentoCommunityEditionProject(instruction, release, options) {
   const defaults = {
-    minimumStability: 'stable',
     description: 'eCommerce Platform for Growth (Community Edition)',
     transform: {},
   };
-  const {minimumStability, description, transform} = Object.assign(defaults, (options || {}))
+  const {description, transform} = Object.assign(defaults, (options || {}))
   const name = `${instruction.vendor}/project-community-edition`;
   const version = release.version || release.dependencyVersions[name] || release.ref;
+  const minimumStability = getVersionStability(version);
   const {packageFilepath, files} = await createComposerJsonOnlyPackage(
     instruction,
     release,
