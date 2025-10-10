@@ -273,8 +273,7 @@ async function buildMageOsProjectCommunityEditionMetapackage(instruction, releas
     instruction,
     release,
     {
-      minimumStability: 'stable',
-      description: 'Community built eCommerce Platform for Growth',
+      description: 'Community-built eCommerce Platform for Growth',
       transform: {
         [`${instruction.vendor}/project-community-edition`]: [
           (composerConfig) => {
