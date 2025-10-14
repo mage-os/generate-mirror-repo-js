@@ -37,7 +37,7 @@ const packageDefs = {
       {
         label: 'Magento Framework',
         dir: 'lib/internal/Magento/Framework',
-        excludes: ['lib/internal/Magento/Framework/Amqp/', 'lib/internal/Magento/Framework/Bulk/', 'lib/internal/Magento/Framework/MessageQueue/'],
+        excludes: ['lib/internal/Magento/Framework/Amqp/', 'lib/internal/Magento/Framework/Bulk/', 'lib/internal/Magento/Framework/MessageQueue/', 'lib/internal/Magento/Framework/Stomp/'],
       },
       {
         label: 'Magento Framework_Amqp',
@@ -50,6 +50,10 @@ const packageDefs = {
       {
         label: 'Magento Framework_MessageQueue',
         dir: 'lib/internal/Magento/Framework/MessageQueue',
+      },
+      {
+        label: 'Magento Framework_MessageQueue',
+        dir: 'lib/internal/Magento/Framework/Stomp',
       },
       {
         label: 'Magento Magento Admin Theme',
