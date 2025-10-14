@@ -52,7 +52,7 @@ const packageDefs = {
         dir: 'lib/internal/Magento/Framework/MessageQueue',
       },
       {
-        label: 'Magento Framework_MessageQueue',
+        label: 'Magento Framework_Stomp',
         dir: 'lib/internal/Magento/Framework/Stomp',
       },
       {
