@@ -368,6 +368,10 @@
         "lib/web/fotorama"
       ],
       [
+        "lib/web/hugerte",
+        "lib/web/hugerte"
+      ],
+      [
         "lib/web/i18n",
         "lib/web/i18n"
       ],
@@ -442,10 +446,6 @@
       [
         "lib/web/spacer.gif",
         "lib/web/spacer.gif"
-      ],
-      [
-        "lib/web/tiny_mce_6",
-        "lib/web/tiny_mce_6"
       ],
       [
         "lib/web/underscore.js",
