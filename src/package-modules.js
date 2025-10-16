@@ -137,6 +137,18 @@ function chooseNameAndVersion(instruction, package, magentoName, composerJson, d
   let composerConfig = JSON.parse(composerJson);
   let {version, name} = composerConfig;
   version = definedVersion || version || fallbackVersion;
+
+  // If no version is found and instruction.ref looks like a branch name, convert to dev-branch format
+  if (!version && instruction.ref && !instruction.ref.match(/^v?\d+\.\d+/)) {
+    version = `dev-${instruction.ref}`;
+  }
+
+  // ALWAYS convert invalid version strings that are branch names to dev-branch format
+  // This catches cases where composer.json itself contains "develop" as version
+  if (version && !version.match(/^v?\d+\.\d+/) && !version.startsWith('dev-') && version.match(/^[a-zA-Z][a-zA-Z0-9_-]*$/)) {
+    version = `dev-${version}`;
+  }
+
   if (!name) {
     throw {
       kind: 'NAME_UNKNOWN',
@@ -215,7 +227,11 @@ async function determinePackageForRef(instruction, package, ref) {
     // Some refs do not have a version in the composer.json (e.g. the base package or the magento-composer-installer 0.4.0-beta1=
     // For those we use the ref as the version. This might be a problem, so for now we leave it as is.
     if (exception.kind === 'VERSION_UNKNOWN') {
-      return {[exception.name]: exception.ref}
+      // For branch names, convert to Composer dev- format
+      const version = exception.ref.match(/^v?(?:\d+\.){0,3}\d+(?:-[a-z]\w*|)$/i) 
+        ? exception.ref 
+        : `dev-${exception.ref}`;
+      return {[exception.name]: version}
     }
     console.log(`Unable to determine name and/or version for ${magentoName || instruction.repoUrl} in ${instruction.ref}: ${exception.message || exception}`);
     return {};
@@ -401,6 +417,17 @@ async function createComposerJsonOnlyPackage(instruction, release, name, version
     contentBuffer: Buffer.from(JSON.stringify(composerConfig, null, 2), 'utf8'),
     isExecutable: false,
   }];
+
+  // Convert branch names to proper dev-branch format for Composer
+  let versionForFilename = release.version || release.ref;
+  if (!release.version && release.ref && !release.ref.match(/^v?\d+\.\d+/)) {
+    versionForFilename = `dev-${release.ref}`;
+  }
+
+  // Also check if versionForFilename looks like a branch name and convert it
+  if (versionForFilename && !versionForFilename.match(/^v?\d+\.\d+/) && !versionForFilename.startsWith('dev-')) {
+    versionForFilename = `dev-${versionForFilename}`;
+  }
 
   // @todo: Check version vs instruction.ref vs release.version here. Is this necessary to track separately? Is this fallback needed?
   const packageFilepath = archiveFilePath(name, version || release.ref);
@@ -662,6 +689,11 @@ async function determineMetaPackageFromRepoDir(url, dir, ref, release) {
     throw {message: `Unable find package name and in composer.json for metapackage ${ref} in ${dir}`}
   }
   version = release || version || ref;
+  
+  // If no version is found and ref looks like a branch name, convert to dev-branch format
+  if (!release && !composerConfig.version && ref && !ref.match(/^v?\d+\.\d+/)) {
+    version = `dev-${ref}`;
+  }
 
   return {[name]: version}
 }
@@ -683,6 +715,11 @@ async function createMetaPackageFromRepoDir(instruction, package, release) {
     throw {message: `Unable find package name and in composer.json for metapackage ${release.ref} in ${package.dir}`}
   }
   version = release.version || release.dependencyVersions[name] || version || release.ref;
+
+  // If no version is found and ref looks like a branch name, convert to dev-branch format
+  if (!release.version && !release.dependencyVersions[name] && !composerConfig.version && release.ref && !release.ref.match(/^v?\d+\.\d+/)) {
+    version = `dev-${release.ref}`;
+  }
 
   // Ensure version is set on composer config because not all repos provide the version in composer.json (e.g.
   // page-builder) and it is required by satis to be able to use artifact repositories.
