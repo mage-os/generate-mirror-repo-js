@@ -253,6 +253,8 @@ async function createPackageForRef(instruction, package, release) {
   if (!excludes.includes('composer.json')) excludes.push('composer.json');
   if (!excludes.includes('.git/')) excludes.push('.git/');
 
+  package.composerJsonFile ??= package.composerJsonPath;
+
   let magentoName = lastTwoDirs(package.dir) || '';
   const composerJson = await getComposerJson(instruction, package, release.ref);
 
