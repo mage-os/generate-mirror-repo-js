@@ -38,11 +38,15 @@ jobs:
       - run: |
           for working_copy in $(ls -d repositories/*/.git); do
             cd $(dirname $working_copy)
+            # Check if the remote is a mage-os org repository
             if git remote -v | grep -qE 'https://github.com/mage-os/'; then
               echo Processing repository $(basename $(pwd))
-              ORIG=$(git remote -v | grep push | awk '{print $2}')
-              NEW=${ORIG/https:\/\/github.com/https:\/\/mage-os-ci:${{ env.github_pat }}@github.com}
-              git push $NEW "${{ env.mageos_release }}"
+              # Check if the tag exists before pushing
+              if git rev-parse "${{ env.mageos_release }}" >/dev/null 2>&1; then
+                ORIG=$(git remote -v | grep push | awk '{print $2}')
+                NEW=${ORIG/https:\/\/github.com/https:\/\/mage-os-ci:${{ env.github_pat }}@github.com}
+                git push $NEW "${{ env.mageos_release }}"
+              fi
             fi
             cd -
           done
