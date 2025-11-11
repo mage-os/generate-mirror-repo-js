@@ -171,7 +171,7 @@ async function processBuildInstruction(instruction, release) {
  */
 async function processNightlyBuildInstructions(instructions) {
   const releaseSuffix = getReleaseDateString();
-  let release = buildState({
+  let release = new buildState({
     fallbackVersion: transformVersionsToNightlyBuildVersion('0.0.1', releaseSuffix), // version to use for previously unreleased packages
     dependencyVersions: await getPackageVersionsForBuildInstructions(instructions, releaseSuffix),
   });
