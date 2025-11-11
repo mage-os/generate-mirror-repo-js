@@ -4,11 +4,12 @@ const repo = require("./repository");
 const {accessSync, constants} = require("fs");
 const fs = require("fs/promises");
 const path = require("path");
-const {readComposerJson, createMagentoCommunityEditionMetapackage,
+const {
+  readComposerJson,
   createPackagesForRef,
   createPackageForRef,
-  createMetaPackageFromRepoDir,
-  createMagentoCommunityEditionProject
+  createMetaPackage,
+  createMetaPackageFromRepoDir
 } = require('./package-modules');
 const {isOnPackagist} = require('./packagist');
 const repositoryBuildDefinition = require('./type/repository-build-definition');
@@ -235,61 +236,6 @@ async function prepPackageForRelease(instruction, package, release, workingCopyP
   await fs.writeFile(file, JSON.stringify(composerConfig, null, 2), 'utf8');
 }
 
-/**
- * @param {repositoryBuildDefinition} instruction 
- * @param {buildState} release
- * @returns {Promise<{}>}
- */
-async function buildMageOsProductCommunityEditionMetapackage(instruction, release) {
-  console.log('Packaging Mage-OS Community Edition Product Metapackage');
-
-  return createMagentoCommunityEditionMetapackage(
-    instruction,
-    release,
-    {
-      transform: {
-        [`${instruction.vendor}/product-community-edition`]: [
-          (composerConfig) => {
-            updateComposerConfigFromMagentoToMageOs(instruction, release, composerConfig)
-
-            // Add upstreamRelease to composer extra data for reference
-            composerConfig.extra = composerConfig.extra || {};
-            composerConfig.extra.magento_version = release.replaceVersions['magento/product-community-edition'];
-
-            return composerConfig
-          }
-        ]
-      }
-    }
-  )
-}
-
-/**
- * @param {repositoryBuildDefinition} instruction 
- * @param {buildState} release
- * @returns {Promise<void>}
- */
-async function buildMageOsProjectCommunityEditionMetapackage(instruction, release) {
-  console.log('Packaging Mage-OS Community Edition Project');
-
-  return createMagentoCommunityEditionProject(
-    instruction,
-    release,
-    {
-      description: 'Community-built eCommerce Platform for Growth',
-      transform: {
-        [`${instruction.vendor}/project-community-edition`]: [
-          (composerConfig) => {
-            updateComposerConfigFromMagentoToMageOs(instruction, release, composerConfig)
-            return composerConfig
-          }
-        ]
-      }
-    }
-  )
-}
-
-
 module.exports = {
   validateVersionString,
   updateComposerConfigFromMagentoToMageOs,
@@ -351,18 +297,19 @@ module.exports = {
       await prepPackageForRelease(instruction, package, release, workingCopyPath);
     }
 
-    if (instruction.magentoCommunityEditionMetapackage) {
-      // nothing to do - the product-community-edition metapackage composer.json is built from a template
-    }
+    // @TODO: Update this code
+    // if (instruction.magentoCommunityEditionMetapackage) {
+    //   // nothing to do - the product-community-edition metapackage composer.json is built from a template
+    // }
 
-    if (instruction.magentoCommunityEditionProject) {
-      // update the base composer.json for releasing (doesn't happen for the base package because that uses a composer.json template)
-      const metapackage = new packageDefinition({
-        'label': 'Mage-OS Community Edition Project Metapackage',
-        'dir': ''
-      });
-      await prepPackageForRelease(instruction, metapackage, release, workingCopyPath);
-    }
+    // if (instruction.magentoCommunityEditionProject) {
+    //   // update the base composer.json for releasing (doesn't happen for the base package because that uses a composer.json template)
+    //   const metapackage = new packageDefinition({
+    //     'label': 'Mage-OS Community Edition Project Metapackage',
+    //     'dir': ''
+    //   });
+    //   await prepPackageForRelease(instruction, metapackage, release, workingCopyPath);
+    // }
 
     return workBranch
   },
@@ -406,14 +353,14 @@ module.exports = {
       Object.assign(packages, built)
     }
 
-    if (instruction.magentoCommunityEditionMetapackage) {
-      const built = await buildMageOsProductCommunityEditionMetapackage(instruction, release)
-      Object.assign(packages, built)
-    }
-
-    if (instruction.magentoCommunityEditionProject) {
-      const built = await buildMageOsProjectCommunityEditionMetapackage(instruction, release)
-      Object.assign(packages, built)
+    for (const metapackage of (instruction.extraMetapackages || [])) {
+      console.log(`Building metapackage ${metapackage.name}`);
+      const built = await createMetaPackage(
+        instruction,
+        metapackage,
+        release
+      );
+      Object.assign(packages, built);
     }
 
     return packages

@@ -2,9 +2,6 @@ const packageDefs = {
   'magento2': {
     repoUrl: 'https://github.com/mage-os/mirror-magento2.git',
 
-    magentoCommunityEditionProject: true,
-    magentoCommunityEditionMetapackage: true,
-
     packageDirs: [
       {label: 'Magento Core Modules', dir: 'app/code/Magento'},
       {label: 'Magento Language packages', dir: 'app/i18n/Magento'}
@@ -69,6 +66,41 @@ const packageDefs = {
       },
     ],
     packageMetaFromDirs: [],
+    extraMetapackages: [
+      {
+        // @TODO: Change full name to just the package name?
+        name: 'magento/project-community-edition',
+        type: 'project',
+        description: 'Magento Community Edition Project',
+        // @TODO: I don't think this is right
+        basePackage: 'magento2-base',
+        historyPath: 'project-community-edition',
+        transform: [
+          (composerConfig, instruction, release) => {
+            updateComposerConfigFromMagentoToMageOs(instruction, release, composerConfig);
+            return composerConfig;
+          }
+        ]
+      },
+      {
+        name: 'magento/product-community-edition',
+        type: 'metapackage',
+        description: 'Magento Community Edition',
+        basePackage: 'magento2-base',
+        historyPath: 'product-community-edition',
+        transform: [
+          (composerConfig, instruction, release) => {
+            updateComposerConfigFromMagentoToMageOs(instruction, release, composerConfig)
+
+            // Add upstreamRelease to composer extra data for reference
+            composerConfig.extra = composerConfig.extra || {};
+            composerConfig.extra.magento_version = release.replaceVersions['magento/product-community-edition'];
+
+            return composerConfig
+          }
+        ]
+      }
+    ]
   },
   'security-package': {
     repoUrl: 'https://github.com/mage-os/mirror-security-package.git',

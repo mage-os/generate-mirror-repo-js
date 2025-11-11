@@ -1,6 +1,7 @@
 
 const packagesConfig = require('./packages-config');
 const {mergeBuildConfigs} = require('../utils');
+const {updateComposerConfigFromMagentoToMageOs} = require('../release-build-tools');
 
 const releaseBuildConfig = {
   'magento2': {
@@ -13,6 +14,63 @@ const releaseBuildConfig = {
         composerJsonPath: `${__dirname}/../../resource/composer-templates/mage-os/magento2-base/template.json`,
       }
     ],
+    extraMetapackages: [
+      {
+        // @TODO: Change full name to just the package name?
+        name: 'mage-os/project-community-edition',
+        type: 'project',
+        description: 'Mage-OS Community Edition Project',
+        // @TODO: I don't think this is right
+        basePackage: 'magento2-base',
+        historyPath: 'project-community-edition',
+        transform: [
+          (composerConfig, instruction, release) => {
+            updateComposerConfigFromMagentoToMageOs(instruction, release, composerConfig);
+            return composerConfig;
+          }
+        ]
+      },
+      {
+        name: 'mage-os/product-community-edition',
+        type: 'metapackage',
+        description: 'Mage-OS Community Edition',
+        basePackage: 'magento2-base',
+        historyPath: 'product-community-edition',
+        transform: [
+          (composerConfig, instruction, release) => {
+            updateComposerConfigFromMagentoToMageOs(instruction, release, composerConfig)
+
+            // Add upstreamRelease to composer extra data for reference
+            composerConfig.extra = composerConfig.extra || {};
+            composerConfig.extra.magento_version = release.replaceVersions['magento/product-community-edition'];
+
+            return composerConfig
+          }
+        ]
+      },
+      {
+        name: 'mage-os/project-minimal',
+        type: 'metapackage',
+        description: 'Mage-OS Minimal Edition Project',
+        basePackage: 'magento2-base',
+        exclude: [
+          'mage-os/module-page-builder',
+          'mage-os/module-adobe-*'
+        ],
+        historyPath: 'project-minimal'
+      },
+      {
+        name: 'mage-os/product-minimal',
+        type: 'metapackage',
+        description: 'Mage-OS Minimal Edition',
+        basePackage: 'magento2-base',
+        exclude: [
+          'mage-os/module-page-builder',
+          'mage-os/module-adobe-*'
+        ],
+        historyPath: 'product-minimal'
+      }
+    ]
   },
   'security-package': {
     repoUrl: 'https://github.com/mage-os/mageos-security-package.git',

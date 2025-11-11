@@ -711,6 +711,90 @@ async function createMetaPackageFromRepoDir(instruction, package, release) {
   return {[name]: version}
 }
 
+async function getBaseDependencies(instruction, basePackage) {
+  try {
+    const composerJson = await readComposerJson(instruction.repoUrl, '', instruction.ref);
+    const composerConfig = JSON.parse(composerJson);
+    return composerConfig.require || {};
+  } catch (error) {
+    console.warn(`Could not load base dependencies from ${basePackage}: ${error.message}`);
+    return {};
+  }
+}
+
+function filterDependencies(dependencies, include, exclude) {
+  const filtered = {};
+  
+  for (const [pkg, version] of Object.entries(dependencies)) {
+    if (exclude && exclude.some(pattern => {
+      return pattern.endsWith('*') 
+        ? pkg.startsWith(pattern.slice(0, -1))
+        : pkg === pattern;
+    })) {
+      continue;
+    }
+    
+    // @TODO: I don't think this is flexible enough. There's no additive ability. This also doesn't wildcard like excludes.
+    if (!include || include.length === 0 || include.includes(pkg)) {
+      filtered[pkg] = version;
+    }
+  }
+  
+  return filtered;
+}
+
+async function createMetaPackage(instruction, metapackage, release) {
+  // Determine dependencies with base and filters
+  let dependencies = {};
+  if (metapackage.basePackage) {
+    dependencies = await getBaseDependencies(instruction, metapackage.basePackage);
+  }
+
+  dependencies = filterDependencies(
+    dependencies,
+    metapackage.include,
+    metapackage.exclude
+  );
+
+  // Create package config
+  let composerConfig = {
+    name: metapackage.name,
+    type: metapackage.type,
+    description: metapackage.description,
+    require: dependencies,
+    version: release.version || release.ref
+  };
+
+  // Apply transforms
+  composerConfig = metapackage.transform.reduce(
+    (config, fn) => fn(config, instruction, release),
+    composerConfig
+  );
+
+  if (instruction.transform[metapackage.name]) {
+    composerConfig = instruction.transform[metapackage.name].reduce(
+      (config, fn) => fn(config, instruction, release),
+      composerConfig
+    );
+  }
+
+  // Create package
+  const files = [{
+    filepath: 'composer.json',
+    mtime: new Date(stableMtime),
+    contentBuffer: Buffer.from(JSON.stringify(composerConfig, null, 2), 'utf8'),
+    isExecutable: false
+  }];
+
+  const packageFilepath = archiveFilePath(metapackage.name, composerConfig.version);
+  
+  if (!isInAdditionalPackages(metapackage.name, composerConfig.version)) {
+    await writePackage(packageFilepath, files);
+  }
+
+  return {[metapackage.name]: composerConfig.version};
+}
+
 module.exports = {
   setArchiveBaseDir(newArchiveBaseDir) {
     archiveBaseDir = newArchiveBaseDir;
@@ -723,6 +807,7 @@ module.exports = {
   createMagentoCommunityEditionMetapackage,
   createMagentoCommunityEditionProject,
   createMetaPackageFromRepoDir,
+  createMetaPackage,
 
   getLatestTag,
   archiveFilePath,

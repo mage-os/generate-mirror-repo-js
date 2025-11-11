@@ -5,10 +5,10 @@ const zip = require('jszip');
 const {
   createPackagesForRef,
   createPackageForRef,
-  createMagentoCommunityEditionMetapackage,
-  createMagentoCommunityEditionProject,
   createMetaPackageFromRepoDir,
-  archiveFilePath
+  archiveFilePath,
+  getAdditionalDependencies,
+  createComposerJsonOnlyPackage
 } = require('./package-modules');
 const repositoryBuildDefinition = require('./type/repository-build-definition');
 const packageDefinition = require('./type/package-definition');
@@ -244,6 +244,52 @@ async function replacePackageFiles(package) {
 
 /**
  * @param {repositoryBuildDefinition} instruction
+ * @param {Object} metapackage
+ * @returns {Array<String>} Packaged tags
+ */
+async function createMetaPackagesSinceTag(instruction, metapackage) {
+  const tags = await listTagsFrom(instruction.repoUrl, instruction.fromTag, instruction.skipTags);
+  console.log(`Versions to process for metapackage ${metapackage.name}: ${tags.join(', ')}`);
+  for (const tag of tags) {
+    console.log(`Processing ${tag}`);
+    let release = new buildState({
+      ref: tag,
+      fallbackVersion: tag,
+      dependencyVersions: (instruction.fixVersions?.[tag] ?? {})
+    });
+    // Try to load additional dependencies from resource history
+    /**
+     * @TODO: This isn't quite right, but I haven't wrapped my head around it yet.
+     *  additional gives `require` only, we need to merge it into the base json for the version
+     *  create... loads ./composer.json for the given release tag, and adds/transforms based on the ref history.
+     */
+    let additionalDeps = await getAdditionalDependencies(metapackage.name, tag);
+    await createComposerJsonOnlyPackage(
+      instruction,
+      release,
+      metapackage.name,
+      tag,
+      composerConfig => {
+        // If additionalDeps found, use them
+        if (additionalDeps) {
+          // @TODO: I don't think so
+          Object.assign(composerConfig, {require: additionalDeps});
+        }
+        // Apply transforms if any
+        if (metapackage.transform) {
+          for (const fn of metapackage.transform) {
+            composerConfig = fn(composerConfig, instruction, release);
+          }
+        }
+        return composerConfig;
+      }
+    );
+  }
+  return tags;
+}
+
+/**
+ * @param {repositoryBuildDefinition} instruction
  * @returns {Promise<void>}
  */
 async function processMirrorInstruction(instruction) {
@@ -277,16 +323,9 @@ async function processMirrorInstruction(instruction) {
     await replacePackageFiles(packageReplacement);
   }
 
-  if (instruction.magentoCommunityEditionMetapackage) {
-    console.log('Packaging Magento Community Edition Product Metapackage');
-    tags = await createMagentoCommunityEditionMetapackagesSinceTag(instruction);
-    console.log('Magento Community Edition Product Metapackage', tags);
-  }
-
-  if (instruction.magentoCommunityEditionProject) {
-    console.log('Packaging Magento Community Edition Project');
-    tags = await createProjectPackagesSinceTag(instruction);
-    console.log('Magento Community Edition Project', tags);
+  for (const metapackage of instruction.extraMetapackages) {
+    console.log(`Packaging ${metapackage.name}`);
+    tags = await createMetaPackagesSinceTag(instruction, metapackage);
   }
 
   repo.clearCache();

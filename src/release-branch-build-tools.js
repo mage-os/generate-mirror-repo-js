@@ -2,8 +2,7 @@ const repo = require("./repository");
 const {
   createPackagesForRef,
   createPackageForRef,
-  createMagentoCommunityEditionMetapackage,
-  createMagentoCommunityEditionProject,
+  createMetaPackage,
   createMetaPackageFromRepoDir,
   determinePackagesForRef,
   determinePackageForRef,
@@ -46,17 +45,18 @@ async function getPackagesForBuildInstruction(instruction) {
     Object.assign(packages, toBeBuilt);
   }
 
-  if (instruction.magentoCommunityEditionMetapackage) {
-    console.log('Inspecting Magento Community Edition Product Metapackage');
-    toBeBuilt = await determineMagentoCommunityEditionMetapackage(instruction.repoUrl, baseVersionsOnRef);
-    Object.assign(packages, toBeBuilt);
-  }
+  // @TODO: Update this code
+  // if (instruction.magentoCommunityEditionMetapackage) {
+  //   console.log('Inspecting Magento Community Edition Product Metapackage');
+  //   toBeBuilt = await determineMagentoCommunityEditionMetapackage(instruction.repoUrl, baseVersionsOnRef);
+  //   Object.assign(packages, toBeBuilt);
+  // }
 
-  if (instruction.magentoCommunityEditionProject) {
-    console.log('Inspecting Magento Community Edition Project');
-    toBeBuilt = await determineMagentoCommunityEditionProject(instruction.repoUrl, baseVersionsOnRef);
-    Object.assign(packages, toBeBuilt);
-  }
+  // if (instruction.magentoCommunityEditionProject) {
+  //   console.log('Inspecting Magento Community Edition Project');
+  //   toBeBuilt = await determineMagentoCommunityEditionProject(instruction.repoUrl, baseVersionsOnRef);
+  //   Object.assign(packages, toBeBuilt);
+  // }
 
   repo.clearCache();
   return packages;
@@ -146,18 +146,9 @@ async function processBuildInstruction(instruction, release) {
     Object.assign(packages, built);
   }
 
-  if (instruction.magentoCommunityEditionMetapackage) {
-    console.log('Packaging Magento Community Edition Product Metapackage');
-    built = await createMagentoCommunityEditionMetapackage(instruction, release);
-    Object.assign(packages, built);
-  }
-
-  if (instruction.magentoCommunityEditionProject) {
-    console.log('Packaging Magento Community Edition Project');
-    built = await createMagentoCommunityEditionProject(
-      instruction,
-      release
-    );
+  for (const metapackage of (instruction.extraMetapackages || [])) {
+    console.log(`Building metapackage ${metapackage.name}`);
+    const built = await createMetaPackage(instruction, metapackage, release);
     Object.assign(packages, built);
   }
 

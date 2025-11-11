@@ -84,21 +84,9 @@ let distroRelease = new buildState({
     if (! skipHistory) {
       console.log(`Building previous ${mageosVendor} releases`)
       for (const instruction of releaseInstructions) {
-        // set vendor for product-community-edition and project-community-edition meta packages
-        if (instruction.magentoCommunityEditionProject || instruction.magentoCommunityEditionMetapackage) {
-          instruction.vendor = mageosVendor
-        }
-        if (instruction.magentoCommunityEditionMetapackage) {
-          // update product package magento dependencies taken from the root composer.json to given vendor
-          const productPackage = `${mageosVendor}/product-community-edition`;
+        instruction.vendor = mageosVendor;
 
-          instruction.transform[productPackage] = instruction.transform[productPackage] || [];
-          instruction.transform[productPackage].push((composerConfig, instruction, release) => {
-            updateComposerConfigFromMagentoToMageOs(instruction, release, composerConfig)
-            return composerConfig
-          })
-        }
-        await processMirrorInstruction(instruction)
+        await processMirrorInstruction(instruction);
       }
     }
 
