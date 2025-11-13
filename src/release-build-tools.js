@@ -298,10 +298,8 @@ module.exports = {
     }
 
     // @TODO: Update this code
-    // if (instruction.magentoCommunityEditionMetapackage) {
-    //   // nothing to do - the product-community-edition metapackage composer.json is built from a template
-    // }
-
+    // TODO: Maybe a problem here. Does this store and pull historical versions of the metapackage from the repo?
+    //    If so, how would we extend that for additional metapackages?
     // if (instruction.magentoCommunityEditionProject) {
     //   // update the base composer.json for releasing (doesn't happen for the base package because that uses a composer.json template)
     //   const metapackage = new packageDefinition({

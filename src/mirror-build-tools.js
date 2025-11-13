@@ -57,54 +57,6 @@ async function copyAdditionalPackages(archiveDir) {
 
 /**
  * @param {repositoryBuildDefinition} instruction 
- * @returns {Array<String>} Packaged tags
- */
-async function createMagentoCommunityEditionMetapackagesSinceTag(instruction) {
-  const tags = await listTagsFrom(instruction.repoUrl, instruction.fromTag, instruction.skipTags);
-  console.log(`Versions to process: ${tags.join(', ')}`);
-  for (const tag of tags) {
-    console.log(`Processing ${tag}`);
-
-    let release = new buildState({
-      ref: tag,
-      fallbackVersion: tag,
-      dependencyVersions: (instruction.fixVersions?.[tag] ?? {})
-    });
-
-    await createMagentoCommunityEditionMetapackage(
-      instruction,
-      release
-    );
-  }
-  return tags;
-}
-
-/**
- * @param {repositoryBuildDefinition} instruction 
- * @returns {Array<String>} Packaged tags
- */
-async function createProjectPackagesSinceTag(instruction) {
-  const tags = await listTagsFrom(instruction.repoUrl, instruction.fromTag, instruction.skipTags);
-  console.log(`Versions to process: ${tags.join(', ')}`);
-  for (const tag of tags) {
-    console.log(`Processing ${tag}`);
-
-    let release = new buildState({
-      ref: tag,
-      fallbackVersion: tag,
-      dependencyVersions: (instruction.fixVersions?.[tag] ?? {})
-    });
-
-    await createMagentoCommunityEditionProject(
-      instruction,
-      release
-    );
-  }
-  return tags;
-}
-
-/**
- * @param {repositoryBuildDefinition} instruction 
  * @param {packageDefinition} package 
  * @returns {Array<String>} Packaged tags
  */
@@ -248,34 +200,25 @@ async function replacePackageFiles(package) {
  * @returns {Array<String>} Packaged tags
  */
 async function createMetaPackagesSinceTag(instruction, metapackage) {
+  const packageName = instruction.vendor + '/' + metapackage.name;
   const tags = await listTagsFrom(instruction.repoUrl, instruction.fromTag, instruction.skipTags);
-  console.log(`Versions to process for metapackage ${metapackage.name}: ${tags.join(', ')}`);
+  console.log(`Versions to process for metapackage ${packageName}: ${tags.join(', ')}`);
+
   for (const tag of tags) {
     console.log(`Processing ${tag}`);
     let release = new buildState({
       ref: tag,
+      // @TODO: We need composerRepoUrl for mirror/history build, but we don't have a buildState for it
       fallbackVersion: tag,
       dependencyVersions: (instruction.fixVersions?.[tag] ?? {})
     });
-    // Try to load additional dependencies from resource history
-    /**
-     * @TODO: This isn't quite right, but I haven't wrapped my head around it yet.
-     *  additional gives `require` only, we need to merge it into the base json for the version
-     *  create... loads ./composer.json for the given release tag, and adds/transforms based on the ref history.
-     */
-    let additionalDeps = await getAdditionalDependencies(metapackage.name, tag);
+
     await createComposerJsonOnlyPackage(
       instruction,
       release,
-      metapackage.name,
+      packageName,
       tag,
       composerConfig => {
-        // If additionalDeps found, use them
-        if (additionalDeps) {
-          // @TODO: I don't think so
-          Object.assign(composerConfig, {require: additionalDeps});
-        }
-        // Apply transforms if any
         if (metapackage.transform) {
           for (const fn of metapackage.transform) {
             composerConfig = fn(composerConfig, instruction, release);

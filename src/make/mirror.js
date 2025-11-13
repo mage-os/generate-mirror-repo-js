@@ -1,6 +1,6 @@
 const repo = require('./../repository');
 const parseOptions = require('parse-options');
-const {setArchiveBaseDir, setMageosPackageRepoUrl} = require('./../package-modules');
+const {setArchiveBaseDir} = require('./../package-modules');
 const {copyAdditionalPackages, processMirrorInstruction} = require('./../mirror-build-tools');
 const {buildConfig: mirrorInstructions} = require('./../build-config/mirror-build-config');
 
@@ -32,9 +32,10 @@ if (options.gitRepoDir) {
   repo.setStorageDir(options.gitRepoDir);
 }
 
-if (options.repoUrl) {
-  setMageosPackageRepoUrl(options.repoUrl);
-}
+// @TODO: Update to use buildState
+// if (options.repoUrl) {
+//   setMageosPackageRepoUrl(options.repoUrl);
+// }
 
 
 (async () => {

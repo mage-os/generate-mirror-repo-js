@@ -7,11 +7,9 @@ const {
   prepRelease,
   processBuildInstructions,
   validateVersionString,
-  updateComposerConfigFromMagentoToMageOs,
 } = require('./../release-build-tools');
 const {
   setArchiveBaseDir,
-  setMageosPackageRepoUrl,
 } = require("../package-modules");
 const {buildConfig: releaseInstructions} = require('./../build-config/mageos-release-build-config');
 const {processMirrorInstruction} = require("../mirror-build-tools");
@@ -51,12 +49,9 @@ if (options.gitRepoDir) {
   repo.setStorageDir(options.gitRepoDir);
 }
 
-if (options.repoUrl) {
-  setMageosPackageRepoUrl(options.repoUrl);
-}
-
 const mageosRelease = options.mageosRelease || '';
 const mageosVendor = options.mageosVendor || 'mage-os';
+const mageosRepoUrl = options.repoUrl || 'https://repo.mage-os.org/';
 const upstreamRelease = options.upstreamRelease || '';
 const releaseRefsFile = options.releaseRefsFile || path.join(__dirname, `./../build-config/${mageosVendor}-release-refs/${mageosRelease}.js`);
 
@@ -73,6 +68,7 @@ const releaseRefs = fs.existsSync(releaseRefsFile)
 
 let distroRelease = new buildState({
   version: mageosRelease,
+  composerRepoUrl: mageosRepoUrl,
   fallbackVersion: mageosRelease,
   dependencyVersions: {'*': mageosRelease}
 });

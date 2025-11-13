@@ -7,8 +7,6 @@ const {
   determinePackagesForRef,
   determinePackageForRef,
   determineMetaPackageFromRepoDir,
-  determineMagentoCommunityEditionMetapackage,
-  determineMagentoCommunityEditionProject,
   getLatestTag
 } = require('./package-modules');
 const repositoryBuildDefinition = require("./type/repository-build-definition");
@@ -45,18 +43,10 @@ async function getPackagesForBuildInstruction(instruction) {
     Object.assign(packages, toBeBuilt);
   }
 
-  // @TODO: Update this code
-  // if (instruction.magentoCommunityEditionMetapackage) {
-  //   console.log('Inspecting Magento Community Edition Product Metapackage');
-  //   toBeBuilt = await determineMagentoCommunityEditionMetapackage(instruction.repoUrl, baseVersionsOnRef);
-  //   Object.assign(packages, toBeBuilt);
-  // }
-
-  // if (instruction.magentoCommunityEditionProject) {
-  //   console.log('Inspecting Magento Community Edition Project');
-  //   toBeBuilt = await determineMagentoCommunityEditionProject(instruction.repoUrl, baseVersionsOnRef);
-  //   Object.assign(packages, toBeBuilt);
-  // }
+  for (const metapackage of (instruction.extraMetapackages || [])) {
+    console.log(`Inspecting ${metapackage.name}`);
+    packages[`${instruction.vendor}/${metapackage.name}`] = baseVersionsOnRef;
+  }
 
   repo.clearCache();
   return packages;

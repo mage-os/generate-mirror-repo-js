@@ -16,12 +16,10 @@ const releaseBuildConfig = {
     ],
     extraMetapackages: [
       {
-        // @TODO: Change full name to just the package name?
-        name: 'mage-os/project-community-edition',
+        name: 'project-community-edition',
         type: 'project',
         description: 'Mage-OS Community Edition Project',
-        // @TODO: I don't think this is right
-        basePackage: 'magento2-base',
+        basePackage: '',
         historyPath: 'project-community-edition',
         transform: [
           (composerConfig, instruction, release) => {
@@ -31,10 +29,10 @@ const releaseBuildConfig = {
         ]
       },
       {
-        name: 'mage-os/product-community-edition',
+        name: 'product-community-edition',
         type: 'metapackage',
         description: 'Mage-OS Community Edition',
-        basePackage: 'magento2-base',
+        basePackage: '',
         historyPath: 'product-community-edition',
         transform: [
           (composerConfig, instruction, release) => {
@@ -49,7 +47,7 @@ const releaseBuildConfig = {
         ]
       },
       {
-        name: 'mage-os/project-minimal',
+        name: 'project-minimal',
         type: 'metapackage',
         description: 'Mage-OS Minimal Edition Project',
         basePackage: 'magento2-base',
@@ -60,7 +58,7 @@ const releaseBuildConfig = {
         historyPath: 'project-minimal'
       },
       {
-        name: 'mage-os/product-minimal',
+        name: 'product-minimal',
         type: 'metapackage',
         description: 'Mage-OS Minimal Edition',
         basePackage: 'magento2-base',
