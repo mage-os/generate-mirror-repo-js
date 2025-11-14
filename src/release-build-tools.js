@@ -297,14 +297,13 @@ module.exports = {
       await prepPackageForRelease(instruction, package, release, workingCopyPath);
     }
 
-    for (const metapackage of (instruction.extraMetapackages || [])) {
-      if (metapackage.name === 'project-community-edition') {
-        const package = new packageDefinition({
-          label: metapackage.description || metapackage.name,
-          dir: '', // metapackages typically at repo root
-        });
-        await prepPackageForRelease(instruction, package, release, workingCopyPath);
-      }
+    const communityEdition = (instruction.extraMetapackages || []).find(package => package.name === 'project-community-edition');
+    if (communityEdition) {
+      const package = new packageDefinition({
+        label: communityEdition.description || communityEdition.name,
+        dir: '', // metapackages typically at repo root
+      });
+      await prepPackageForRelease(instruction, package, release, workingCopyPath);
     }
 
     return workBranch
