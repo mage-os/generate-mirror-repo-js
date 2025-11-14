@@ -40,7 +40,12 @@ class metapackageDefinition {
   historyPath = null;
 
   /**
-   * @param {{name: String, type: String, description: String, basePackage: String, include: Array<String>, exclude: Array<String>, transform: Array<Function>, historyPath: String}} config
+   * @type String|null Tag to build from (e.g. a git tag)
+   */
+  fromTag = null;
+
+  /**
+   * @param {{name: String, type: String, description: String, basePackage: String, include: Array<String>, exclude: Array<String>, transform: Array<Function>, historyPath: String, fromTag: String}} config
    */
   constructor(config = {}) {
     this.name = config.name || this.name;
@@ -51,6 +56,7 @@ class metapackageDefinition {
     this.exclude = config.exclude || this.exclude;
     this.transform = config.transform || this.transform;
     this.historyPath = config.historyPath || this.historyPath;
+    this.fromTag = config.fromTag || this.fromTag;
   }
 }
 

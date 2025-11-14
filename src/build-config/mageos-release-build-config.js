@@ -18,6 +18,7 @@ const releaseBuildConfig = {
       {
         name: 'project-community-edition',
         type: 'project',
+        fromTag: '1.0.0',
         description: 'Mage-OS Community Edition Project',
         basePackage: '',
         historyPath: 'project-community-edition',
@@ -31,6 +32,7 @@ const releaseBuildConfig = {
       {
         name: 'product-community-edition',
         type: 'metapackage',
+        fromTag: '1.0.0',
         description: 'Mage-OS Community Edition',
         basePackage: '',
         historyPath: 'product-community-edition',
@@ -49,6 +51,7 @@ const releaseBuildConfig = {
       {
         name: 'project-minimal',
         type: 'metapackage',
+        fromTag: '3.0.0',
         description: 'Mage-OS Minimal Edition Project',
         basePackage: 'magento2-base',
         exclude: [
@@ -60,6 +63,7 @@ const releaseBuildConfig = {
       {
         name: 'product-minimal',
         type: 'metapackage',
+        fromTag: '3.0.0',
         description: 'Mage-OS Minimal Edition',
         basePackage: 'magento2-base',
         exclude: [

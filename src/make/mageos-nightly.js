@@ -31,10 +31,9 @@ if (options.gitRepoDir) {
   repo.setStorageDir(options.gitRepoDir);
 }
 
-// @TODO: Update to use buildState
-// if (options.repoUrl) {
-//   setMageosPackageRepoUrl(options.repoUrl);
-// }
+let releaseContext = new buildState({
+  composerRepoUrl: options.repoUrl || 'https://nightly.mage-os.org/',
+});
 
-processNightlyBuildInstructions(branchBuildInstructions);
+processNightlyBuildInstructions(branchBuildInstructions, releaseContext);
 

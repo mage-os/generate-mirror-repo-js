@@ -297,17 +297,15 @@ module.exports = {
       await prepPackageForRelease(instruction, package, release, workingCopyPath);
     }
 
-    // @TODO: Update this code
-    // TODO: Maybe a problem here. Does this store and pull historical versions of the metapackage from the repo?
-    //    If so, how would we extend that for additional metapackages?
-    // if (instruction.magentoCommunityEditionProject) {
-    //   // update the base composer.json for releasing (doesn't happen for the base package because that uses a composer.json template)
-    //   const metapackage = new packageDefinition({
-    //     'label': 'Mage-OS Community Edition Project Metapackage',
-    //     'dir': ''
-    //   });
-    //   await prepPackageForRelease(instruction, metapackage, release, workingCopyPath);
-    // }
+    for (const metapackage of (instruction.extraMetapackages || [])) {
+      if (metapackage.name === 'project-community-edition') {
+        const package = new packageDefinition({
+          label: metapackage.description || metapackage.name,
+          dir: '', // metapackages typically at repo root
+        });
+        await prepPackageForRelease(instruction, package, release, workingCopyPath);
+      }
+    }
 
     return workBranch
   },

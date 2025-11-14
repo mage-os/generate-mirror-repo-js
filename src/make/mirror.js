@@ -32,16 +32,15 @@ if (options.gitRepoDir) {
   repo.setStorageDir(options.gitRepoDir);
 }
 
-// @TODO: Update to use buildState
-// if (options.repoUrl) {
-//   setMageosPackageRepoUrl(options.repoUrl);
-// }
+let releaseContext = new buildState({
+  composerRepoUrl: options.repoUrl || 'https://mirror.mage-os.org/',
+});
 
 
 (async () => {
   try {
     for (const instruction of mirrorInstructions) {
-      await processMirrorInstruction(instruction);
+      await processMirrorInstruction(instruction, releaseContext);
     }
     await copyAdditionalPackages(archiveDir);
   } catch (exception) {

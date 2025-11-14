@@ -7,7 +7,6 @@ const {
   createPackageForRef,
   createMetaPackageFromRepoDir,
   archiveFilePath,
-  getAdditionalDependencies,
   createComposerJsonOnlyPackage
 } = require('./package-modules');
 const repositoryBuildDefinition = require('./type/repository-build-definition');
@@ -197,18 +196,23 @@ async function replacePackageFiles(package) {
 /**
  * @param {repositoryBuildDefinition} instruction
  * @param {Object} metapackage
+ * @param {buildState} releaseContext
  * @returns {Array<String>} Packaged tags
  */
-async function createMetaPackagesSinceTag(instruction, metapackage) {
-  const packageName = instruction.vendor + '/' + metapackage.name;
-  const tags = await listTagsFrom(instruction.repoUrl, instruction.fromTag, instruction.skipTags);
+async function createMetaPackagesSinceTag(instruction, metapackage, releaseContext) {
+  const packageName = `${instruction.vendor}/${metapackage.name}`;
+  const tags = await listTagsFrom(
+    instruction.repoUrl,
+    metapackage.fromTag || instruction.fromTag,
+    instruction.skipTags
+  );
   console.log(`Versions to process for metapackage ${packageName}: ${tags.join(', ')}`);
 
   for (const tag of tags) {
     console.log(`Processing ${tag}`);
     let release = new buildState({
       ref: tag,
-      // @TODO: We need composerRepoUrl for mirror/history build, but we don't have a buildState for it
+      composerRepoUrl: releaseContext.composerRepoUrl,
       fallbackVersion: tag,
       dependencyVersions: (instruction.fixVersions?.[tag] ?? {})
     });
@@ -221,7 +225,7 @@ async function createMetaPackagesSinceTag(instruction, metapackage) {
       composerConfig => {
         if (metapackage.transform) {
           for (const fn of metapackage.transform) {
-            composerConfig = fn(composerConfig, instruction, release);
+            composerConfig = fn(composerConfig, instruction, metapackage, release);
           }
         }
         return composerConfig;
@@ -233,9 +237,10 @@ async function createMetaPackagesSinceTag(instruction, metapackage) {
 
 /**
  * @param {repositoryBuildDefinition} instruction
+ * @param {buildState} releaseContext
  * @returns {Promise<void>}
  */
-async function processMirrorInstruction(instruction) {
+async function processMirrorInstruction(instruction, releaseContext) {
   let tags = [];
 
   await Promise.all(
@@ -268,7 +273,7 @@ async function processMirrorInstruction(instruction) {
 
   for (const metapackage of instruction.extraMetapackages) {
     console.log(`Packaging ${metapackage.name}`);
-    tags = await createMetaPackagesSinceTag(instruction, metapackage);
+    tags = await createMetaPackagesSinceTag(instruction, metapackage, releaseContext);
   }
 
   repo.clearCache();

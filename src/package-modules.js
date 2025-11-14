@@ -591,7 +591,7 @@ function filterDependencies(dependencies, include, exclude) {
 }
 
 async function createMetaPackage(instruction, metapackage, release) {
-  const packageName = instruction.vendor + '/' + metapackage.name;
+  const packageName = `${instruction.vendor}/${metapackage.name}`;
 
   // Determine dependencies with base and filters
   let dependencies = {};
@@ -616,7 +616,7 @@ async function createMetaPackage(instruction, metapackage, release) {
 
   // Apply transforms
   composerConfig = metapackage.transform.reduce(
-    (config, fn) => fn(config, instruction, release),
+    (config, fn) => fn(config, instruction, metapackage, release),
     composerConfig
   );
 
@@ -652,6 +652,7 @@ module.exports = {
   createPackagesForRef,
   createMetaPackageFromRepoDir,
   createMetaPackage,
+  createComposerJsonOnlyPackage,
 
   getLatestTag,
   archiveFilePath,

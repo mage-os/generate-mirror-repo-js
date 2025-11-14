@@ -3,6 +3,8 @@ const {
   setDependencyVersions,
   getAdditionalDependencies
 } = require('../mirror-build-tools');
+const buildState = require('../type/build-state');
+const repositoryBuildDefinition = require('../type/repository-build-definition');
 
 const packageDefs = {
   'magento2': {
@@ -80,10 +82,14 @@ const packageDefs = {
         basePackage: '',
         historyPath: 'project-community-edition',
         transform: [
-          // @TODO: Param types
-          async (composerConfig, instruction, release) => {
-            // TODO: Should really have metapackage.name in here
-            const packageName = `${instruction.vendor}/project-community-edition`;
+          /**
+           * @param {{}} composerConfig 
+           * @param {repositoryBuildDefinition} instruction 
+           * @param {metapackageDefinition} metapackage
+           * @param {buildState} release 
+           */
+          async (composerConfig, instruction, metapackage, release) => {
+            const packageName = `${instruction.vendor}/${metapackage.name}`;
             const version = release.version || release.dependencyVersions[packageName] || release.ref;
 
             // read release history or dependencies-template for project metapackage
@@ -123,10 +129,15 @@ const packageDefs = {
         description: 'Magento Community Edition',
         basePackage: '',
         historyPath: 'product-community-edition',
-        // TODO: Add 'fromTag'
         transform: [
-          async (composerConfig, instruction, release) => {
-            const packageName = `${instruction.vendor}/project-community-edition`;
+          /**
+           * @param {{}} composerConfig 
+           * @param {repositoryBuildDefinition} instruction 
+           * @param {metapackageDefinition} metapackage
+           * @param {buildState} release 
+           */
+          async (composerConfig, instruction, metapackage, release) => {
+            const packageName = `${instruction.vendor}/${metapackage.name}`;
 
             // This method is in package-modules, and checks history and falls back to composer-templates
             // We should find a way to consolidate or abstract this for other instances
