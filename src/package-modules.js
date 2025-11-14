@@ -591,7 +591,7 @@ function filterDependencies(dependencies, include, exclude) {
 }
 
 async function createMetaPackage(instruction, metapackage, release) {
-  const packageName = `${instruction.vendor}/${metapackage.name}`;
+  const packageName = `magento/${metapackage.name}`; // Has to be Magento here. Trust me. reasons.
 
   // Determine dependencies with base and filters
   let dependencies = {};
@@ -615,13 +615,13 @@ async function createMetaPackage(instruction, metapackage, release) {
   };
 
   // Apply transforms
-  composerConfig = metapackage.transform.reduce(
+  composerConfig = await metapackage.transform.reduce(
     (config, fn) => fn(config, instruction, metapackage, release),
     composerConfig
   );
 
   if (instruction.transform[packageName]) {
-    composerConfig = instruction.transform[packageName].reduce(
+    composerConfig = await instruction.transform[packageName].reduce(
       (config, fn) => fn(config, instruction, release),
       composerConfig
     );
@@ -634,6 +634,9 @@ async function createMetaPackage(instruction, metapackage, release) {
     contentBuffer: Buffer.from(JSON.stringify(composerConfig, null, 2), 'utf8'),
     isExecutable: false
   }];
+
+  // Update packageName with final vendor
+  packageName = `${instruction.vendor}/${metapackage.name}`;
 
   const packageFilepath = archiveFilePath(packageName, composerConfig.version);
   
@@ -660,9 +663,9 @@ module.exports = {
 
   determinePackageForRef,
   determinePackagesForRef,
-  determineMagentoCommunityEditionMetapackage,
-  determineMagentoCommunityEditionProject,
   determineMetaPackageFromRepoDir,
 
+  getVersionStability,
+  setDependencyVersions,
   getAdditionalDependencies,
 }

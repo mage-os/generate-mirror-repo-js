@@ -2,7 +2,7 @@ const {
   getVersionStability,
   setDependencyVersions,
   getAdditionalDependencies
-} = require('../mirror-build-tools');
+} = require('../package-modules');
 const buildState = require('../type/build-state');
 const repositoryBuildDefinition = require('../type/repository-build-definition');
 
@@ -89,6 +89,7 @@ const packageDefs = {
            * @param {buildState} release 
            */
           async (composerConfig, instruction, metapackage, release) => {
+            // TODO: Refactor, extract these into separate modules
             const packageName = `${instruction.vendor}/${metapackage.name}`;
             const version = release.version || release.dependencyVersions[packageName] || release.ref;
 
@@ -120,6 +121,8 @@ const packageDefs = {
                 composerConfig
               )
             }
+
+            return composerConfig;
           }
         ]
       },
@@ -138,23 +141,24 @@ const packageDefs = {
            */
           async (composerConfig, instruction, metapackage, release) => {
             const packageName = `${instruction.vendor}/${metapackage.name}`;
+            const version = release.version || release.dependencyVersions[packageName] || release.ref;
 
             // This method is in package-modules, and checks history and falls back to composer-templates
             // We should find a way to consolidate or abstract this for other instances
             const additionalDependencies = await getAdditionalDependencies(packageName, release.ref)
 
-            let composerConfig = Object.assign({}, composerConfig, {
+            composerConfig = Object.assign({}, composerConfig, {
               name: packageName,
               description: 'eCommerce Platform for Growth (Community Edition)',
               type: 'metapackage',
               require: Object.assign(
                 {},
-                refComposerConfig.require,
-                refComposerConfig.replace,
+                composerConfig.require,
+                composerConfig.replace,
                 additionalDependencies,
-                {[`${instruction.vendor}/magento2-base`]: version}
+                {[`${instruction.vendor}/magento2-base`]: release.version}
               ),
-              version
+              version: release.version
             });
 
             for (const k of ['autoload', 'autoload-dev', 'config', 'conflict', 'extra', 'minimum-stability', 'replace', 'require-dev', 'suggest']) {
