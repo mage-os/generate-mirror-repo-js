@@ -15,29 +15,9 @@ class metapackageDefinition {
   description = '';
 
   /**
-   * @type String|null Base package to extend from
-   */
-  basePackage = null;
-
-  /**
-   * @type Array<String> Packages to include in the metapackage
-   */
-  include = [];
-
-  /**
-   * @type Array<String> Packages to exclude from the metapackage
-   */
-  exclude = [];
-
-  /**
    * @type Array<Function> Transform functions to apply
    */
   transform = [];
-
-  /**
-   * @type String|null Path to history file
-   */
-  historyPath = null;
 
   /**
    * @type String|null Tag to build from (e.g. a git tag)
@@ -45,17 +25,13 @@ class metapackageDefinition {
   fromTag = null;
 
   /**
-   * @param {{name: String, type: String, description: String, basePackage: String, include: Array<String>, exclude: Array<String>, transform: Array<Function>, historyPath: String, fromTag: String}} config
+   * @param {{name: String, type: String, description: String, transform: Array<Function>, fromTag: String}} config
    */
   constructor(config = {}) {
     this.name = config.name || this.name;
     this.type = config.type || this.type;
     this.description = config.description || this.description;
-    this.basePackage = config.basePackage || this.basePackage;
-    this.include = config.include || this.include;
-    this.exclude = config.exclude || this.exclude;
     this.transform = config.transform || this.transform;
-    this.historyPath = config.historyPath || this.historyPath;
     this.fromTag = config.fromTag || this.fromTag;
   }
 }

@@ -1,10 +1,7 @@
 const {
-  getVersionStability,
-  setDependencyVersions,
-  getAdditionalDependencies
-} = require('../package-modules');
-const buildState = require('../type/build-state');
-const repositoryBuildDefinition = require('../type/repository-build-definition');
+  transformMagentoCommunityEditionProject,
+  transformMagentoCommunityEditionProduct
+} = require('../build-metapackage/magento-community-edition');
 
 const packageDefs = {
   'magento2': {
@@ -79,102 +76,16 @@ const packageDefs = {
         name: 'project-community-edition',
         type: 'project',
         description: 'Magento Community Edition Project',
-        basePackage: '',
-        historyPath: 'project-community-edition',
         transform: [
-          /**
-           * @param {{}} composerConfig 
-           * @param {repositoryBuildDefinition} instruction 
-           * @param {metapackageDefinition} metapackage
-           * @param {buildState} release 
-           */
-          async (composerConfig, instruction, metapackage, release) => {
-            // TODO: Refactor, extract these into separate modules
-            const packageName = `${instruction.vendor}/${metapackage.name}`;
-            const version = release.version || release.dependencyVersions[packageName] || release.ref;
-
-            // read release history or dependencies-template for project metapackage
-            const additionalDependencies = await getAdditionalDependencies(packageName, release.ref)
-
-            composerConfig = Object.assign({}, composerConfig, {
-              name: packageName,
-              description: 'eCommerce Platform for Growth (Community Edition)',
-              extra: {'magento-force': 'override'},
-              version: release.version || release.dependencyVersions[packageName] || release.ref,
-              repositories: [{type: 'composer', url: release.composerRepoUrl}],
-              'minimum-stability': getVersionStability(version),
-              require: Object.assign(
-                {[`${packageName}`]: version},
-                additionalDependencies
-              )
-            });
-
-            for (const k of ['replace', 'suggest']) {
-              delete composerConfig[k];
-            }
-
-            setDependencyVersions(instruction, release, composerConfig);
-
-            if (instruction?.transform[packageName]) {
-              composerConfig = instruction.transform[packageName].reduce(
-                (config, transformFn) => transformFn(config, instruction, release),
-                composerConfig
-              )
-            }
-
-            return composerConfig;
-          }
+          transformMagentoCommunityEditionProject
         ]
       },
       {
         name: 'product-community-edition',
         type: 'metapackage',
         description: 'Magento Community Edition',
-        basePackage: '',
-        historyPath: 'product-community-edition',
         transform: [
-          /**
-           * @param {{}} composerConfig 
-           * @param {repositoryBuildDefinition} instruction 
-           * @param {metapackageDefinition} metapackage
-           * @param {buildState} release 
-           */
-          async (composerConfig, instruction, metapackage, release) => {
-            const packageName = `${instruction.vendor}/${metapackage.name}`;
-            const version = release.version || release.dependencyVersions[packageName] || release.ref;
-
-            // This method is in package-modules, and checks history and falls back to composer-templates
-            // We should find a way to consolidate or abstract this for other instances
-            const additionalDependencies = await getAdditionalDependencies(packageName, release.ref)
-
-            composerConfig = Object.assign({}, composerConfig, {
-              name: packageName,
-              description: 'eCommerce Platform for Growth (Community Edition)',
-              type: 'metapackage',
-              require: Object.assign(
-                {},
-                composerConfig.require,
-                composerConfig.replace,
-                additionalDependencies,
-                {[`${instruction.vendor}/magento2-base`]: release.version}
-              ),
-              version: release.version
-            });
-
-            for (const k of ['autoload', 'autoload-dev', 'config', 'conflict', 'extra', 'minimum-stability', 'replace', 'require-dev', 'suggest']) {
-              delete composerConfig[k];
-            }
-            setDependencyVersions(instruction, release, composerConfig);
-
-            if (instruction.transform[packageName]) {
-              composerConfig = instruction.transform[packageName].reduce(
-                (config, transformFn) => transformFn(config, instruction, release),
-                composerConfig
-              );
-            }
-
-            return composerConfig;
-          }
+          transformMagentoCommunityEditionProduct
         ]
       }
     ]

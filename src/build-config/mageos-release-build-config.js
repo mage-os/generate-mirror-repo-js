@@ -1,14 +1,14 @@
 const {
-  getVersionStability,
-  setDependencyVersions,
-  getAdditionalDependencies
-} = require('../package-modules');
-const buildState = require('../type/build-state');
-const repositoryBuildDefinition = require('../type/repository-build-definition');
+  transformMagentoCommunityEditionProject,
+  transformMagentoCommunityEditionProduct
+} = require('../build-metapackage/magento-community-edition');
+const {
+  transformMageOSCommunityEditionProject,
+  transformMageOSCommunityEditionProduct
+} = require('../build-metapackage/mage-os-community-edition');
 
 const packagesConfig = require('./packages-config');
 const {mergeBuildConfigs} = require('../utils');
-const {updateComposerConfigFromMagentoToMageOs} = require('../release-build-tools');
 
 const releaseBuildConfig = {
   'magento2': {
@@ -27,52 +27,9 @@ const releaseBuildConfig = {
         type: 'project',
         fromTag: '1.0.0',
         description: 'Mage-OS Community Edition Project',
-        basePackage: '',
-        historyPath: 'project-community-edition',
         transform: [
-          /**
-           * @param {{}} composerConfig 
-           * @param {repositoryBuildDefinition} instruction 
-           * @param {metapackageDefinition} metapackage
-           * @param {buildState} release 
-           */
-          async (composerConfig, instruction, metapackage, release) => {
-            const packageName = `${instruction.vendor}/${metapackage.name}`;
-            const version = release.version || release.dependencyVersions[packageName] || release.ref;
-
-            // read release history or dependencies-template for project metapackage
-            const additionalDependencies = await getAdditionalDependencies(packageName, release.ref)
-
-            composerConfig = Object.assign({}, composerConfig, {
-              name: packageName,
-              description: 'eCommerce Platform for Growth (Community Edition)',
-              extra: {'magento-force': 'override'},
-              version: release.version || release.dependencyVersions[packageName] || release.ref,
-              repositories: [{type: 'composer', url: release.composerRepoUrl}],
-              'minimum-stability': getVersionStability(version),
-              require: Object.assign(
-                {[`${packageName}`]: version},
-                additionalDependencies
-              )
-            });
-
-            for (const k of ['replace', 'suggest']) {
-              delete composerConfig[k];
-            }
-
-            setDependencyVersions(instruction, release, composerConfig);
-
-            if (instruction?.transform[packageName]) {
-              composerConfig = instruction.transform[packageName].reduce(
-                (config, transformFn) => transformFn(config, instruction, release),
-                composerConfig
-              )
-            }
-
-            // TODO: Issue with composerConfig promise not resolving before then next one executes
-            updateComposerConfigFromMagentoToMageOs(instruction, release, composerConfig);
-            return composerConfig;
-          }
+          transformMagentoCommunityEditionProject,
+          transformMageOSCommunityEditionProject,
         ]
       },
       {
@@ -80,9 +37,29 @@ const releaseBuildConfig = {
         type: 'metapackage',
         fromTag: '1.0.0',
         description: 'Mage-OS Community Edition',
-        basePackage: '',
-        historyPath: 'product-community-edition',
         transform: [
+          transformMagentoCommunityEditionProduct,
+          transformMageOSCommunityEditionProduct,
+        ]
+      },
+      {
+        name: 'project-minimal',
+        type: 'project',
+        fromTag: '3.0.0',
+        description: 'Mage-OS Minimal Edition Project',
+        transform: [
+          transformMagentoCommunityEditionProject,
+          transformMageOSCommunityEditionProject,
+        ]
+      },
+      {
+        name: 'product-minimal',
+        type: 'metapackage',
+        fromTag: '3.0.0',
+        description: 'Mage-OS Minimal Edition',
+        transform: [
+          transformMagentoCommunityEditionProduct,
+          transformMageOSCommunityEditionProduct,
           /**
            * @param {{}} composerConfig 
            * @param {repositoryBuildDefinition} instruction 
@@ -90,72 +67,16 @@ const releaseBuildConfig = {
            * @param {buildState} release 
            */
           async (composerConfig, instruction, metapackage, release) => {
-            const packageName = `${instruction.vendor}/${metapackage.name}`;
-            const version = release.version || release.dependencyVersions[packageName] || release.ref;
-
-            // This method is in package-modules, and checks history and falls back to composer-templates
-            // We should find a way to consolidate or abstract this for other instances
-            const additionalDependencies = await getAdditionalDependencies(packageName, release.ref)
-
-            composerConfig = Object.assign({}, composerConfig, {
-              name: packageName,
-              description: 'eCommerce Platform for Growth (Community Edition)',
-              type: 'metapackage',
-              require: Object.assign(
-                {},
-                composerConfig.require,
-                composerConfig.replace,
-                additionalDependencies,
-                {[`${instruction.vendor}/magento2-base`]: version}
-              ),
-              version: version
-            });
-
-            for (const k of ['autoload', 'autoload-dev', 'config', 'conflict', 'extra', 'minimum-stability', 'replace', 'require-dev', 'suggest']) {
-              delete composerConfig[k];
+            // Mock removing inventory and graphql packages for minimal edition
+            for (const pkg of Object.keys(composerConfig.require)) {
+              if (pkg.includes('-graph-ql') || pkg.includes('-inventory')) {
+                delete composerConfig.require[pkg];
+              }
             }
-            setDependencyVersions(instruction, release, composerConfig);
-
-            if (instruction.transform[packageName]) {
-              composerConfig = instruction.transform[packageName].reduce(
-                (config, transformFn) => transformFn(config, instruction, release),
-                composerConfig
-              );
-            }
-
-            updateComposerConfigFromMagentoToMageOs(instruction, release, composerConfig)
-
-            // Add upstreamRelease to composer extra data for reference
-            composerConfig.extra = composerConfig.extra || {};
-            composerConfig.extra.magento_version = release.replaceVersions['magento/product-community-edition'];
-
-            return composerConfig
+            
+            return composerConfig;
           }
         ]
-      },
-      {
-        name: 'project-minimal',
-        type: 'metapackage',
-        fromTag: '3.0.0',
-        description: 'Mage-OS Minimal Edition Project',
-        basePackage: 'magento2-base',
-        exclude: [
-          'mage-os/module-page-builder',
-          'mage-os/module-adobe-*'
-        ],
-        historyPath: 'project-minimal'
-      },
-      {
-        name: 'product-minimal',
-        type: 'metapackage',
-        fromTag: '3.0.0',
-        description: 'Mage-OS Minimal Edition',
-        basePackage: 'magento2-base',
-        exclude: [
-          'mage-os/module-page-builder',
-          'mage-os/module-adobe-*'
-        ],
-        historyPath: 'product-minimal'
       }
     ]
   },

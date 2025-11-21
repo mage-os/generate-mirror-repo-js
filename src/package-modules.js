@@ -335,10 +335,9 @@ async function createPackageForRef(instruction, package, release) {
   setDependencyVersions(instruction, release, composerConfig);
 
   if (instruction.transform[name]) {
-    composerConfig = instruction.transform[name].reduce(
-      (config, transformFn) => transformFn(config, instruction, release),
-      composerConfig
-    );
+    for (const fn of instruction.transform[name]) {
+      composerConfig = await fn(composerConfig, instruction, release);
+    }
   }
 
   const filesInZip = files.map(file => {
@@ -537,10 +536,9 @@ async function createMetaPackageFromRepoDir(instruction, package, release) {
   setDependencyVersions(instruction, release, composerConfig);
 
   if (instruction.transform[name]) {
-    composerConfig = instruction.transform[name].reduce(
-      (config, transformFn) => transformFn(config, instruction, release),
-      composerConfig
-    );
+    for (const fn of instruction.transform[name]) {
+      composerConfig = await fn(composerConfig, instruction, release);
+    }
   }
 
   const files = [{
@@ -558,73 +556,32 @@ async function createMetaPackageFromRepoDir(instruction, package, release) {
   return {[name]: version}
 }
 
-async function getBaseDependencies(instruction, basePackage) {
-  try {
-    const composerJson = await readComposerJson(instruction.repoUrl, '', instruction.ref);
-    const composerConfig = JSON.parse(composerJson);
-    return composerConfig.require || {};
-  } catch (error) {
-    console.warn(`Could not load base dependencies from ${basePackage}: ${error.message}`);
-    return {};
-  }
-}
-
-function filterDependencies(dependencies, include, exclude) {
-  const filtered = {};
-  
-  for (const [pkg, version] of Object.entries(dependencies)) {
-    if (exclude && exclude.some(pattern => {
-      return pattern.endsWith('*') 
-        ? pkg.startsWith(pattern.slice(0, -1))
-        : pkg === pattern;
-    })) {
-      continue;
-    }
-    
-    // @TODO: I don't think this is flexible enough. There's no additive ability. This also doesn't wildcard like excludes.
-    if (!include || include.length === 0 || include.includes(pkg)) {
-      filtered[pkg] = version;
-    }
-  }
-  
-  return filtered;
-}
-
 async function createMetaPackage(instruction, metapackage, release) {
-  const packageName = `magento/${metapackage.name}`; // Has to be Magento here. Trust me. reasons.
+  let packageName = `magento/${metapackage.name}`; // Has to be Magento here for transforms.
 
-  // Determine dependencies with base and filters
-  let dependencies = {};
-  if (metapackage.basePackage) {
-    dependencies = await getBaseDependencies(instruction, metapackage.basePackage);
-  }
+  // Fetch base composer config
+  const composerJson = await readComposerJson(instruction.repoUrl, '', release.ref);
+  let composerConfig = JSON.parse(composerJson);
 
-  dependencies = filterDependencies(
-    dependencies,
-    metapackage.include,
-    metapackage.exclude
-  );
-
-  // Create package config
-  let composerConfig = {
+  // Create specific package config
+  composerConfig = Object.assign(composerConfig, {
     name: packageName,
+    description: composerConfig.description || '',
     type: metapackage.type,
-    description: metapackage.description,
-    require: dependencies,
+    license: composerConfig.license || [],
+    require: composerConfig.require || {},
     version: release.version || release.ref
-  };
+  });
 
   // Apply transforms
-  composerConfig = await metapackage.transform.reduce(
-    (config, fn) => fn(config, instruction, metapackage, release),
-    composerConfig
-  );
-
   if (instruction.transform[packageName]) {
-    composerConfig = await instruction.transform[packageName].reduce(
-      (config, fn) => fn(config, instruction, release),
-      composerConfig
-    );
+    for (const fn of instruction.transform[packageName]) {
+      composerConfig = await fn(composerConfig, instruction, release);
+    }
+  }
+
+  for (const fn of metapackage.transform) {
+    composerConfig = await fn(composerConfig, instruction, metapackage, release);
   }
 
   // Create package
