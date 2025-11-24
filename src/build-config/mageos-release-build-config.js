@@ -41,42 +41,6 @@ const releaseBuildConfig = {
           transformMagentoCommunityEditionProduct,
           transformMageOSCommunityEditionProduct,
         ]
-      },
-      {
-        name: 'project-minimal',
-        type: 'project',
-        fromTag: '3.0.0',
-        description: 'Mage-OS Minimal Edition Project',
-        transform: [
-          transformMagentoCommunityEditionProject,
-          transformMageOSCommunityEditionProject,
-        ]
-      },
-      {
-        name: 'product-minimal',
-        type: 'metapackage',
-        fromTag: '3.0.0',
-        description: 'Mage-OS Minimal Edition',
-        transform: [
-          transformMagentoCommunityEditionProduct,
-          transformMageOSCommunityEditionProduct,
-          /**
-           * @param {{}} composerConfig 
-           * @param {repositoryBuildDefinition} instruction 
-           * @param {metapackageDefinition} metapackage
-           * @param {buildState} release 
-           */
-          async (composerConfig, instruction, metapackage, release) => {
-            // Mock removing inventory and graphql packages for minimal edition
-            for (const pkg of Object.keys(composerConfig.require)) {
-              if (pkg.includes('-graph-ql') || pkg.includes('-inventory')) {
-                delete composerConfig.require[pkg];
-              }
-            }
-            
-            return composerConfig;
-          }
-        ]
       }
     ]
   },
