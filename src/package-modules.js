@@ -413,6 +413,11 @@ async function createComposerJsonOnlyPackage(instruction, release, name, version
 
   // @todo: Check version vs instruction.ref vs release.version here. Is this necessary to track separately? Is this fallback needed?
   const packageFilepath = archiveFilePath(name, version || release.ref);
+  
+  if (!isInAdditionalPackages(name, composerConfig.version)) {
+    await writePackage(packageFilepath, files);
+  }
+
   return {packageFilepath, files}
 }
 
@@ -424,20 +429,23 @@ async function getLatestTag(url) {
 
 async function getLatestDependencies(dir) {
   if (!fs.existsSync(`${dir}/dependencies-template.json`)) {
-    return {};
+    return {
+      require: {}
+    };
   }
   const template = JSON.parse(fs.readFileSync(`${dir}/dependencies-template.json`, 'utf8'));
   return Object.entries(template.dependencies).reduce(async (deps, [dependency, url]) => {
-    const tag = url.slice(0, 4) === 'http' ? await getLatestTag(url) : url;
-    return Object.assign(await deps, {[dependency]: tag});
-  }, Promise.resolve({}));
+      const tag = url.slice(0, 4) === 'http' ? await getLatestTag(url) : url;
+      return Object.assign(await deps, {[dependency]: tag});
+    }, Promise.resolve({}))
+    .then(requireObj => ({ require: requireObj }));
 }
 
 async function getAdditionalDependencies(packageName, ref) {
   const dir = `${__dirname}/../resource/history/${packageName}`;
   const file = `${dir}/${ref}.json`;
   return fs.existsSync(file)
-    ? JSON.parse(fs.readFileSync(file, 'utf8')).require
+    ? JSON.parse(fs.readFileSync(file, 'utf8'))
     : await getLatestDependencies(`${__dirname}/../resource/composer-templates/${packageName}`);
 }
 

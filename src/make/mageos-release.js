@@ -82,7 +82,7 @@ let distroRelease = new buildState({
       for (const instruction of releaseInstructions) {
         instruction.vendor = mageosVendor;
 
-        await processMirrorInstruction(instruction);
+        await processMirrorInstruction(instruction, distroRelease);
       }
     }
 

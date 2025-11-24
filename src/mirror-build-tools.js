@@ -222,10 +222,10 @@ async function createMetaPackagesSinceTag(instruction, metapackage, releaseConte
       release,
       packageName,
       tag,
-      composerConfig => {
+      async composerConfig => {
         if (metapackage.transform) {
           for (const fn of metapackage.transform) {
-            composerConfig = fn(composerConfig, instruction, metapackage, release);
+            composerConfig = await fn(composerConfig, instruction, metapackage, release);
           }
         }
         return composerConfig;

@@ -3,6 +3,7 @@ const parseOptions = require('parse-options');
 const {setArchiveBaseDir} = require('./../package-modules');
 const {copyAdditionalPackages, processMirrorInstruction} = require('./../mirror-build-tools');
 const {buildConfig: mirrorInstructions} = require('./../build-config/mirror-build-config');
+const buildState = require('../type/build-state');
 
 
 const options = parseOptions(

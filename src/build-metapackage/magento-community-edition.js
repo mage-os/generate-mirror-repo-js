@@ -15,6 +15,7 @@ const repositoryBuildDefinition = require('../type/repository-build-definition')
  */
 async function transformMagentoCommunityEditionProject(composerConfig, instruction, metapackage, release) {
   const packageName = `${instruction.vendor}/${metapackage.name}`;
+  const productName = `${instruction.vendor}/` + metapackage.name.replace('project-', 'product-');
   const version = release.version || release.dependencyVersions[packageName] || release.ref;
 
   // read release history or dependencies-template for project metapackage
@@ -23,14 +24,15 @@ async function transformMagentoCommunityEditionProject(composerConfig, instructi
     release.ref
   )
 
-  composerConfig = Object.assign({}, composerConfig, {
+  composerConfig = Object.assign({}, composerConfig, additionalDependencies, {
+    name: packageName,
     description: 'Community-built eCommerce Platform for Growth',
     extra: {'magento-force': 'override'},
     repositories: [{type: 'composer', url: release.composerRepoUrl}],
     'minimum-stability': getVersionStability(version),
     require: Object.assign(
-      {[`${packageName}`]: version},
-      additionalDependencies
+      {[`${productName}`]: version},
+      additionalDependencies.require
     )
   });
 
@@ -51,25 +53,27 @@ async function transformMagentoCommunityEditionProject(composerConfig, instructi
  */
 async function transformMagentoCommunityEditionProduct(composerConfig, instruction, metapackage, release) {
   const packageName = `${instruction.vendor}/${metapackage.name}`;
-  const version = release.version || release.dependencyVersions[packageName] || release.ref;
 
   // This method is in package-modules, and checks history and falls back to composer-templates
   // We should find a way to consolidate or abstract this for other instances
   const additionalDependencies = await getAdditionalDependencies(packageName, release.ref)
 
-  composerConfig = Object.assign({}, composerConfig, {
+  delete composerConfig.extra;
+
+  composerConfig = Object.assign({}, composerConfig, additionalDependencies, {
+    name: packageName,
     description: 'eCommerce Platform for Growth (Community Edition)',
     type: 'metapackage',
     require: Object.assign(
       {},
       composerConfig.require,
       composerConfig.replace,
-      additionalDependencies,
+      additionalDependencies.require,
       {[`${instruction.vendor}/magento2-base`]: release.version}
     ),
   });
 
-  for (const k of ['autoload', 'autoload-dev', 'config', 'conflict', 'extra', 'minimum-stability', 'replace', 'require-dev', 'suggest']) {
+  for (const k of ['autoload', 'autoload-dev', 'config', 'conflict', 'minimum-stability', 'replace', 'require-dev', 'suggest']) {
     delete composerConfig[k];
   }
   setDependencyVersions(instruction, release, composerConfig);
