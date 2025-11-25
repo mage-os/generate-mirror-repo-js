@@ -19,10 +19,12 @@ async function transformMagentoCommunityEditionProject(composerConfig, instructi
   const version = release.version || release.dependencyVersions[packageName] || release.ref;
 
   // read release history or dependencies-template for project metapackage
-  const additionalDependencies = await getAdditionalDependencies(
-    `${instruction.vendor}/project-community-edition`,
-    release.ref
-  )
+  const additionalDependencies = await getAdditionalDependencies(packageName, release.ref)
+
+  // If this is not a new release, and additionalDependencies looks like a full composer config, use it directly.
+  if (release.dependencyVersions['*'] === undefined && additionalDependencies['prefer-stable'] !== undefined) {
+    return additionalDependencies;
+  }
 
   composerConfig = Object.assign({}, composerConfig, additionalDependencies, {
     name: packageName,
@@ -57,6 +59,11 @@ async function transformMagentoCommunityEditionProduct(composerConfig, instructi
   // This method is in package-modules, and checks history and falls back to composer-templates
   // We should find a way to consolidate or abstract this for other instances
   const additionalDependencies = await getAdditionalDependencies(packageName, release.ref)
+
+  // If this is not a new release, and additionalDependencies looks like a full composer config, use it directly.
+  if (release.dependencyVersions['*'] === undefined && additionalDependencies['prefer-stable'] !== undefined) {
+    return additionalDependencies;
+  }
 
   delete composerConfig.extra;
 
