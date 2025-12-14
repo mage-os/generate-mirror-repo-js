@@ -83,9 +83,9 @@ async function writePackage(packageFilepath, files) {
 }
 
 /**
- * @param {repositoryBuildDefinition} instruction 
- * @param {packageDefinition} package 
- * @param {String} ref 
+ * @param {repositoryBuildDefinition} instruction
+ * @param {packageDefinition} package
+ * @param {String} ref
  * @returns {String}
  */
 async function getComposerJson(instruction, package, ref) {
@@ -105,7 +105,7 @@ async function getComposerJson(instruction, package, ref) {
  */
 function getVersionStability(version) {
   version = version.toLowerCase();
-  
+
   if (version.startsWith('dev-') || version.includes('-dev')) {
     return 'dev';
   }
@@ -123,13 +123,13 @@ function getVersionStability(version) {
 }
 
 /**
- * @param {repositoryBuildDefinition} instruction 
- * @param {packageDefinition} package 
- * @param {*} magentoName 
- * @param {*} composerJson 
- * @param {*} definedVersion 
- * @param {*} fallbackVersion 
- * @returns 
+ * @param {repositoryBuildDefinition} instruction
+ * @param {packageDefinition} package
+ * @param {*} magentoName
+ * @param {*} composerJson
+ * @param {*} definedVersion
+ * @param {*} fallbackVersion
+ * @returns
  */
 function chooseNameAndVersion(instruction, package, magentoName, composerJson, definedVersion, fallbackVersion) {
   let composerConfig = JSON.parse(composerJson);
@@ -192,8 +192,8 @@ function setDependencyVersions(instruction, release, composerConfig) {
  *
  * Only used for release-branch builds (not mirror builds).
  *
- * @param {repositoryBuildDefinition} instruction 
- * @param {packageDefinition} package 
+ * @param {repositoryBuildDefinition} instruction
+ * @param {packageDefinition} package
  * @returns {Promise<Object.<String, String>>}
  */
 async function determinePackageForRef(instruction, package, ref) {
@@ -225,8 +225,8 @@ async function determinePackageForRef(instruction, package, ref) {
  *
  * Only used for release-branch builds (not mirror builds).
  *
- * @param {repositoryBuildDefinition} instruction 
- * @param {packageDefinition} package 
+ * @param {repositoryBuildDefinition} instruction
+ * @param {packageDefinition} package
  * @returns {Promise<Object.<String, String>>}
  */
 async function determinePackagesForRef(instruction, package, ref) {
@@ -241,7 +241,7 @@ async function determinePackagesForRef(instruction, package, ref) {
 }
 
 /**
- * @param {repositoryBuildDefinition} instruction 
+ * @param {repositoryBuildDefinition} instruction
  * @param {packageDefinition} package
  * @param {buildState} release
  * @returns {Promise<{}>}
@@ -381,7 +381,7 @@ function isInAdditionalPackages(name, version) {
 }
 
 /**
- * @param {repositoryBuildDefinition} instruction 
+ * @param {repositoryBuildDefinition} instruction
  * @param {buildState} release
  * @param {String} name The composer name to use in the composer.json and for the package archive
  * @param {String|undefined} version Release version to use in the package archive name. Defaults to ref
@@ -413,7 +413,7 @@ async function createComposerJsonOnlyPackage(instruction, release, name, version
 
   // @todo: Check version vs instruction.ref vs release.version here. Is this necessary to track separately? Is this fallback needed?
   const packageFilepath = archiveFilePath(name, version || release.ref);
-  
+
   if (!isInAdditionalPackages(name, composerConfig.version)) {
     await writePackage(packageFilepath, files);
   }
@@ -427,7 +427,7 @@ async function getLatestTag(url) {
   return tags[tags.length - 1];
 }
 
-async function getLatestDependencies(dir) {
+async function getLatestConfiguration(dir) {
   if (!fs.existsSync(`${dir}/dependencies-template.json`)) {
     return {
       require: {}
@@ -441,17 +441,17 @@ async function getLatestDependencies(dir) {
     .then(requireObj => ({ require: requireObj }));
 }
 
-async function getAdditionalDependencies(packageName, ref) {
+async function getAdditionalConfiguration(packageName, ref) {
   const dir = `${__dirname}/../resource/history/${packageName}`;
   const file = `${dir}/${ref}.json`;
   return fs.existsSync(file)
     ? JSON.parse(fs.readFileSync(file, 'utf8'))
-    : await getLatestDependencies(`${__dirname}/../resource/composer-templates/${packageName}`);
+    : await getLatestConfiguration(`${__dirname}/../resource/composer-templates/${packageName}`);
 }
 
 /**
- * @param {repositoryBuildDefinition} instruction 
- * @param {packageDefinition} package 
+ * @param {repositoryBuildDefinition} instruction
+ * @param {packageDefinition} package
  * @returns Array<String>
  */
 async function findModulesToBuild(instruction, package, ref) {
@@ -467,8 +467,8 @@ async function findModulesToBuild(instruction, package, ref) {
 }
 
 /**
- * @param {repositoryBuildDefinition} instruction 
- * @param {packageDefinition} package 
+ * @param {repositoryBuildDefinition} instruction
+ * @param {packageDefinition} package
  * @param {buildState} release
  * @returns {Promise<{}>}
  */
@@ -604,7 +604,7 @@ async function createMetaPackage(instruction, metapackage, release) {
   packageName = `${instruction.vendor}/${metapackage.name}`;
 
   const packageFilepath = archiveFilePath(packageName, composerConfig.version);
-  
+
   if (!isInAdditionalPackages(packageName, composerConfig.version)) {
     await writePackage(packageFilepath, files);
   }
@@ -632,5 +632,6 @@ module.exports = {
 
   getVersionStability,
   setDependencyVersions,
-  getAdditionalDependencies,
+  getAdditionalDependencies: getAdditionalConfiguration,
+  getAdditionalConfiguration
 }

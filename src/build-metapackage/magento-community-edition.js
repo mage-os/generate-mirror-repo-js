@@ -1,17 +1,17 @@
 const {
   getVersionStability,
   setDependencyVersions,
-  getAdditionalDependencies
+  getAdditionalConfiguration
 } = require('../package-modules');
 const buildState = require('../type/build-state');
 const metapackageDefinition = require('../type/metapackage-definition');
 const repositoryBuildDefinition = require('../type/repository-build-definition');
 
 /**
- * @param {{}} composerConfig 
- * @param {repositoryBuildDefinition} instruction 
+ * @param {{}} composerConfig
+ * @param {repositoryBuildDefinition} instruction
  * @param {metapackageDefinition} metapackage
- * @param {buildState} release 
+ * @param {buildState} release
  */
 async function transformMagentoCommunityEditionProject(composerConfig, instruction, metapackage, release) {
   const packageName = `${instruction.vendor}/${metapackage.name}`;
@@ -19,14 +19,14 @@ async function transformMagentoCommunityEditionProject(composerConfig, instructi
   const version = release.version || release.dependencyVersions[packageName] || release.ref;
 
   // read release history or dependencies-template for project metapackage
-  const additionalDependencies = await getAdditionalDependencies(packageName, release.ref)
+  const additionalConfig = await getAdditionalConfiguration(packageName, release.ref)
 
-  // If this is not a new release, and additionalDependencies looks like a full composer config, use it directly.
-  if (release.dependencyVersions['*'] === undefined && additionalDependencies['prefer-stable'] !== undefined) {
-    return additionalDependencies;
+  // If this is not a new release, and additionalConfig looks like a full composer config, use it directly.
+  if (release.dependencyVersions['*'] === undefined && additionalConfig['prefer-stable'] !== undefined) {
+    return additionalConfig;
   }
 
-  composerConfig = Object.assign({}, composerConfig, additionalDependencies, {
+  composerConfig = Object.assign({}, composerConfig, additionalConfig, {
     name: packageName,
     description: 'Community-built eCommerce Platform for Growth',
     extra: {'magento-force': 'override'},
@@ -34,7 +34,7 @@ async function transformMagentoCommunityEditionProject(composerConfig, instructi
     'minimum-stability': getVersionStability(version),
     require: Object.assign(
       {[`${productName}`]: version},
-      additionalDependencies.require
+      additionalConfig.require
     )
   });
 
@@ -48,26 +48,26 @@ async function transformMagentoCommunityEditionProject(composerConfig, instructi
 }
 
 /**
- * @param {{}} composerConfig 
- * @param {repositoryBuildDefinition} instruction 
+ * @param {{}} composerConfig
+ * @param {repositoryBuildDefinition} instruction
  * @param {metapackageDefinition} metapackage
- * @param {buildState} release 
+ * @param {buildState} release
  */
 async function transformMagentoCommunityEditionProduct(composerConfig, instruction, metapackage, release) {
   const packageName = `${instruction.vendor}/${metapackage.name}`;
 
   // This method is in package-modules, and checks history and falls back to composer-templates
   // We should find a way to consolidate or abstract this for other instances
-  const additionalDependencies = await getAdditionalDependencies(packageName, release.ref)
+  const additionalConfig = await getAdditionalConfiguration(packageName, release.ref)
 
-  // If this is not a new release, and additionalDependencies looks like a full composer config, use it directly.
-  if (release.dependencyVersions['*'] === undefined && additionalDependencies['prefer-stable'] !== undefined) {
-    return additionalDependencies;
+  // If this is not a new release, and additionalConfig looks like a full composer config, use it directly.
+  if (release.dependencyVersions['*'] === undefined && additionalConfig['prefer-stable'] !== undefined) {
+    return additionalConfig;
   }
 
   delete composerConfig.extra;
 
-  composerConfig = Object.assign({}, composerConfig, additionalDependencies, {
+  composerConfig = Object.assign({}, composerConfig, additionalConfig, {
     name: packageName,
     description: 'eCommerce Platform for Growth (Community Edition)',
     type: 'metapackage',
@@ -75,7 +75,7 @@ async function transformMagentoCommunityEditionProduct(composerConfig, instructi
       {},
       composerConfig.require,
       composerConfig.replace,
-      additionalDependencies.require,
+      additionalConfig.require,
       {[`${instruction.vendor}/magento2-base`]: release.version}
     ),
   });

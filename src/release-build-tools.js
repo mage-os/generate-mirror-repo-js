@@ -130,7 +130,7 @@ function updateMapFromMagentoToMageOs(obj, vendor) {
 }
 
 /**
- * @param {repositoryBuildDefinition} instruction 
+ * @param {repositoryBuildDefinition} instruction
  * @param {buildState} release
  * @param {{}} composerConfig
  */
@@ -142,7 +142,7 @@ function updateComposerDepsFromMagentoToMageOs(instruction, release, composerCon
 }
 
 /**
- * @param {repositoryBuildDefinition} instruction 
+ * @param {repositoryBuildDefinition} instruction
  * @param {buildState} release
  * @param {{}} composerConfigPart
  * @param {String} dependencyType
@@ -157,7 +157,7 @@ function setMageOsDependencyVersion(instruction, release, composerConfigPart, de
         // Note: Original code here was just "release.version". The remainder are probably mostly unnecessary. Point for later refinement.
         composerConfigPart[packageName] = release.version || release.fallbackVersion || release.dependencyVersions[packageName] || release.dependencyVersions['*'];
       }
-      
+
       if (dependencyType === 'suggest' && packageName.endsWith('-sample-data')) {
         composerConfigPart[packageName] = `Sample Data version: ${release.version || release.fallbackVersion}`;
       }
@@ -167,7 +167,7 @@ function setMageOsDependencyVersion(instruction, release, composerConfigPart, de
 }
 
 /**
- * @param {repositoryBuildDefinition} instruction 
+ * @param {repositoryBuildDefinition} instruction
  * @param {buildState} release
  * @param {{}} composerConfig
  */
@@ -178,7 +178,7 @@ function updateComposerDepsVersionForMageOs(instruction, release, composerConfig
 }
 
 /**
- * @param {repositoryBuildDefinition} instruction 
+ * @param {repositoryBuildDefinition} instruction
  * @param {buildState} release
  * @param {{}} composerConfig
  */
@@ -197,7 +197,7 @@ function updateComposerPluginConfigForMageOs(instruction, release, composerConfi
  *
  * This also happens for the "replace" section, before the given replaceVersionMap is merged.
  *
- * @param {repositoryBuildDefinition} instruction 
+ * @param {repositoryBuildDefinition} instruction
  * @param {buildState} release
  * @param {{}} composerConfig
  */
@@ -206,7 +206,7 @@ function updateComposerConfigFromMagentoToMageOs(instruction, release, composerC
 
   composerConfig.version = release.version || release.ref;
   composerConfig.name = setMageOsVendor(composerConfig.name, instruction.vendor);
-  
+
   updateComposerDepsFromMagentoToMageOs(instruction, release, composerConfig);
   updateComposerDepsVersionForMageOs(instruction, release, composerConfig);
   updateComposerPluginConfigForMageOs(instruction, release, composerConfig);
@@ -217,10 +217,10 @@ function updateComposerConfigFromMagentoToMageOs(instruction, release, composerC
 }
 
 /**
- * @param {repositoryBuildDefinition} instruction 
+ * @param {repositoryBuildDefinition} instruction
  * @param {packageDefinition} package
  * @param {buildState} release
- * @param {String} workingCopyPath 
+ * @param {String} workingCopyPath
  */
 async function prepPackageForRelease(instruction, package, release, workingCopyPath) {
   console.log(`Preparing ${package.label}`);
@@ -245,7 +245,7 @@ module.exports = {
     return getInstalledPackageMap(dir);
   },
   /**
-   * @param {repositoryBuildDefinition} instruction 
+   * @param {repositoryBuildDefinition} instruction
    * @param {buildState} release
    * @returns {void}
    */
@@ -301,7 +301,7 @@ module.exports = {
     if (communityEdition) {
       const package = new packageDefinition({
         label: communityEdition.description || communityEdition.name,
-        dir: '', // metapackages typically at repo root
+        dir: '', // communityEdition metapackages use the root ./composer.json. Others generally use ./_metapackage/.
       });
       await prepPackageForRelease(instruction, package, release, workingCopyPath);
     }
@@ -310,7 +310,7 @@ module.exports = {
   },
 
   /**
-   * @param {repositoryBuildDefinition} instruction 
+   * @param {repositoryBuildDefinition} instruction
    * @param {buildState} release
    * @returns {Object.<String, String>} A map of built packages:versions
    */
