@@ -3,6 +3,7 @@
 const extraRefToRelease = require('./extra-ref-to-release');
 const packageDefinition = require('./package-definition');
 const packageReplacement = require('./package-replacement');
+const metapackageDefinition = require('./metapackage-definition');
 
 /**
  * Defines release build instructions for a git repository.
@@ -31,14 +32,9 @@ class repositoryBuildDefinition {
   packageMetaFromDirs = [];
 
   /**
-   * @type Boolean Whether this package is a Magento project metapackage
+   * @type Array<metapackageDefinition> Create additional metapackages as defined
    */
-  magentoCommunityEditionProject = false;
-
-  /**
-   * @type Boolean Whether this package is a Magento product metapackage
-   */
-  magentoCommunityEditionMetapackage = false;
+  extraMetapackages = [];
 
   /**
    * @type String Package vendor to use
@@ -83,13 +79,10 @@ class repositoryBuildDefinition {
   extraRefToRelease = [];
 
   /**
-   * @param {{repoUrl: String, packageDirs: Array, packageIndividual: Array, packageMetaFromDirs: Array, magentoCommunityEditionProject: boolean, magentoCommunityEditionMetapackage: boolean, vendor: String, ref: String, fromTag: String, skipTags: {Object}, transform: Object.<String,Array>, fixVersions: {Object}, packageReplacements: {Object}, extraRefToRelease: Array}}
+   * @param {{repoUrl: String, packageDirs: Array, packageIndividual: Array, packageMetaFromDirs: Array, vendor: String, ref: String, fromTag: String, skipTags: {Object}, transform: Object.<String,Array>, fixVersions: {Object}, packageReplacements: {Object}, extraRefToRelease: Array, extraMetapackages: Array}}
    */
   constructor(options) {
     this.repoUrl = options.repoUrl || this.repoUrl;
-    
-    this.magentoCommunityEditionProject = options.magentoCommunityEditionProject || this.magentoCommunityEditionProject;
-    this.magentoCommunityEditionMetapackage = options.magentoCommunityEditionMetapackage || this.magentoCommunityEditionMetapackage;
 
     this.vendor = options.vendor || this.vendor;
     this.ref = options.ref || this.ref;
@@ -101,9 +94,10 @@ class repositoryBuildDefinition {
     this.packageDirs = this.initPackageDefinitions(options.packageDirs || []);
     this.packageIndividual = this.initPackageDefinitions(options.packageIndividual || []);
     this.packageMetaFromDirs = this.initPackageDefinitions(options.packageMetaFromDirs || []);
-
+    
     this.packageReplacements = this.initPackageReplacements(options.packageReplacements || []);
     this.extraRefToRelease = this.initExtraRefsToRelease(options.extraRefToRelease || []);
+    this.extraMetapackages = this.initMetapackageDefinitions(options.extraMetapackages || []);
   }
 
   /**
@@ -140,6 +134,19 @@ class repositoryBuildDefinition {
     let instances = [];
     extraRefs.forEach(element => {
       instances.push(new extraRefToRelease(element));
+    });
+
+    return instances;
+  }
+
+  /**
+   * @param {Array<{}>} metapackages 
+   * @returns {Array<metapackageDefinition>}
+   */
+  initMetapackageDefinitions(metapackages) {
+    let instances = [];
+    metapackages.forEach(element => {
+      instances.push(new metapackageDefinition(element));
     });
 
     return instances;

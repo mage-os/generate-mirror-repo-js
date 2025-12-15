@@ -1,9 +1,11 @@
+const {
+  transformMagentoCommunityEditionProject,
+  transformMagentoCommunityEditionProduct
+} = require('../build-metapackage/magento-community-edition');
+
 const packageDefs = {
   'magento2': {
     repoUrl: 'https://github.com/mage-os/mirror-magento2.git',
-
-    magentoCommunityEditionProject: true,
-    magentoCommunityEditionMetapackage: true,
 
     packageDirs: [
       {label: 'Magento Core Modules', dir: 'app/code/Magento'},
@@ -69,6 +71,24 @@ const packageDefs = {
       },
     ],
     packageMetaFromDirs: [],
+    extraMetapackages: [
+      {
+        name: 'project-community-edition',
+        type: 'project',
+        description: 'Magento Community Edition Project',
+        transform: [
+          transformMagentoCommunityEditionProject
+        ]
+      },
+      {
+        name: 'product-community-edition',
+        type: 'metapackage',
+        description: 'Magento Community Edition',
+        transform: [
+          transformMagentoCommunityEditionProduct
+        ]
+      }
+    ]
   },
   'security-package': {
     repoUrl: 'https://github.com/mage-os/mirror-security-package.git',

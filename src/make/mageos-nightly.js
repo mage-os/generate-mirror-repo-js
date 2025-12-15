@@ -1,6 +1,6 @@
 const repo = require('./../repository');
 const parseOptions = require('parse-options');
-const {setArchiveBaseDir, setMageosPackageRepoUrl} = require('./../package-modules');
+const {setArchiveBaseDir} = require('./../package-modules');
 const {processNightlyBuildInstructions} = require('./../release-branch-build-tools');
 const {buildConfig: branchBuildInstructions} = require('./../build-config/mageos-nightly-build-config');
 
@@ -31,9 +31,9 @@ if (options.gitRepoDir) {
   repo.setStorageDir(options.gitRepoDir);
 }
 
-if (options.repoUrl) {
-  setMageosPackageRepoUrl(options.repoUrl);
-}
+let releaseContext = new buildState({
+  composerRepoUrl: options.repoUrl || 'https://nightly.mage-os.org/',
+});
 
-processNightlyBuildInstructions(branchBuildInstructions);
+processNightlyBuildInstructions(branchBuildInstructions, releaseContext);
 

@@ -5,10 +5,9 @@ const zip = require('jszip');
 const {
   createPackagesForRef,
   createPackageForRef,
-  createMagentoCommunityEditionMetapackage,
-  createMagentoCommunityEditionProject,
   createMetaPackageFromRepoDir,
-  archiveFilePath
+  archiveFilePath,
+  createComposerJsonOnlyPackage
 } = require('./package-modules');
 const repositoryBuildDefinition = require('./type/repository-build-definition');
 const packageDefinition = require('./type/package-definition');
@@ -53,54 +52,6 @@ async function copyAdditionalPackages(archiveDir) {
       })
     })
   }
-}
-
-/**
- * @param {repositoryBuildDefinition} instruction 
- * @returns {Array<String>} Packaged tags
- */
-async function createMagentoCommunityEditionMetapackagesSinceTag(instruction) {
-  const tags = await listTagsFrom(instruction.repoUrl, instruction.fromTag, instruction.skipTags);
-  console.log(`Versions to process: ${tags.join(', ')}`);
-  for (const tag of tags) {
-    console.log(`Processing ${tag}`);
-
-    let release = new buildState({
-      ref: tag,
-      fallbackVersion: tag,
-      dependencyVersions: (instruction.fixVersions?.[tag] ?? {})
-    });
-
-    await createMagentoCommunityEditionMetapackage(
-      instruction,
-      release
-    );
-  }
-  return tags;
-}
-
-/**
- * @param {repositoryBuildDefinition} instruction 
- * @returns {Array<String>} Packaged tags
- */
-async function createProjectPackagesSinceTag(instruction) {
-  const tags = await listTagsFrom(instruction.repoUrl, instruction.fromTag, instruction.skipTags);
-  console.log(`Versions to process: ${tags.join(', ')}`);
-  for (const tag of tags) {
-    console.log(`Processing ${tag}`);
-
-    let release = new buildState({
-      ref: tag,
-      fallbackVersion: tag,
-      dependencyVersions: (instruction.fixVersions?.[tag] ?? {})
-    });
-
-    await createMagentoCommunityEditionProject(
-      instruction,
-      release
-    );
-  }
-  return tags;
 }
 
 /**
@@ -244,9 +195,52 @@ async function replacePackageFiles(package) {
 
 /**
  * @param {repositoryBuildDefinition} instruction
+ * @param {Object} metapackage
+ * @param {buildState} releaseContext
+ * @returns {Array<String>} Packaged tags
+ */
+async function createMetaPackagesSinceTag(instruction, metapackage, releaseContext) {
+  const packageName = `${instruction.vendor}/${metapackage.name}`;
+  const tags = await listTagsFrom(
+    instruction.repoUrl,
+    metapackage.fromTag || instruction.fromTag,
+    instruction.skipTags
+  );
+  console.log(`Versions to process for metapackage ${packageName}: ${tags.join(', ')}`);
+
+  for (const tag of tags) {
+    console.log(`Processing ${tag}`);
+    let release = new buildState({
+      ref: tag,
+      composerRepoUrl: releaseContext.composerRepoUrl,
+      fallbackVersion: tag,
+      dependencyVersions: (instruction.fixVersions?.[tag] ?? {})
+    });
+
+    await createComposerJsonOnlyPackage(
+      instruction,
+      release,
+      packageName,
+      tag,
+      async composerConfig => {
+        if (metapackage.transform) {
+          for (const fn of metapackage.transform) {
+            composerConfig = await fn(composerConfig, instruction, metapackage, release);
+          }
+        }
+        return composerConfig;
+      }
+    );
+  }
+  return tags;
+}
+
+/**
+ * @param {repositoryBuildDefinition} instruction
+ * @param {buildState} releaseContext
  * @returns {Promise<void>}
  */
-async function processMirrorInstruction(instruction) {
+async function processMirrorInstruction(instruction, releaseContext) {
   let tags = [];
 
   await Promise.all(
@@ -277,16 +271,9 @@ async function processMirrorInstruction(instruction) {
     await replacePackageFiles(packageReplacement);
   }
 
-  if (instruction.magentoCommunityEditionMetapackage) {
-    console.log('Packaging Magento Community Edition Product Metapackage');
-    tags = await createMagentoCommunityEditionMetapackagesSinceTag(instruction);
-    console.log('Magento Community Edition Product Metapackage', tags);
-  }
-
-  if (instruction.magentoCommunityEditionProject) {
-    console.log('Packaging Magento Community Edition Project');
-    tags = await createProjectPackagesSinceTag(instruction);
-    console.log('Magento Community Edition Project', tags);
+  for (const metapackage of instruction.extraMetapackages) {
+    console.log(`Packaging ${metapackage.name}`);
+    tags = await createMetaPackagesSinceTag(instruction, metapackage, releaseContext);
   }
 
   repo.clearCache();

@@ -1,8 +1,9 @@
 const repo = require('./../repository');
 const parseOptions = require('parse-options');
-const {setArchiveBaseDir, setMageosPackageRepoUrl} = require('./../package-modules');
+const {setArchiveBaseDir} = require('./../package-modules');
 const {copyAdditionalPackages, processMirrorInstruction} = require('./../mirror-build-tools');
 const {buildConfig: mirrorInstructions} = require('./../build-config/mirror-build-config');
+const buildState = require('../type/build-state');
 
 
 const options = parseOptions(
@@ -32,15 +33,15 @@ if (options.gitRepoDir) {
   repo.setStorageDir(options.gitRepoDir);
 }
 
-if (options.repoUrl) {
-  setMageosPackageRepoUrl(options.repoUrl);
-}
+let releaseContext = new buildState({
+  composerRepoUrl: options.repoUrl || 'https://mirror.mage-os.org/',
+});
 
 
 (async () => {
   try {
     for (const instruction of mirrorInstructions) {
-      await processMirrorInstruction(instruction);
+      await processMirrorInstruction(instruction, releaseContext);
     }
     await copyAdditionalPackages(archiveDir);
   } catch (exception) {
