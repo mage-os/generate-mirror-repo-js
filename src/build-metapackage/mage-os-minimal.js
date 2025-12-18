@@ -218,6 +218,7 @@ async function transformMageOSMinimalProduct(composerConfig, instruction, metapa
     `${instruction.vendor}/theme-adminhtml-backend`,
     `${instruction.vendor}/theme-adminhtml-m137`,
     `${instruction.vendor}/theme-frontend-blank`,
+    `${instruction.vendor}/theme-frontend-luma`,
     `${instruction.vendor}/zend-cache`,
     `${instruction.vendor}/zend-db`,
     `${instruction.vendor}/zend-pdf`,
