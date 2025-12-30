@@ -16,10 +16,10 @@ const buildState = require('./type/build-state');
 
 
 /**
- * 
- * @param {String} url 
- * @param {String} fromTag 
- * @param {Array<String>} skipTags 
+ *
+ * @param {String} url
+ * @param {String} fromTag
+ * @param {Array<String>} skipTags
  * @returns {Promise<Array<String>>}
  */
 async function listTagsFrom(url, fromTag, skipTags) {
@@ -29,7 +29,7 @@ async function listTagsFrom(url, fromTag, skipTags) {
 }
 
 /**
- * @param {String} archiveDir 
+ * @param {String} archiveDir
  */
 async function copyAdditionalPackages(archiveDir) {
   const dir = `${__dirname}/../resource/additional-packages`;
@@ -55,8 +55,8 @@ async function copyAdditionalPackages(archiveDir) {
 }
 
 /**
- * @param {repositoryBuildDefinition} instruction 
- * @param {packageDefinition} package 
+ * @param {repositoryBuildDefinition} instruction
+ * @param {packageDefinition} package
  * @returns {Array<String>} Packaged tags
  */
 async function createMetaPackagesFromRepoDir(instruction, package) {
@@ -87,8 +87,8 @@ async function createMetaPackagesFromRepoDir(instruction, package) {
 }
 
 /**
- * @param {repositoryBuildDefinition} instruction 
- * @param {packageDefinition} package 
+ * @param {repositoryBuildDefinition} instruction
+ * @param {packageDefinition} package
  * @returns {Array<String>} Packaged tags
  */
 async function createPackagesSinceTag(instruction, package) {
@@ -102,7 +102,7 @@ async function createPackagesSinceTag(instruction, package) {
       ref: tag,
       dependencyVersions: (instruction.fixVersions?.[tag] ?? {})
     });
-    
+
     try {
       await createPackagesForRef(
         instruction,
@@ -118,8 +118,8 @@ async function createPackagesSinceTag(instruction, package) {
 }
 
 /**
- * @param {repositoryBuildDefinition} instruction 
- * @param {packageDefinition} package 
+ * @param {repositoryBuildDefinition} instruction
+ * @param {packageDefinition} package
  * @returns {Array<String>} Packaged tags
  */
 async function createPackageSinceTag(instruction, package) {
@@ -165,7 +165,7 @@ async function createPackageSinceTag(instruction, package) {
 }
 
 /**
- * @param {packageReplacement} package 
+ * @param {packageReplacement} package
  * @return {void}
  */
 async function replacePackageFiles(package) {
@@ -228,6 +228,13 @@ async function createMetaPackagesSinceTag(instruction, metapackage, releaseConte
             composerConfig = await fn(composerConfig, instruction, metapackage, release);
           }
         }
+
+        if (instruction.transform[packageName]) {
+          for (const fn of instruction.transform[packageName]) {
+            composerConfig = await fn(composerConfig, instruction, metapackage, release);
+          }
+        }
+
         return composerConfig;
       }
     );
