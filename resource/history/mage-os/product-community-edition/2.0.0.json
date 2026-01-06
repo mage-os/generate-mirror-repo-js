@@ -12,5 +12,8 @@
     "mage-os/page-builder": "2.0.0",
     "mage-os/security-package": "2.0.0",
     "mage-os/theme-adminhtml-m137": "1.3.2"
+  },
+  "extra": {
+    "magento_version": "2.4.8-p3"
   }
 }
