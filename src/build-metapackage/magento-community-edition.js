@@ -67,6 +67,12 @@ async function transformMagentoCommunityEditionProduct(composerConfig, instructi
 
   delete composerConfig.extra;
 
+  // For all entries in composerConfig.replace, pull all first-party replacements (magento/ modules) for requirements.
+  const replace = composerConfig?.replace ?? {};
+  const vendorReplacements = Object.fromEntries(
+    Object.entries(replace).filter(([pkg]) => pkg.startsWith(`${instruction.vendor}/`) || pkg.startsWith('magento/'))
+  );
+
   composerConfig = Object.assign({}, composerConfig, additionalConfig, {
     name: packageName,
     description: 'eCommerce Platform for Growth (Community Edition)',
@@ -74,9 +80,9 @@ async function transformMagentoCommunityEditionProduct(composerConfig, instructi
     require: Object.assign(
       {},
       composerConfig.require,
-      composerConfig.replace,
+      vendorReplacements,
       additionalConfig.require,
-      {[`${instruction.vendor}/magento2-base`]: release.version}
+      {[`${instruction.vendor}/magento2-base`]: release.version || composerConfig.version}
     ),
   });
 
