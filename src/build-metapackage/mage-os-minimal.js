@@ -1,11 +1,3 @@
-const buildState = require('../type/build-state');
-const metapackageDefinition = require('../type/metapackage-definition');
-const repositoryBuildDefinition = require('../type/repository-build-definition');
-const {compareVersions} = require('../utils');
-const {
-  updateComposerConfigFromMagentoToMageOs
-} = require('../release-build-tools');
-
 /**
  * @param {{}} composerConfig
  * @param {repositoryBuildDefinition} instruction
@@ -68,7 +60,6 @@ async function transformMageOSMinimalProduct(composerConfig, instruction, metapa
     'phpseclib/phpseclib',
     'psr/log',
     'ramsey/uuid',
-    'swissup/module-search-mysql-legacy',
     'symfony/console',
     'symfony/intl',
     'symfony/mailer',
@@ -171,6 +162,7 @@ async function transformMageOSMinimalProduct(composerConfig, instruction, metapa
     `${instruction.vendor}/module-newsletter`,
     `${instruction.vendor}/module-offline-payments`,
     `${instruction.vendor}/module-offline-shipping`,
+    `${instruction.vendor}/module-open-search`,
     `${instruction.vendor}/module-order-cancellation`,
     `${instruction.vendor}/module-order-cancellation-ui`,
     `${instruction.vendor}/module-page-cache`,
