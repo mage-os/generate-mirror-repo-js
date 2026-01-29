@@ -1,0 +1,10 @@
+{
+  "dependencies": {
+    "aligent/magento2-pci-4-compatibility": "https://github.com/aligent/magento2-pci-4-compatibility.git",
+    "creatuity/magento2-interceptors": "https://github.com/creatuity/magento2-interceptors.git",
+    "mage-os/inventory-metapackage": "https://github.com/mage-os/mageos-inventory.git",
+    "mage-os/security-package": "https://github.com/mage-os/mageos-security-package.git",
+    "mage-os/theme-adminhtml-m137": "https://github.com/mage-os/theme-adminhtml-m137.git",
+    "swissup/module-search-mysql-legacy": "https://github.com/swissup/module-search-mysql-legacy.git"
+  }
+}
