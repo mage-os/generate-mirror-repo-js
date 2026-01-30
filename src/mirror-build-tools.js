@@ -245,10 +245,11 @@ async function createMetaPackagesSinceTag(instruction, metapackage, releaseConte
 /**
  * @param {repositoryBuildDefinition} instruction
  * @param {buildState} releaseContext
- * @returns {Promise<void>}
+ * @returns {Promise<Object.<string, string>>} Map of all built packages {name: version}
  */
 async function processMirrorInstruction(instruction, releaseContext) {
   let tags = [];
+  let allBuiltPackages = {};
 
   await Promise.all(
     instruction.extraRefToRelease.map(
@@ -284,6 +285,8 @@ async function processMirrorInstruction(instruction, releaseContext) {
   }
 
   repo.clearCache();
+
+  return allBuiltPackages;
 }
 
 module.exports = {

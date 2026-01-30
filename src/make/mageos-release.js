@@ -10,6 +10,7 @@ const {
 } = require('./../release-build-tools');
 const {
   setArchiveBaseDir,
+  createMagentoAliasPackages,
 } = require("../package-modules");
 const {buildConfig: releaseInstructions} = require('./../build-config/mageos-release-build-config');
 const {processMirrorInstruction} = require("../mirror-build-tools");
@@ -17,11 +18,12 @@ const {fetchPackagistList} = require('../packagist');
 const buildState = require('../type/build-state');
 
 const options = parseOptions(
-  `$outputDir $gitRepoDir $repoUrl $mageosVendor $mageosRelease $upstreamRelease @skipHistory @help|h`,
+  `$outputDir $gitRepoDir $repoUrl $mageosVendor $mageosRelease $upstreamRelease @skipHistory @generateAliases @help|h`,
   process.argv
 );
 
 const skipHistory = options.skipHistory;
+const generateAliases = options.generateAliases;
 
 if (options.help) {
   console.log(`Build Mage-OS release packages from github.com/mage-os git repositories.
@@ -38,6 +40,9 @@ Options:
   --releaseRefsFile= JS file exporting a map with the git repo refs to use for the release
   --upstreamRelease= Upstream Magento Open Source release to use for package compatibility
   --skipHistory      Skip rebuilding of historic releases
+  --generateAliases  Generate magento/* alias metapackages that require mage-os/* packages.
+                     This allows third-party extensions requiring magento/* packages to
+                     resolve against the Mage-OS repository.
 `);
   process.exit(1);
 }
@@ -77,6 +82,9 @@ let distroRelease = new buildState({
   try {
     await fetchPackagistList(mageosVendor);
 
+    // Track all built packages for alias generation
+    let allBuiltPackages = {};
+
     if (! skipHistory) {
       console.log(`Building previous ${mageosVendor} releases`)
       for (const instruction of releaseInstructions) {
@@ -91,7 +99,7 @@ let distroRelease = new buildState({
       const upstreamVersionMap = upstreamRelease
         ? await getPackageVersionMap(upstreamRelease)
         : {};
-      
+
       distroRelease.replaceVersions = upstreamVersionMap;
 
       for (const instruction of releaseInstructions) {
@@ -110,7 +118,20 @@ let distroRelease = new buildState({
 
         distroRelease.origRef = instruction.ref;
         instruction.ref = mageosRelease;
-        await processBuildInstructions(instruction, distroRelease);
+        const builtPackages = await processBuildInstructions(instruction, distroRelease);
+
+        // Collect built packages for alias generation
+        Object.assign(allBuiltPackages, builtPackages);
+      }
+
+      // Generate magento/* alias packages if enabled
+      if (generateAliases) {
+        console.log(`\nGenerating magento/* alias packages...`);
+        const aliasPackages = await createMagentoAliasPackages(
+          allBuiltPackages,
+          distroRelease.replaceVersions
+        );
+        console.log(`Alias generation complete. Created ${Object.keys(aliasPackages).length} alias packages.\n`);
       }
     }
   } catch (exception) {
