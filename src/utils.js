@@ -86,7 +86,7 @@ module.exports = {
         res.on('data', chunk => data += chunk);
         res.on('end', () => resolve(data));
       });
-      request.on('error', err => reject(e.message));
+      request.on('error', err => reject(err.message));
       request.end();
     });
   },
