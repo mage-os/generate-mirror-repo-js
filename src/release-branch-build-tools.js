@@ -25,21 +25,21 @@ async function getPackagesForBuildInstruction(instruction) {
   const baseVersionsOnRef = await getLatestTag(instruction.repoUrl) || instruction.ref || 'HEAD';
   console.log(`Basing ${instruction.repoUrl} package versions on those from reference ${baseVersionsOnRef}`);
 
-  for (const package of (instruction.packageDirs || [])) {
-    console.log(`Inspecting ${package.label}`);
-    toBeBuilt = await determinePackagesForRef(instruction, package, baseVersionsOnRef);
+  for (const pkg of (instruction.packageDirs || [])) {
+    console.log(`Inspecting ${pkg.label}`);
+    toBeBuilt = await determinePackagesForRef(instruction, pkg, baseVersionsOnRef);
     Object.assign(packages, toBeBuilt);
   }
 
-  for (const package of (instruction.packageIndividual || [])) {
-    console.log(`Inspecting ${package.label}`);
-    toBeBuilt = await determinePackageForRef(instruction, package, baseVersionsOnRef);
+  for (const pkg of (instruction.packageIndividual || [])) {
+    console.log(`Inspecting ${pkg.label}`);
+    toBeBuilt = await determinePackageForRef(instruction, pkg, baseVersionsOnRef);
     Object.assign(packages, toBeBuilt);
   }
 
-  for (const package of (instruction.packageMetaFromDirs || [])) {
-    console.log(`Inspecting ${package.label}`);
-    toBeBuilt = await determineMetaPackageFromRepoDir(instruction.repoUrl, package.dir, baseVersionsOnRef, undefined);
+  for (const pkg of (instruction.packageMetaFromDirs || [])) {
+    console.log(`Inspecting ${pkg.label}`);
+    toBeBuilt = await determineMetaPackageFromRepoDir(instruction.repoUrl, pkg.dir, baseVersionsOnRef, undefined);
     Object.assign(packages, toBeBuilt);
   }
 
@@ -118,21 +118,21 @@ async function processBuildInstruction(instruction, release) {
 
   await repo.pull(instruction.repoUrl, instruction.ref);
 
-  for (const package of (instruction.packageDirs || [])) {
-    console.log(`Packaging ${package.label}`);
-    built = await createPackagesForRef(instruction, package, release);
+  for (const pkg of (instruction.packageDirs || [])) {
+    console.log(`Packaging ${pkg.label}`);
+    built = await createPackagesForRef(instruction, pkg, release);
     Object.assign(packages, built);
   }
 
-  for (const package of (instruction.packageIndividual || [])) {
-    console.log(`Packaging ${package.label}`);
-    built = await createPackageForRef(instruction, package, release);
+  for (const pkg of (instruction.packageIndividual || [])) {
+    console.log(`Packaging ${pkg.label}`);
+    built = await createPackageForRef(instruction, pkg, release);
     Object.assign(packages, built);
   }
 
-  for (const package of (instruction.packageMetaFromDirs || [])) {
-    console.log(`Packaging ${package.label}`);
-    built = await createMetaPackageFromRepoDir(instruction, package, release);
+  for (const pkg of (instruction.packageMetaFromDirs || [])) {
+    console.log(`Packaging ${pkg.label}`);
+    built = await createMetaPackageFromRepoDir(instruction, pkg, release);
     Object.assign(packages, built);
   }
 
@@ -171,4 +171,6 @@ module.exports = {
   transformVersionsToNightlyBuildVersions,
   calcNightlyBuildPackageBaseVersion,
   getReleaseDateString,
+  // Exported for testing
+  addSuffixToVersion,
 };
