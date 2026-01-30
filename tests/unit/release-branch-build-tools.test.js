@@ -527,9 +527,8 @@ describe('release-branch-build-tools', () => {
         expect(addSuffixToVersion('2.4.5', '')).toBe('2.4.5-a');
       });
 
-      it('should append undefined as string when undefined suffix provided (regex path)', () => {
-        // When the regex matches, buildSuffix is directly interpolated, so undefined becomes "undefined"
-        expect(addSuffixToVersion('2.4.5', undefined)).toBe('2.4.5-aundefined');
+      it('should handle undefined suffix as empty string', () => {
+        expect(addSuffixToVersion('2.4.5', undefined)).toBe('2.4.5-a');
       });
     });
 
@@ -555,9 +554,8 @@ describe('release-branch-build-tools', () => {
     });
 
     describe('edge cases', () => {
-      it('should strip v prefix from version (regex captures digits only)', () => {
-        // The regex only captures digit groups, so 'v' prefix is stripped
-        expect(addSuffixToVersion('v2.4.5', '20240115')).toBe('2.4.5-a20240115');
+      it('should preserve v prefix in version', () => {
+        expect(addSuffixToVersion('v2.4.5', '20240115')).toBe('v2.4.5-a20240115');
       });
 
       it('should handle zero versions', () => {

@@ -72,9 +72,11 @@ async function getPackageVersionsForBuildInstructions(instructions, suffix) {
 }
 
 function addSuffixToVersion(version, buildSuffix) {
-  const match = version.match(/(?<versions>(?:[\d]+\.?){1,4})(?<suffix>-[^+]+)?(?<legacy>\+.+)?/)
+  const match = version.match(/(?<prefix>v?)(?<versions>(?:[\d]+\.?){1,4})(?<suffix>-[^+]+)?(?<legacy>\+.+)?/)
   if (match) {
-    return `${match.groups.versions}-a${buildSuffix}${match.groups.legacy ? match.groups.legacy : ''}`
+    const prefix = match.groups.prefix || '';
+    const legacy = match.groups.legacy || '';
+    return `${prefix}${match.groups.versions}-a${buildSuffix || ''}${legacy}`
   }
   return `${version}-a${buildSuffix || 'lpha'}`
 }
