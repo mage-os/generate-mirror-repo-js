@@ -2,6 +2,8 @@
 /**
  * Simple verification script for alias package generation
  * Run with: node tests/verify-alias-generation.js
+ *
+ * TODO: Refactor to Jest tests when feature/test-suite branch is merged
  */
 
 const fs = require('fs');
