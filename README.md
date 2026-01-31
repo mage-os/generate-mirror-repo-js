@@ -117,6 +117,17 @@ Two things are required:
   In future it will be possible to specify the composer-templates path with a command line argument.
 
 
+## Development
+
+Run the test suite:
+
+```bash
+npm install
+npm test
+```
+
+Tests run automatically on pull requests via GitHub Actions.
+
 ## Building the docker image
 
 ```bash
