@@ -1,5 +1,5 @@
 
-const sut = require('../../src/build-config/packages-config').magento2.packageIndividual[0].excludes[1];
+const sut = require('../../../src/build-config/packages-config').magento2.packageIndividual[0].excludes[1];
 
 // This is a test for one of the exclude functions in src/build-config/packages-config.js
 // It was written during a refactoring to ensure the behavior does not change.

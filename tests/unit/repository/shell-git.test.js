@@ -18,7 +18,7 @@ const path = require('path');
 jest.mock('child_process');
 jest.mock('fs');
 
-const sut = require('../../src/repository/shell-git');
+const sut = require('../../../src/repository/shell-git');
 
 describe('shell-git', () => {
   beforeEach(() => {
