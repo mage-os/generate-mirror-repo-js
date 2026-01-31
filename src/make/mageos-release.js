@@ -10,7 +10,7 @@ const {
 } = require('./../release-build-tools');
 const {
   setArchiveBaseDir,
-  createMagentoAliasPackages,
+  generateAliasesFromBuiltPackages,
 } = require("../package-modules");
 const {buildConfig: releaseInstructions} = require('./../build-config/mageos-release-build-config');
 const {processMirrorInstruction} = require("../mirror-build-tools");
@@ -82,9 +82,6 @@ let distroRelease = new buildState({
   try {
     await fetchPackagistList(mageosVendor);
 
-    // Track all built packages for alias generation
-    let allBuiltPackages = {};
-
     if (! skipHistory) {
       console.log(`Building previous ${mageosVendor} releases`)
       for (const instruction of releaseInstructions) {
@@ -118,21 +115,15 @@ let distroRelease = new buildState({
 
         distroRelease.origRef = instruction.ref;
         instruction.ref = mageosRelease;
-        const builtPackages = await processBuildInstructions(instruction, distroRelease);
-
-        // Collect built packages for alias generation
-        Object.assign(allBuiltPackages, builtPackages);
+        await processBuildInstructions(instruction, distroRelease);
       }
+    }
 
-      // Generate magento/* alias packages if enabled
-      if (generateAliases) {
-        console.log(`\nGenerating magento/* alias packages...`);
-        const aliasPackages = await createMagentoAliasPackages(
-          allBuiltPackages,
-          distroRelease.replaceVersions
-        );
-        console.log(`Alias generation complete. Created ${Object.keys(aliasPackages).length} alias packages.\n`);
-      }
+    // Generate magento/* alias packages by scanning all built mage-os packages
+    if (generateAliases) {
+      console.log(`\nGenerating magento/* alias packages...`);
+      const aliasPackages = await generateAliasesFromBuiltPackages(archiveDir);
+      console.log(`Alias generation complete. Created ${Object.keys(aliasPackages).length} alias packages.\n`);
     }
   } catch (exception) {
     console.log(exception);
