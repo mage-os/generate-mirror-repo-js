@@ -188,6 +188,14 @@ describe('getVersionStability', () => {
       expect(sut.getVersionStability('1.0.0-beta123')).toBe('beta');
       expect(sut.getVersionStability('1.0.0-rc99')).toBe('RC');
     });
+
+    it('should throw error when null is passed', () => {
+      expect(() => sut.getVersionStability(null)).toThrow();
+    });
+
+    it('should throw error when undefined is passed', () => {
+      expect(() => sut.getVersionStability(undefined)).toThrow();
+    });
   });
 });
 

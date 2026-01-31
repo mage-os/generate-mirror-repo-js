@@ -658,6 +658,43 @@ describe('updateComposerConfigFromMagentoToMageOs', () => {
 
       expect(composerConfig.require['mage-os/framework']).toBe('0.9.0');
     });
+
+    it('should use dependencyVersions[packageName] when version and fallbackVersion are not set', () => {
+      const composerConfig = createComposerConfig({
+        require: { 'magento/framework': '*' }
+      });
+      const instruction = createInstruction();
+      const release = createRelease({
+        version: null,
+        ref: 'main',
+        fallbackVersion: null,
+        dependencyVersions: {
+          'mage-os/framework': '0.7.0',
+          '*': '0.8.0'
+        }
+      });
+
+      sut.updateComposerConfigFromMagentoToMageOs(instruction, release, composerConfig);
+
+      expect(composerConfig.require['mage-os/framework']).toBe('0.7.0');
+    });
+
+    it('should use dependencyVersions["*"] wildcard when version, fallbackVersion, and specific package version are not set', () => {
+      const composerConfig = createComposerConfig({
+        require: { 'magento/framework': '*' }
+      });
+      const instruction = createInstruction();
+      const release = createRelease({
+        version: null,
+        ref: 'main',
+        fallbackVersion: null,
+        dependencyVersions: { '*': '0.8.0' }
+      });
+
+      sut.updateComposerConfigFromMagentoToMageOs(instruction, release, composerConfig);
+
+      expect(composerConfig.require['mage-os/framework']).toBe('0.8.0');
+    });
   });
 });
 
