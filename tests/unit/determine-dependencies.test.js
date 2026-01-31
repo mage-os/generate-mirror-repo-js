@@ -165,6 +165,73 @@ describe('DependencyAnalyzer', () => {
 
       expect(DependencyAnalyzer.exists('/path/to/unreadable/file')).toBe(false);
     });
+
+    it('handles empty string path', () => {
+      jest.resetModules();
+      jest.doMock('fs', () => ({
+        accessSync: jest.fn().mockImplementation(() => {
+          const error = new Error('ENOENT: no such file or directory');
+          error.code = 'ENOENT';
+          throw error;
+        }),
+        constants: { R_OK: 4 }
+      }));
+
+      const module = require('../../src/determine-dependencies');
+      const { DependencyAnalyzer } = module._internal;
+
+      expect(DependencyAnalyzer.exists('')).toBe(false);
+    });
+
+    it('handles path with special characters', () => {
+      jest.resetModules();
+      jest.doMock('fs', () => ({
+        accessSync: jest.fn().mockImplementation(() => undefined),
+        constants: { R_OK: 4 }
+      }));
+
+      const module = require('../../src/determine-dependencies');
+      const { DependencyAnalyzer } = module._internal;
+
+      // Paths with spaces, unicode, and special chars should work
+      expect(DependencyAnalyzer.exists('/path/with spaces/file')).toBe(true);
+      expect(DependencyAnalyzer.exists('/path/with-dashes/file')).toBe(true);
+      expect(DependencyAnalyzer.exists('/path/with_underscores/file')).toBe(true);
+      expect(DependencyAnalyzer.exists('/path/with.dots/file')).toBe(true);
+    });
+
+    it('handles symlinks (follows them by default)', () => {
+      jest.resetModules();
+      // accessSync with R_OK follows symlinks and checks target
+      jest.doMock('fs', () => ({
+        accessSync: jest.fn().mockImplementation(() => undefined),
+        constants: { R_OK: 4 }
+      }));
+
+      const module = require('../../src/determine-dependencies');
+      const { DependencyAnalyzer } = module._internal;
+
+      // Symlink to readable target should return true
+      expect(DependencyAnalyzer.exists('/path/to/symlink')).toBe(true);
+    });
+
+    it('returns false for broken symlink', () => {
+      jest.resetModules();
+      jest.doMock('fs', () => ({
+        accessSync: jest.fn().mockImplementation(() => {
+          const error = new Error('ENOENT: no such file or directory');
+          error.code = 'ENOENT';
+          throw error;
+        }),
+        constants: { R_OK: 4 }
+      }));
+
+      const module = require('../../src/determine-dependencies');
+      const { DependencyAnalyzer } = module._internal;
+
+      // Broken symlink should return false
+      expect(DependencyAnalyzer.exists('/path/to/broken-symlink')).toBe(false);
+    });
   });
 
   describe('createWorkDirPath', () => {
@@ -401,6 +468,20 @@ describe('DependencyAnalyzer', () => {
       expect(result).toHaveLength(1);
       expect(result[0].filepath).toBe('/path/to/file.php');
     });
+
+    it('logs count of filtered files', () => {
+      const logSpy = jest.spyOn(console, 'log');
+      const files = [
+        { filepath: '/path/to/file1.php', contentBuffer: Buffer.from('<?php') },
+        { filepath: '/path/to/file2.php', contentBuffer: Buffer.from('<?php') },
+        { filepath: '/path/to/file3.js', contentBuffer: Buffer.from('js') },
+        { filepath: '/path/to/file4.phtml', contentBuffer: Buffer.from('<?php') }
+      ];
+
+      analyzer.filterPhpFiles(files);
+
+      expect(logSpy).toHaveBeenCalledWith('Found 3 PHP files out of 4 total files');
+    });
   });
 
   describe('processFilesInBatches', () => {
@@ -514,6 +595,39 @@ describe('DependencyAnalyzer', () => {
       expect(processor).not.toHaveBeenCalled();
       expect(result).toEqual([]);
     });
+
+    it('logs batch progress', async () => {
+      const logSpy = jest.spyOn(console, 'log');
+      const files = Array(250).fill(null).map((_, i) => ({ filepath: `file${i}.php` }));
+      const processor = jest.fn().mockResolvedValue('batch-result');
+
+      await analyzer.processFilesInBatches(files, processor);
+
+      // With 250 files and BATCH_SIZE=100, expect 3 batches
+      expect(logSpy).toHaveBeenCalledWith('Processing batch 1/3 (100 files)');
+      expect(logSpy).toHaveBeenCalledWith('Processing batch 2/3 (100 files)');
+      expect(logSpy).toHaveBeenCalledWith('Processing batch 3/3 (50 files)');
+    });
+
+    it('logs warning when batch fails', async () => {
+      const warnSpy = jest.spyOn(console, 'warn');
+      const files = Array(150).fill(null).map((_, i) => ({ filepath: `file${i}.php` }));
+      let callCount = 0;
+      const processor = jest.fn().mockImplementation(() => {
+        callCount++;
+        if (callCount === 1) {
+          return Promise.reject(new Error('Processing failed'));
+        }
+        return Promise.resolve('result');
+      });
+
+      await analyzer.processFilesInBatches(files, processor);
+
+      expect(warnSpy).toHaveBeenCalledWith(
+        'Batch processing failed for files 0-99:',
+        'Processing failed'
+      );
+    });
   });
 
   describe('runComposerInstall', () => {
@@ -603,6 +717,40 @@ describe('DependencyAnalyzer', () => {
 
       // console.warn should not have been called with 'Composer warnings:'
       expect(warnSpy).not.toHaveBeenCalledWith('Composer warnings:', expect.any(String));
+    });
+
+    it('uses correct timeout from CONFIG', async () => {
+      mockExec.mockResolvedValue({ stdout: 'success', stderr: '' });
+
+      await analyzer.runComposerInstall();
+
+      expect(mockExec).toHaveBeenCalledWith(
+        expect.any(String),
+        expect.objectContaining({
+          timeout: 300000 // CONFIG.TIMEOUT
+        })
+      );
+    });
+
+    it('uses correct maxBuffer from CONFIG', async () => {
+      mockExec.mockResolvedValue({ stdout: 'success', stderr: '' });
+
+      await analyzer.runComposerInstall();
+
+      expect(mockExec).toHaveBeenCalledWith(
+        expect.any(String),
+        expect.objectContaining({
+          maxBuffer: 4 * 1024 * 1024 // CONFIG.BUFFER_SIZE
+        })
+      );
+    });
+
+    it('returns stdout on success', async () => {
+      mockExec.mockResolvedValue({ stdout: 'Installation complete', stderr: '' });
+
+      const result = await analyzer.runComposerInstall();
+
+      expect(result).toBe('Installation complete');
     });
   });
 
@@ -747,6 +895,63 @@ describe('DependencyAnalyzer', () => {
       mockChild.emit('error', error);
 
       await expect(resultPromise).rejects.toThrow('Process error: Permission denied');
+    });
+
+    it('handles empty stdout', async () => {
+      const mockChild = createMockChildProcess();
+      mockSpawn.mockReturnValue(mockChild);
+
+      const resultPromise = analyzer.spawnProcess('php', ['script.php'], {});
+
+      // No stdout data emitted
+      mockChild.emit('close', 0);
+
+      const result = await resultPromise;
+
+      expect(result.stdout).toBe('');
+    });
+
+    it('handles empty stderr', async () => {
+      const mockChild = createMockChildProcess();
+      mockSpawn.mockReturnValue(mockChild);
+
+      const resultPromise = analyzer.spawnProcess('php', ['script.php'], {});
+
+      mockChild.stdout.emit('data', 'output');
+      // No stderr data emitted
+      mockChild.emit('close', 0);
+
+      const result = await resultPromise;
+
+      expect(result.stderr).toBe('');
+    });
+
+    it('handles both empty stdout and stderr', async () => {
+      const mockChild = createMockChildProcess();
+      mockSpawn.mockReturnValue(mockChild);
+
+      const resultPromise = analyzer.spawnProcess('php', ['script.php'], {});
+
+      // No stdout or stderr data emitted
+      mockChild.emit('close', 0);
+
+      const result = await resultPromise;
+
+      expect(result.stdout).toBe('');
+      expect(result.stderr).toBe('');
+    });
+
+    it('includes process reference in resolved object', async () => {
+      const mockChild = createMockChildProcess();
+      mockSpawn.mockReturnValue(mockChild);
+
+      const resultPromise = analyzer.spawnProcess('php', ['script.php'], {});
+
+      mockChild.emit('close', 0);
+
+      const result = await resultPromise;
+
+      expect(result.process).toBe(mockChild);
     });
   });
 
