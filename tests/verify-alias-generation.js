@@ -9,12 +9,12 @@
 const fs = require('fs');
 const path = require('path');
 const JSZip = require('jszip');
+const packageModules = require('../src/package-modules');
+const {setArchiveBaseDir, archiveFilePath} = packageModules;
 const {
   createMagentoAliasPackage,
-  generateAliasesFromBuiltPackages,
-  setArchiveBaseDir,
-  archiveFilePath
-} = require('../src/package-modules');
+  generateAliasesFromBuiltPackages
+} = require('../src/package-aliases');
 
 const testDir = '/tmp/mage-os-alias-test';
 
@@ -64,7 +64,7 @@ async function runTests() {
   // Test 1: Skip non-magento packages
   console.log('Test 1: Skip non-magento packages');
   try {
-    const result = await createMagentoAliasPackage('laminas/laminas-code', '4.0.0', 'mage-os/module-catalog', '2.1.0');
+    const result = await createMagentoAliasPackage('laminas/laminas-code', '4.0.0', 'mage-os/module-catalog', '2.1.0', packageModules);
     if (Object.keys(result).length === 0) {
       console.log('  ✓ Passed: non-magento package skipped\n');
       passed++;
@@ -80,7 +80,7 @@ async function runTests() {
   // Test 2: Create alias for magento package
   console.log('Test 2: Create alias for magento package');
   try {
-    const result = await createMagentoAliasPackage('magento/module-catalog', '103.0.7', 'mage-os/module-catalog', '2.1.0');
+    const result = await createMagentoAliasPackage('magento/module-catalog', '103.0.7', 'mage-os/module-catalog', '2.1.0', packageModules);
     if (result['magento/module-catalog'] === '103.0.7') {
       console.log('  ✓ Passed: alias created with correct version');
 
@@ -131,7 +131,7 @@ async function runTests() {
   console.log('Test 3: Don\'t overwrite existing package');
   try {
     // Package already exists from Test 2
-    const result = await createMagentoAliasPackage('magento/module-catalog', '103.0.7', 'mage-os/module-catalog', '2.1.0');
+    const result = await createMagentoAliasPackage('magento/module-catalog', '103.0.7', 'mage-os/module-catalog', '2.1.0', packageModules);
     if (Object.keys(result).length === 0) {
       console.log('  ✓ Passed: existing package not overwritten\n');
       passed++;
@@ -166,7 +166,7 @@ async function runTests() {
       'laminas/laminas-code': '4.0.0'
     });
 
-    const result = await generateAliasesFromBuiltPackages(testDir);
+    const result = await generateAliasesFromBuiltPackages(testDir, packageModules);
 
     const aliasCount = Object.keys(result).length;
     if (aliasCount === 2 &&
@@ -220,7 +220,7 @@ async function runTests() {
       'magento/module-catalog': '103.0.7'
     });
 
-    const result = await generateAliasesFromBuiltPackages(testDir);
+    const result = await generateAliasesFromBuiltPackages(testDir, packageModules);
 
     // Wait for file write
     await new Promise(resolve => setTimeout(resolve, 100));

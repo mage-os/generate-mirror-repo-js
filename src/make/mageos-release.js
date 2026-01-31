@@ -8,10 +8,9 @@ const {
   processBuildInstructions,
   validateVersionString,
 } = require('./../release-build-tools');
-const {
-  setArchiveBaseDir,
-  generateAliasesFromBuiltPackages,
-} = require("../package-modules");
+const packageModules = require("../package-modules");
+const {setArchiveBaseDir} = packageModules;
+const {generateAliasesFromBuiltPackages} = require("../package-aliases");
 const {buildConfig: releaseInstructions} = require('./../build-config/mageos-release-build-config');
 const {processMirrorInstruction} = require("../mirror-build-tools");
 const {fetchPackagistList} = require('../packagist');
@@ -122,7 +121,7 @@ let distroRelease = new buildState({
     // Generate magento/* alias packages by scanning all built mage-os packages
     if (generateAliases) {
       console.log(`\nGenerating magento/* alias packages...`);
-      const aliasPackages = await generateAliasesFromBuiltPackages(archiveDir);
+      const aliasPackages = await generateAliasesFromBuiltPackages(archiveDir, packageModules);
       console.log(`Alias generation complete. Created ${Object.keys(aliasPackages).length} alias packages.\n`);
     }
   } catch (exception) {
