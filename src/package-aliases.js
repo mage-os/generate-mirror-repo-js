@@ -57,13 +57,6 @@ async function createMagentoAliasPackage(magentoPackageName, magentoVersion, mag
     version: magentoVersion,
     require: {
       [mageOsPackageName]: mageOsVersion
-    },
-    // Add extra metadata to identify this as an alias package
-    extra: {
-      'mage-os-alias': {
-        'original-package': mageOsPackageName,
-        'original-version': mageOsVersion
-      }
     }
   };
 

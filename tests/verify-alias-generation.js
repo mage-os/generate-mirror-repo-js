@@ -246,33 +246,6 @@ async function runTests() {
   }
   console.log();
 
-  // Test 6: Verify alias package has correct extra metadata
-  console.log('Test 6: Verify alias package has correct extra metadata');
-  try {
-    // The alias from Test 5 should have the correct metadata
-    const aliasPath = archiveFilePath('magento/module-catalog', '103.0.7');
-    const zipData = fs.readFileSync(aliasPath);
-    const zip = await JSZip.loadAsync(zipData);
-    const composerJson = JSON.parse(await zip.file('composer.json').async('string'));
-
-    if (composerJson.extra &&
-        composerJson.extra['mage-os-alias'] &&
-        composerJson.extra['mage-os-alias']['original-package'] === 'mage-os/module-catalog' &&
-        composerJson.extra['mage-os-alias']['original-version'] === '2.1.0') {
-      console.log('  ✓ Passed: alias has correct extra metadata');
-      console.log('    - extra.mage-os-alias:', JSON.stringify(composerJson.extra['mage-os-alias']));
-      passed++;
-    } else {
-      console.log('  ✗ Failed: alias extra metadata incorrect');
-      console.log('    Content:', JSON.stringify(composerJson, null, 2));
-      failed++;
-    }
-  } catch (e) {
-    console.log('  ✗ Failed with error:', e.message, '\n');
-    failed++;
-  }
-  console.log();
-
   // Cleanup
   fs.rmSync(testDir, { recursive: true });
 

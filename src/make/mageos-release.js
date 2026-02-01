@@ -17,12 +17,12 @@ const {fetchPackagistList} = require('../packagist');
 const buildState = require('../type/build-state');
 
 const options = parseOptions(
-  `$outputDir $gitRepoDir $repoUrl $mageosVendor $mageosRelease $upstreamRelease @skipHistory @generateAliases @help|h`,
+  `$outputDir $gitRepoDir $repoUrl $mageosVendor $mageosRelease $upstreamRelease @skipHistory @skipAliases @help|h`,
   process.argv
 );
 
 const skipHistory = options.skipHistory;
-const generateAliases = options.generateAliases;
+const skipAliases = options.skipAliases;
 
 if (options.help) {
   console.log(`Build Mage-OS release packages from github.com/mage-os git repositories.
@@ -39,9 +39,7 @@ Options:
   --releaseRefsFile= JS file exporting a map with the git repo refs to use for the release
   --upstreamRelease= Upstream Magento Open Source release to use for package compatibility
   --skipHistory      Skip rebuilding of historic releases
-  --generateAliases  Generate magento/* alias metapackages that require mage-os/* packages.
-                     This allows third-party extensions requiring magento/* packages to
-                     resolve against the Mage-OS repository.
+  --skipAliases      Skip building package magento/* aliases to mage-os/* packages
 `);
   process.exit(1);
 }
@@ -118,8 +116,8 @@ let distroRelease = new buildState({
       }
     }
 
-    // Generate magento/* alias packages by scanning all built mage-os packages
-    if (generateAliases) {
+    if (! skipAliases) {
+      // Generate magento/* alias packages by scanning all built mage-os packages
       console.log(`\nGenerating magento/* alias packages...`);
       const aliasPackages = await generateAliasesFromBuiltPackages(archiveDir, packageModules);
       console.log(`Alias generation complete. Created ${Object.keys(aliasPackages).length} alias packages.\n`);
