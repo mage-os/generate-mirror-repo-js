@@ -116,6 +116,7 @@ async function processBuildInstruction(instruction, release) {
   let packages = {};
   let built = {};
 
+  release.ref = instruction.ref;
   await repo.pull(instruction.repoUrl, instruction.ref);
 
   for (const package of (instruction.packageDirs || [])) {
@@ -150,9 +151,10 @@ async function processBuildInstruction(instruction, release) {
  * @param {Array<repositoryBuildDefinition>} instructions
  * @returns {Promise<void>}
  */
-async function processNightlyBuildInstructions(instructions) {
+async function processNightlyBuildInstructions(instructions, repoUrl) {
   const releaseSuffix = getReleaseDateString();
   let release = new buildState({
+    composerRepoUrl: repoUrl,
     fallbackVersion: transformVersionsToNightlyBuildVersion('0.0.1', releaseSuffix), // version to use for previously unreleased packages
     dependencyVersions: await getPackageVersionsForBuildInstructions(instructions, releaseSuffix),
   });
