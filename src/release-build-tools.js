@@ -218,21 +218,21 @@ function updateComposerConfigFromMagentoToMageOs(instruction, release, composerC
 
 /**
  * @param {repositoryBuildDefinition} instruction
- * @param {packageDefinition} package
+ * @param {packageDefinition} pkg
  * @param {buildState} release
  * @param {String} workingCopyPath
  */
-async function prepPackageForRelease(instruction, package, release, workingCopyPath) {
-  console.log(`Preparing ${package.label}`);
+async function prepPackageForRelease(instruction, pkg, release, workingCopyPath) {
+  console.log(`Preparing ${pkg.label}`);
 
   // Reset value in case it was set during history mirroring
-  package.composerJsonFile = null;
+  pkg.composerJsonFile = null;
 
-  const composerConfig = JSON.parse(await readComposerJson(instruction.repoUrl, package.dir, release.ref));
+  const composerConfig = JSON.parse(await readComposerJson(instruction.repoUrl, pkg.dir, release.ref));
   updateComposerConfigFromMagentoToMageOs(instruction, release, composerConfig);
 
   // write composerJson to file in repo
-  const file = path.join(workingCopyPath, package.dir, 'composer.json');
+  const file = path.join(workingCopyPath, pkg.dir, 'composer.json');
   await fs.writeFile(file, JSON.stringify(composerConfig, null, 2), 'utf8');
 }
 
@@ -256,17 +256,17 @@ module.exports = {
     const workingCopyPath = await repo.pull(instruction.repoUrl, instruction.ref);
     await repo.createBranch(instruction.repoUrl, workBranch, instruction.ref);
 
-    for (const package of instruction.packageDirs) {
-      const childPackageDirs = await fs.readdir(path.join(workingCopyPath, package.dir));
+    for (const pkg of instruction.packageDirs) {
+      const childPackageDirs = await fs.readdir(path.join(workingCopyPath, pkg.dir));
 
       for (let childPackageDir of childPackageDirs) {
         // Add trailing slash to our dir, so it matches excludes strings.
-        if (package.excludes.includes(childPackageDir + path.sep)) {
+        if (pkg.excludes.includes(childPackageDir + path.sep)) {
           // Skip directory
           continue;
         }
 
-        const workingChildPackagePath = path.join(workingCopyPath, package.dir, childPackageDir);
+        const workingChildPackagePath = path.join(workingCopyPath, pkg.dir, childPackageDir);
 
         if (!(await fs.lstat(workingChildPackagePath)).isDirectory()) {
           // Not a directory, skip
@@ -278,32 +278,32 @@ module.exports = {
           throw new Error(`Error: ${workingChildPackagePath} doesn\'t contain a composer.json! Please add to excludes in config.`);
         }
 
-        childPackageDir = path.join(package.dir, childPackageDir);
+        childPackageDir = path.join(pkg.dir, childPackageDir);
         const composerJson = JSON.parse(await readComposerJson(instruction.repoUrl, childPackageDir, workBranch));
 
         const subpackage = new packageDefinition({
-          'label': `${composerJson.name} (part of ${package.label})`,
+          'label': `${composerJson.name} (part of ${pkg.label})`,
           'dir': childPackageDir
         });
         await prepPackageForRelease(instruction, subpackage, release, workingCopyPath);
       }
     }
 
-    for (const package of (instruction.packageIndividual || [])) {
-      await prepPackageForRelease(instruction, package, release, workingCopyPath);
+    for (const pkg of (instruction.packageIndividual || [])) {
+      await prepPackageForRelease(instruction, pkg, release, workingCopyPath);
     }
 
-    for (const package of (instruction.packageMetaFromDirs || [])) {
-      await prepPackageForRelease(instruction, package, release, workingCopyPath);
+    for (const pkg of (instruction.packageMetaFromDirs || [])) {
+      await prepPackageForRelease(instruction, pkg, release, workingCopyPath);
     }
 
-    const communityEdition = (instruction.extraMetapackages || []).find(package => package.name === 'project-community-edition');
+    const communityEdition = (instruction.extraMetapackages || []).find(mp => mp.name === 'project-community-edition');
     if (communityEdition) {
-      const package = new packageDefinition({
+      const communityEditionPkg = new packageDefinition({
         label: communityEdition.description || communityEdition.name,
         dir: '', // communityEdition metapackages use the root ./composer.json. Others generally use ./_metapackage/.
       });
-      await prepPackageForRelease(instruction, package, release, workingCopyPath);
+      await prepPackageForRelease(instruction, communityEditionPkg, release, workingCopyPath);
     }
 
     return workBranch
@@ -317,32 +317,32 @@ module.exports = {
   async processBuildInstructions(instruction, release) {
     let packages = {};
 
-    for (const package of (instruction.packageDirs || [])) {
-      console.log(`Packaging ${package.label}`)
+    for (const pkg of (instruction.packageDirs || [])) {
+      console.log(`Packaging ${pkg.label}`)
       const built = await createPackagesForRef(
         instruction,
-        package,
+        pkg,
         release
       );
       Object.assign(packages, built)
     }
 
-    for (const package of (instruction.packageIndividual || [])) {
-      console.log(`Packaging ${package.label}`)
+    for (const pkg of (instruction.packageIndividual || [])) {
+      console.log(`Packaging ${pkg.label}`)
 
       const built = await createPackageForRef(
         instruction,
-        package,
+        pkg,
         release
       );
       Object.assign(packages, built)
     }
 
-    for (const package of (instruction.packageMetaFromDirs || [])) {
-      console.log(`Packaging ${package.label}`)
+    for (const pkg of (instruction.packageMetaFromDirs || [])) {
+      console.log(`Packaging ${pkg.label}`)
       const built = await createMetaPackageFromRepoDir(
         instruction,
-        package,
+        pkg,
         release
       );
       Object.assign(packages, built)
