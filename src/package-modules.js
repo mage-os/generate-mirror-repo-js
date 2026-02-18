@@ -578,7 +578,7 @@ async function createMetaPackage(instruction, metapackage, release) {
     type: metapackage.type,
     license: composerConfig.license || [],
     require: composerConfig.require || {},
-    version: release.version || release.ref
+    version: release.version || release.dependencyVersions[packageName] || release.ref
   });
 
   // Apply transforms
