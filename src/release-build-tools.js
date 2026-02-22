@@ -38,6 +38,7 @@ async function composerCreateMagentoProject(version) {
       childProcess.exec(command, {maxBuffer: bufferBytes}, (error, stdout, stderr) => {
         //if (stderr && stderr.includes('Warning: The lock file is not up-to-date with the latest changes in composer.json')) stderr = '';
         if (stderr && stderr.includes('Generating autoload files')) stderr = '';
+        if (stderr) stderr = stderr.split('\n').filter(line => !line.startsWith('Deprecation Notice:')).join('\n').trim();
         if (error) {
           reject(`Error executing command: ${error.message}`)
         }
@@ -57,6 +58,7 @@ async function installSampleData(dir) {
   const bufferBytes = 4 * 1024 * 1024; // 4M
   const output = await (new Promise((resolve, reject) => {
     childProcess.exec(listCommand, {maxBuffer: bufferBytes, cwd: dir}, (error, stdout, stderr) => {
+      if (stderr) stderr = stderr.split('\n').filter(line => !line.startsWith('Deprecation Notice:')).join('\n').trim();
       if (error) {
         reject(`Error executing command: ${error.message}`)
       }
@@ -79,6 +81,7 @@ async function installSampleData(dir) {
       console.log(`Installing sample data packages`)
       childProcess.exec(installCommand, {maxBuffer: bufferBytes, cwd: dir}, (error, stdout, stderr) => {
         if (stderr && stderr.includes('Generating autoload files')) stderr = '';
+        if (stderr) stderr = stderr.split('\n').filter(line => !line.startsWith('Deprecation Notice:')).join('\n').trim();
         if (error) {
           reject(`Error executing command: ${error.message}`)
         }
@@ -95,6 +98,7 @@ async function getInstalledPackageMap(dir) {
   const bufferBytes = 4 * 1024 * 1024; // 4M
   const output = await (new Promise((resolve, reject) => {
     childProcess.exec(command, {maxBuffer: bufferBytes, cwd: dir}, (error, stdout, stderr) => {
+      if (stderr) stderr = stderr.split('\n').filter(line => !line.startsWith('Deprecation Notice:')).join('\n').trim();
       if (error) {
         reject(`Error executing command: ${error.message}`)
       }
