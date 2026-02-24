@@ -536,7 +536,7 @@ async function createMetaPackageFromRepoDir(instruction, package, release) {
   if (!name) {
     throw {message: `Unable find package name and in composer.json for metapackage ${release.ref} in ${package.dir}`}
   }
-  version = release.version || release.dependencyVersions[name] || version || release.ref;
+  version = release.version || release.dependencyVersions[name] || version || release.fallbackVersion || release.ref;
 
   // Ensure version is set on composer config because not all repos provide the version in composer.json (e.g.
   // page-builder) and it is required by satis to be able to use artifact repositories.
