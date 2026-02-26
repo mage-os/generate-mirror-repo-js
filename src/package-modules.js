@@ -199,6 +199,8 @@ function setDependencyVersions(instruction, release, composerConfig) {
 async function determinePackageForRef(instruction, package, ref) {
   const magentoName = lastTwoDirs(package.dir) || '';
 
+  package.composerJsonFile ??= package.composerJsonPath;
+
   try {
     let composerJson = await getComposerJson(instruction, package, ref);
 
