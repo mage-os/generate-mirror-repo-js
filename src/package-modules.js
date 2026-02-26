@@ -84,18 +84,18 @@ async function writePackage(packageFilepath, files) {
 
 /**
  * @param {repositoryBuildDefinition} instruction
- * @param {packageDefinition} package
+ * @param {packageDefinition} pkg
  * @param {String} ref
  * @returns {String}
  */
-async function getComposerJson(instruction, package, ref) {
-  if (!package.composerJsonFile || !package.composerJsonFile.length) {
-    return readComposerJson(instruction.repoUrl, package.dir, ref || instruction.ref)
+async function getComposerJson(instruction, pkg, ref) {
+  if (!pkg.composerJsonFile || !pkg.composerJsonFile.length) {
+    return readComposerJson(instruction.repoUrl, pkg.dir, ref || instruction.ref)
   }
-  if (package.composerJsonFile.slice(0, 4) === 'http') {
-    return httpSlurp(package.composerJsonFile);
+  if (pkg.composerJsonFile.slice(0, 4) === 'http') {
+    return httpSlurp(pkg.composerJsonFile);
   }
-  return fs.readFileSync(package.composerJsonFile, 'utf8');
+  return fs.readFileSync(pkg.composerJsonFile, 'utf8');
 }
 
 /**
@@ -124,14 +124,14 @@ function getVersionStability(version) {
 
 /**
  * @param {repositoryBuildDefinition} instruction
- * @param {packageDefinition} package
+ * @param {packageDefinition} pkg
  * @param {*} magentoName
  * @param {*} composerJson
  * @param {*} definedVersion
  * @param {*} fallbackVersion
  * @returns
  */
-function chooseNameAndVersion(instruction, package, magentoName, composerJson, definedVersion, fallbackVersion) {
+function chooseNameAndVersion(instruction, pkg, magentoName, composerJson, definedVersion, fallbackVersion) {
   let composerConfig = JSON.parse(composerJson);
   let {version, name} = composerConfig;
   version = definedVersion || version || fallbackVersion;
@@ -193,19 +193,19 @@ function setDependencyVersions(instruction, release, composerConfig) {
  * Only used for release-branch builds (not mirror builds).
  *
  * @param {repositoryBuildDefinition} instruction
- * @param {packageDefinition} package
+ * @param {packageDefinition} pkg
  * @returns {Promise<Object.<String, String>>}
  */
-async function determinePackageForRef(instruction, package, ref) {
-  const magentoName = lastTwoDirs(package.dir) || '';
+async function determinePackageForRef(instruction, pkg, ref) {
+  const magentoName = lastTwoDirs(pkg.dir) || '';
 
   try {
-    let composerJson = await getComposerJson(instruction, package, ref);
+    let composerJson = await getComposerJson(instruction, pkg, ref);
 
     if (composerJson.trim() === '404: Not Found') {
       throw {message: `Unable to find composer.json for ${ref || instruction.ref}, skipping ${magentoName}`}
     }
-    const {name, version} = chooseNameAndVersion(instruction, package, magentoName, composerJson, null, ref || instruction.ref);
+    const {name, version} = chooseNameAndVersion(instruction, pkg, magentoName, composerJson, null, ref || instruction.ref);
 
     return {[name]: version}
   } catch (exception) {
@@ -226,11 +226,11 @@ async function determinePackageForRef(instruction, package, ref) {
  * Only used for release-branch builds (not mirror builds).
  *
  * @param {repositoryBuildDefinition} instruction
- * @param {packageDefinition} package
+ * @param {packageDefinition} pkg
  * @returns {Promise<Object.<String, String>>}
  */
-async function determinePackagesForRef(instruction, package, ref) {
-  const modules = await findModulesToBuild(instruction, package, ref);
+async function determinePackagesForRef(instruction, pkg, ref) {
+  const modules = await findModulesToBuild(instruction, pkg, ref);
   const packages = {};
 
   for (const moduleDir of modules) {
@@ -242,19 +242,19 @@ async function determinePackagesForRef(instruction, package, ref) {
 
 /**
  * @param {repositoryBuildDefinition} instruction
- * @param {packageDefinition} package
+ * @param {packageDefinition} pkg
  * @param {buildState} release
  * @returns {Promise<{}>}
  */
-async function createPackageForRef(instruction, package, release) {
-  let excludes = package.excludes;
+async function createPackageForRef(instruction, pkg, release) {
+  let excludes = pkg.excludes;
   if (!excludes.includes('composer.json')) excludes.push('composer.json');
   if (!excludes.includes('.git/')) excludes.push('.git/');
 
-  package.composerJsonFile ??= package.composerJsonPath;
+  pkg.composerJsonFile ??= pkg.composerJsonPath;
 
-  let magentoName = lastTwoDirs(package.dir) || '';
-  const composerJson = await getComposerJson(instruction, package, release.ref);
+  let magentoName = lastTwoDirs(pkg.dir) || '';
+  const composerJson = await getComposerJson(instruction, pkg, release.ref);
 
   if (composerJson.trim() === '404: Not Found') {
     throw {message: `Unable to find composer.json for ${instruction.ref}, skipping ${magentoName}`}
@@ -289,7 +289,7 @@ async function createPackageForRef(instruction, package, release) {
   ({
     name,
     version
-  } = chooseNameAndVersion(instruction, package, magentoName, composerJson, (release.dependencyVersions[composerConfig.name] ?? null), release.fallbackVersion));
+  } = chooseNameAndVersion(instruction, pkg, magentoName, composerJson, (release.dependencyVersions[composerConfig.name] ?? null), release.fallbackVersion));
   const packageWithVersion = {[name]: version};
 
   // Use fixed date for stable package checksum generation
@@ -305,9 +305,9 @@ async function createPackageForRef(instruction, package, release) {
     return packageWithVersion;
   }
 
-  const files = (await repo.listFiles(instruction.repoUrl, package.dir, release.ref, package.excludes))
+  const files = (await repo.listFiles(instruction.repoUrl, pkg.dir, release.ref, pkg.excludes))
     .filter(file => {
-      const isExcluded = (package.excludes || []).find(exclude => {
+      const isExcluded = (pkg.excludes || []).find(exclude => {
         return typeof exclude === 'function'
           ? exclude(release.ref, file.filepath)
           : file.filepath === exclude || file.filepath.startsWith(exclude)
@@ -319,7 +319,7 @@ async function createPackageForRef(instruction, package, release) {
   // in tagged composer.json files. The version is required for satis to be able to use the artifact repository type.
   composerConfig.version = version;
 
-  if ((package.composerJsonFile || '').endsWith('template.json')) {
+  if ((pkg.composerJsonFile || '').endsWith('template.json')) {
     // the origRef that ref is based on needs to be checked out for composer install, because only magento/* packages are available through the mirror repo
     const dir = await repo.checkout(instruction.repoUrl, release.origRef || release.ref);
     const deps = await determineSourceDependencies(dir, files);
@@ -342,7 +342,7 @@ async function createPackageForRef(instruction, package, release) {
 
   const filesInZip = files.map(file => {
     file.mtime = mtime;
-    file.filepath = file.filepath.slice(package.dir ? package.dir.length + 1 : 0);
+    file.filepath = file.filepath.slice(pkg.dir ? pkg.dir.length + 1 : 0);
     return file;
   });
 
@@ -352,7 +352,7 @@ async function createPackageForRef(instruction, package, release) {
     mtime,
     isExecutable: false
   });
-  for (const d of (package.emptyDirsToAdd || [])) {
+  for (const d of (pkg.emptyDirsToAdd || [])) {
     filesInZip.push({filepath: d, contentBuffer: false, mtime, isExecutable: false});
   }
   filesInZip.sort((a, b) => ('' + a.filepath).localeCompare('' + b.filepath));
@@ -451,15 +451,15 @@ async function getAdditionalConfiguration(packageName, ref) {
 
 /**
  * @param {repositoryBuildDefinition} instruction
- * @param {packageDefinition} package
+ * @param {packageDefinition} pkg
  * @returns Array<String>
  */
-async function findModulesToBuild(instruction, package, ref) {
-  const folders = await repo.listFolders(instruction.repoUrl, package.dir, ref || instruction.ref);
+async function findModulesToBuild(instruction, pkg, ref) {
+  const folders = await repo.listFolders(instruction.repoUrl, pkg.dir, ref || instruction.ref);
   return folders
     .filter(folder => folder !== '.')
     .filter(folder => {
-      const isExcluded = (package.excludes || []).find(exclude => {
+      const isExcluded = (pkg.excludes || []).find(exclude => {
         return folder === rtrim(exclude, '/') || folder.startsWith(exclude)
       })
       return !isExcluded;
@@ -468,12 +468,12 @@ async function findModulesToBuild(instruction, package, ref) {
 
 /**
  * @param {repositoryBuildDefinition} instruction
- * @param {packageDefinition} package
+ * @param {packageDefinition} pkg
  * @param {buildState} release
  * @returns {Promise<{}>}
  */
-async function createPackagesForRef(instruction, package, release) {
-  const modules = await findModulesToBuild(instruction, package, release.ref);
+async function createPackagesForRef(instruction, pkg, release) {
+  const modules = await findModulesToBuild(instruction, pkg, release.ref);
 
   report(`Found ${modules.length} modules`);
 
@@ -487,7 +487,7 @@ async function createPackagesForRef(instruction, package, release) {
     report(`${current}/${modules.length} Packaging [${release.ref}] ${(lastTwoDirs(moduleDir, '_'))}`);
     try {
       let subpackage = new packageDefinition({
-        ...package,
+        ...pkg,
         dir: moduleDir,
       });
       const packageToVersion = await createPackageForRef(instruction, subpackage, release);
@@ -522,19 +522,19 @@ async function determineMetaPackageFromRepoDir(url, dir, ref, release) {
 
 /**
  * @param {repositoryBuildDefinition} instruction
- * @param {packageDefinition} package
+ * @param {packageDefinition} pkg
  * @param {buildState} release
  * @returns {Promise<Object.<String, String>>}
  */
-async function createMetaPackageFromRepoDir(instruction, package, release) {
+async function createMetaPackageFromRepoDir(instruction, pkg, release) {
   let composerConfig = JSON.parse(await readComposerJson(
     instruction.repoUrl,
-    package.dir,
+    pkg.dir,
     release.ref
   ));
   let {version, name} = composerConfig;
   if (!name) {
-    throw {message: `Unable find package name and in composer.json for metapackage ${release.ref} in ${package.dir}`}
+    throw {message: `Unable find package name and in composer.json for metapackage ${release.ref} in ${pkg.dir}`}
   }
   version = release.version || release.dependencyVersions[name] || version || release.ref;
 
