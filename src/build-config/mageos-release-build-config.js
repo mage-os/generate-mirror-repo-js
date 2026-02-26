@@ -6,6 +6,9 @@ const {
   transformMageOSCommunityEditionProject,
   transformMageOSCommunityEditionProduct
 } = require('../build-metapackage/mage-os-community-edition');
+const {
+  transformMageOSMinimalProduct
+} = require('../build-metapackage/mage-os-minimal');
 
 const packagesConfig = require('./packages-config');
 const {mergeBuildConfigs} = require('../utils');
@@ -40,6 +43,27 @@ const releaseBuildConfig = {
         transform: [
           transformMagentoCommunityEditionProduct,
           transformMageOSCommunityEditionProduct,
+        ]
+      },
+      {
+        name: 'project-minimal-edition',
+        type: 'project',
+        fromTag: '2.2.0',
+        description: 'Mage-OS Minimal Edition Project',
+        transform: [
+          transformMagentoCommunityEditionProject,
+          transformMageOSCommunityEditionProject,
+        ]
+      },
+      {
+        name: 'product-minimal-edition',
+        type: 'metapackage',
+        fromTag: '2.2.0',
+        description: 'Mage-OS Minimal Edition',
+        transform: [
+          transformMagentoCommunityEditionProduct,
+          transformMageOSCommunityEditionProduct,
+          transformMageOSMinimalProduct
         ]
       }
     ]
