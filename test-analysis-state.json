@@ -1,0 +1,177 @@
+{
+  "analysisStarted": "2026-01-30",
+  "status": "completed",
+  "files": [
+    {"file": "src/packages-and-versions.js", "status": "completed", "isTestCandidate": false, "notes": "CLI script with no exported functions - only orchestration code"},
+    {"file": "src/integrity-test/validate-package-versions-match.js", "status": "completed", "isTestCandidate": true, "notes": "Contains 3 functions with business logic for comparing composer packages", "planFile": "docs/validate-package-versions-match-testing-plan.md"},
+    {"file": "src/repository/shell-git.js", "status": "completed", "isTestCandidate": true, "notes": "Core infrastructure with security-critical validation functions and git operations", "planFile": "docs/shell-git-testing-plan.md"},
+    {"file": "src/build-config/mageos-nightly-build-config.js", "status": "completed", "isTestCandidate": false, "notes": "Configuration file with repository URLs and refs - no testable logic"},
+    {"file": "src/repository.js", "status": "completed", "isTestCandidate": false, "notes": "Thin facade/wrapper over shell-git.js - only delegates calls"},
+    {"file": "src/packagist.js", "status": "completed", "isTestCandidate": true, "notes": "HTTP fetching with pagination, caching, vendor filtering - testable business logic", "planFile": "docs/packagist-testing-plan.md"},
+    {"file": "src/type/package-definition.js", "status": "completed", "isTestCandidate": false, "notes": "Simple data class - no business logic to test"},
+    {"file": "src/type/package-replacement.js", "status": "completed", "isTestCandidate": false, "notes": "Simple data class - no business logic to test"},
+    {"file": "src/type/extra-ref-to-release.js", "status": "completed", "isTestCandidate": false, "notes": "Simple data class - no business logic to test"},
+    {"file": "src/make/upstream-nightly.js", "status": "completed", "isTestCandidate": false, "notes": "CLI entry point script - no exported functions"},
+    {"file": "src/build-config/mirror-build-config.js", "status": "completed", "isTestCandidate": false, "notes": "Configuration file with static data objects"},
+    {"file": "src/build-config/upstream-nightly-build-config.js", "status": "completed", "isTestCandidate": false, "notes": "Pure configuration file with repository URLs and refs"},
+    {"file": "src/determine-dependencies.js", "status": "completed", "isTestCandidate": true, "notes": "DependencyAnalyzer class with testable methods for PHP dependency analysis", "planFile": "docs/determine-dependencies-testing-plan.md"},
+    {"file": "src/build-metapackage/mage-os-community-edition.js", "status": "completed", "isTestCandidate": true, "notes": "Transform functions with version-specific logic for Mage-OS metapackages", "planFile": "docs/mage-os-community-edition-testing-plan.md"},
+    {"file": "src/build-config/packages-config.js", "status": "completed", "isTestCandidate": false, "notes": "Large static configuration file defining package structures"},
+    {"file": "src/package-modules.js", "status": "completed", "isTestCandidate": true, "notes": "Many pure/testable functions for ZIP creation, composer.json, version handling", "planFile": "docs/package-modules-testing-plan.md"},
+    {"file": "src/type/repository-build-definition.js", "status": "completed", "isTestCandidate": true, "notes": "Data class with initialization logic converting plain objects to typed instances", "planFile": "docs/repository-build-definition-testing-plan.md"},
+    {"file": "src/type/build-state.js", "status": "completed", "isTestCandidate": false, "notes": "Simple data class with minimal logic"},
+    {"file": "src/type/metapackage-definition.js", "status": "completed", "isTestCandidate": false, "notes": "Simple data class with no business logic"},
+    {"file": "src/release-branch-build-tools.js", "status": "completed", "isTestCandidate": true, "notes": "Pure version transformation functions for nightly build version calculation", "planFile": "docs/release-branch-build-tools-testing-plan.md"},
+    {"file": "src/release-build-tools.js", "status": "completed", "isTestCandidate": true, "notes": "Version validation, composer.json transformations - multiple pure functions", "planFile": "docs/release-build-tools-testing-plan.md"},
+    {"file": "src/make/mirror.js", "status": "completed", "isTestCandidate": false, "notes": "CLI entry point script with no exported functions"},
+    {"file": "src/make/mageos-release.js", "status": "completed", "isTestCandidate": false, "notes": "CLI entry point script with no exported functions"},
+    {"file": "src/make/mageos-nightly.js", "status": "completed", "isTestCandidate": false, "notes": "CLI entry point script - delegates to other modules"},
+    {"file": "src/utils.js", "status": "completed", "isTestCandidate": true, "notes": "Pure utility functions for version comparison, path manipulation, config merging. BUG FOUND: httpSlurp uses 'e.message' but variable is 'err'", "planFile": "docs/utils-testing-plan.md"},
+    {"file": "src/build-config/mageos-release-build-config.js", "status": "completed", "isTestCandidate": false, "notes": "Pure configuration file - no testable logic"},
+    {"file": "src/build-metapackage/magento-community-edition.js", "status": "completed", "isTestCandidate": true, "notes": "Transform functions with version resolution and dependency management", "planFile": "docs/magento-community-edition-testing-plan.md"},
+    {"file": "src/mirror-build-tools.js", "status": "completed", "isTestCandidate": true, "notes": "Orchestration logic and tag filtering - moderate candidate, heavy I/O", "planFile": "docs/mirror-build-tools-testing-plan.md"},
+    {"file": "src/build-metapackage/mage-os-minimal.js", "status": "completed", "isTestCandidate": true, "notes": "Pure filtering function for minimal edition - excellent candidate", "planFile": "docs/mage-os-minimal-testing-plan.md"}
+  ],
+  "summary": {
+    "totalFiles": 29,
+    "testCandidates": 13,
+    "notTestCandidates": 16,
+    "testingPlansCreated": 13,
+    "completedAt": "2026-01-30"
+  },
+  "implementation": {
+    "status": "completed",
+    "startedAt": "2026-01-30",
+    "completedAt": "2026-01-30",
+    "testsTotal": 13,
+    "testFilesCreated": 13,
+    "allPassing": true,
+    "totalTestCount": 764,
+    "sourceCodeFixes": [
+      "Renamed reserved word 'package' to 'pkg' in release-branch-build-tools.js",
+      "Renamed reserved word 'package' to 'pkg' in release-build-tools.js",
+      "Renamed reserved word 'package' to 'pkg' in mirror-build-tools.js",
+      "Renamed reserved word 'package' to 'pkg' in package-modules.js",
+      "Fixed missing await in shell-git.js lastCommitTimeForFile (was returning Promise instead of timestamp)"
+    ],
+    "results": {
+      "repository-build-definition": {"status": "passing", "tests": 48},
+      "packagist": {"status": "passing", "tests": 28},
+      "release-branch-build-tools": {"status": "passing", "tests": 96},
+      "release-build-tools": {"status": "passing", "tests": "~"},
+      "shell-git": {"status": "passing", "tests": 121},
+      "validate-package-versions-match": {"status": "passing", "tests": 32},
+      "determine-dependencies": {"status": "passing", "tests": 59},
+      "utils": {"status": "passing", "tests": 81},
+      "mage-os-community-edition": {"status": "passing", "tests": "~"},
+      "magento-community-edition": {"status": "passing", "tests": "~"},
+      "package-modules": {"status": "passing", "tests": 84},
+      "mirror-build-tools": {"status": "passing", "tests": 40},
+      "mage-os-minimal": {"status": "passing", "tests": "~"}
+    }
+  },
+  "review": {
+    "status": "completed",
+    "completedAt": "2026-01-30",
+    "totalReviews": 13,
+    "passed": 13,
+    "needsWork": 0,
+    "reviewDirectory": "docs/reviews/",
+    "results": {
+      "validate-package-versions-match": {
+        "rating": "PASS",
+        "reviewFile": "docs/reviews/validate-package-versions-match-review.md",
+        "summary": "100% plan coverage, 26 tests implemented"
+      },
+      "shell-git": {
+        "rating": "PASS",
+        "reviewFile": "docs/reviews/shell-git-review.md",
+        "summary": "121 tests, comprehensive coverage, security validation enhanced, lastCommitTimeForFile tests added",
+        "fixApplied": "Added await to exec() call in lastCommitTimeForFile, added security validation tests for newlines/tabs/pipes"
+      },
+      "packagist": {
+        "rating": "PASS",
+        "reviewFile": "docs/reviews/packagist-review.md",
+        "summary": "28 tests, good HTTP mocking, all planned cases implemented"
+      },
+      "determine-dependencies": {
+        "rating": "PASS",
+        "reviewFile": "docs/reviews/determine-dependencies-review.md",
+        "summary": "59 tests, refactored to test actual DependencyAnalyzer class",
+        "fixApplied": "Exported DependencyAnalyzer class and CONFIG, refactored tests to import and test real implementation"
+      },
+      "mage-os-community-edition": {
+        "rating": "PASS",
+        "reviewFile": "docs/reviews/mage-os-community-edition-review.md",
+        "summary": "All 22 planned test cases implemented plus additional tests"
+      },
+      "package-modules": {
+        "rating": "PASS",
+        "reviewFile": "docs/reviews/package-modules-review.md",
+        "summary": "84 tests, all 15 exported functions covered"
+      },
+      "repository-build-definition": {
+        "rating": "PASS",
+        "reviewFile": "docs/reviews/repository-build-definition-review.md",
+        "summary": "48 tests, 100% plan coverage with additional integration tests"
+      },
+      "release-branch-build-tools": {
+        "rating": "PASS",
+        "reviewFile": "docs/reviews/release-branch-build-tools-review.md",
+        "summary": "96 tests, added tests for getPackageVersionsForBuildInstructions and addSuffixToVersion",
+        "fixApplied": "Added comprehensive tests for getPackageVersionsForBuildInstructions with mocked dependencies"
+      },
+      "release-build-tools": {
+        "rating": "PASS",
+        "reviewFile": "docs/reviews/release-build-tools-review.md",
+        "summary": "45+ tests, excellent use of parameterized tests"
+      },
+      "utils": {
+        "rating": "PASS",
+        "reviewFile": "docs/reviews/utils-review.md",
+        "summary": "81 tests, all 7 exported functions tested, httpSlurp bug was fixed"
+      },
+      "magento-community-edition": {
+        "rating": "PASS",
+        "reviewFile": "docs/reviews/magento-community-edition-review.md",
+        "summary": "26+ tests including extra integration tests beyond plan"
+      },
+      "mirror-build-tools": {
+        "rating": "PASS",
+        "reviewFile": "docs/reviews/mirror-build-tools-review.md",
+        "summary": "40 tests, comprehensive mock setup"
+      },
+      "mage-os-minimal": {
+        "rating": "PASS",
+        "reviewFile": "docs/reviews/mage-os-minimal-review.md",
+        "summary": "100% plan coverage plus 8 additional tests"
+      }
+    },
+    "issuesRequiringAction": []
+  },
+  "remediation": {
+    "status": "completed",
+    "completedAt": "2026-01-30",
+    "issuesFixed": 3,
+    "fixes": [
+      {
+        "file": "determine-dependencies",
+        "issue": "Tests re-implemented functions locally instead of testing actual source code",
+        "fix": "Exported DependencyAnalyzer class and CONFIG via _internal object, refactored tests to import and test real implementation",
+        "testsAfterFix": 59
+      },
+      {
+        "file": "release-branch-build-tools",
+        "issue": "Missing tests for getPackageVersionsForBuildInstructions",
+        "fix": "Added comprehensive tests with mocked dependencies, also exported addSuffixToVersion for direct testing",
+        "testsAfterFix": 96
+      },
+      {
+        "file": "shell-git",
+        "issue": "Missing await in lastCommitTimeForFile causing NaN timestamp, missing tests for lastCommitTimeForFile",
+        "fix": "Added await to exec() call, added security validation tests and lastCommitTimeForFile tests",
+        "testsAfterFix": 121
+      }
+    ]
+  }
+}

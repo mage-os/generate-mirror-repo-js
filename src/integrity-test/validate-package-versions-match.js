@@ -149,26 +149,36 @@ function displayDiffs(diffs, originName, targetName) {
   });
 }
 
-try {
-  const mageOsVendorDir = process.argv[2];
-  const magentoVendorDir = process.argv[3];
+// Export functions for testing
+module.exports = {
+  getComposerPackagesConfig,
+  comparePackages,
+  displayDiffs
+};
 
-  if (!mageOsVendorDir || !magentoVendorDir) {
-    throw new Error('Usage: node validate-package-versions-match.js <mage-os-vendor-dir> <magento-vendor-dir>');
-  }
+// Only run when executed directly (not when required as a module)
+if (require.main === module) {
+  try {
+    const mageOsVendorDir = process.argv[2];
+    const magentoVendorDir = process.argv[3];
 
-  let mageOsPackagesConfig = getComposerPackagesConfig(mageOsVendorDir);
-  let magentoPackagesConfig = getComposerPackagesConfig(magentoVendorDir);
+    if (!mageOsVendorDir || !magentoVendorDir) {
+      throw new Error('Usage: node validate-package-versions-match.js <mage-os-vendor-dir> <magento-vendor-dir>');
+    }
 
-  let compareResult = comparePackages(mageOsPackagesConfig, magentoPackagesConfig);
+    let mageOsPackagesConfig = getComposerPackagesConfig(mageOsVendorDir);
+    let magentoPackagesConfig = getComposerPackagesConfig(magentoVendorDir);
 
-  if (Object.keys(compareResult).length !== 0) {
-    displayDiffs(compareResult, 'mage-os', 'magento');
+    let compareResult = comparePackages(mageOsPackagesConfig, magentoPackagesConfig);
+
+    if (Object.keys(compareResult).length !== 0) {
+      displayDiffs(compareResult, 'mage-os', 'magento');
+      process.exit(1);
+    }
+
+    console.log('\x1b[32m' + 'Done. No differences found.' + '\x1b[0m');
+  } catch (error) {
+    console.error(error.message);
     process.exit(1);
   }
-
-  console.log('\x1b[32m' + 'Done. No differences found.' + '\x1b[0m');
-} catch (error) {
-  console.error(error.message);
-  process.exit(1);
 }
