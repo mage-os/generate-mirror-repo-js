@@ -199,6 +199,8 @@ function setDependencyVersions(instruction, release, composerConfig) {
 async function determinePackageForRef(instruction, pkg, ref) {
   const magentoName = lastTwoDirs(pkg.dir) || '';
 
+  pkg.composerJsonFile ??= pkg.composerJsonPath;
+
   try {
     let composerJson = await getComposerJson(instruction, pkg, ref);
 
@@ -536,7 +538,7 @@ async function createMetaPackageFromRepoDir(instruction, pkg, release) {
   if (!name) {
     throw {message: `Unable find package name and in composer.json for metapackage ${release.ref} in ${pkg.dir}`}
   }
-  version = release.version || release.dependencyVersions[name] || version || release.ref;
+  version = release.version || release.dependencyVersions[name] || version || release.fallbackVersion || release.ref;
 
   // Ensure version is set on composer config because not all repos provide the version in composer.json (e.g.
   // page-builder) and it is required by satis to be able to use artifact repositories.
@@ -578,7 +580,7 @@ async function createMetaPackage(instruction, metapackage, release) {
     type: metapackage.type,
     license: composerConfig.license || [],
     require: composerConfig.require || {},
-    version: release.version || release.ref
+    version: release.version || release.dependencyVersions[packageName] || release.ref
   });
 
   // Apply transforms
