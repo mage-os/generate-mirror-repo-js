@@ -659,9 +659,17 @@ const mirrorBuildConfig = {
     repoUrl: 'https://github.com/mage-os/mirror-magento-zend-memory.git',
     fromTag: '1.16.0'
   },
+  'magento-zf-captcha': {
+    repoUrl: 'https://github.com/mage-os/mirror-magento-zf-captcha.git',
+    fromTag: '1.0.0'
+  },
   'magento-zf-db': {
     repoUrl: 'https://github.com/mage-os/mirror-magento-zf-db.git',
     fromTag: '3.21.0'
+  },
+  'magento-zf-soap': {
+    repoUrl: 'https://github.com/mage-os/mirror-magento-zf-soap.git',
+    fromTag: '1.0.0'
   },
   'php-compatibility-fork': {
     repoUrl: 'https://github.com/mage-os/mirror-PHPCompatibilityFork',

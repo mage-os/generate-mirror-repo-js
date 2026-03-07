@@ -395,6 +395,18 @@ const packageDefs = {
     ],
     packageMetaFromDirs: [],
   },
+  'magento-zf-captcha': {
+    repoUrl: 'https://github.com/mage-os/mirror-magento-zf-captcha.git',
+
+    packageDirs: [],
+    packageIndividual: [
+      {
+        label: 'Magento fork of Zend_Captcha',
+        dir: ''
+      }
+    ],
+    packageMetaFromDirs: [],
+  },
   'magento-zf-db': {
     repoUrl: 'https://github.com/mage-os/mirror-magento-zf-db.git',
 
@@ -402,6 +414,18 @@ const packageDefs = {
     packageIndividual: [
       {
         label: 'Magento fork of Zend_Db',
+        dir: ''
+      }
+    ],
+    packageMetaFromDirs: [],
+  },
+  'magento-zf-soap': {
+    repoUrl: 'https://github.com/mage-os/mirror-magento-zf-soap.git',
+
+    packageDirs: [],
+    packageIndividual: [
+      {
+        label: 'Magento fork of Zend_Soap',
         dir: ''
       }
     ],

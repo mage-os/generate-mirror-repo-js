@@ -97,9 +97,17 @@ const branchBuildConfig = {
     repoUrl: 'https://github.com/mage-os/mirror-magento-zend-memory.git',
     ref: 'main'
   },
+  'magento-zf-captcha': {
+    repoUrl: 'https://github.com/mage-os/mirror-magento-zf-captcha.git',
+    ref: '2.20.x'
+  },
   'magento-zf-db': {
     repoUrl: 'https://github.com/mage-os/mirror-magento-zf-db.git',
     ref: '2.21.x'
+  },
+  'magento-zf-soap': {
+    repoUrl: 'https://github.com/mage-os/mirror-magento-zf-soap.git',
+    ref: '2.15.x'
   },
 };
 
