@@ -131,6 +131,39 @@ function getVersionStability(version) {
  * @param {*} fallbackVersion
  * @returns
  */
+/**
+ * Rename magento/ vendor prefix to the instruction vendor in a composerConfig object (mutates in place).
+ * Used for nightly/release builds where the output vendor differs from the upstream magento/ vendor.
+ *
+ * When dependencyVersions is provided, only deps whose renamed form exists in that map are renamed.
+ * This prevents renaming third-party magento/ packages (e.g. magento/magento-zf-captcha) that are
+ * not built by Mage-OS and should stay resolvable from their original vendor on Packagist.
+ * The package name itself (composerConfig.name) is always renamed regardless.
+ *
+ * @param {{}} composerConfig
+ * @param {String} vendor
+ * @param {{}} [dependencyVersions]
+ */
+function applyVendorRename(composerConfig, vendor, dependencyVersions) {
+  if (!vendor || vendor === 'magento') return;
+  const toVendor = name => name.replace(/^magento\//, `${vendor}/`);
+  const shouldRename = name => {
+    if (!name.startsWith('magento/')) return false;
+    if (!dependencyVersions) return true;
+    return toVendor(name) in dependencyVersions;
+  };
+  const rename = name => shouldRename(name) ? toVendor(name) : name;
+  composerConfig.name = toVendor(composerConfig.name);
+  for (const depType of ['require', 'require-dev', 'suggest', 'replace', 'conflict']) {
+    if (!composerConfig[depType]) continue;
+    const renamed = {};
+    for (const [pkg, val] of Object.entries(composerConfig[depType])) {
+      renamed[rename(pkg)] = val;
+    }
+    composerConfig[depType] = renamed;
+  }
+}
+
 function chooseNameAndVersion(instruction, pkg, magentoName, composerJson, definedVersion, fallbackVersion) {
   let composerConfig = JSON.parse(composerJson);
   let {version, name} = composerConfig;
@@ -207,15 +240,26 @@ async function determinePackageForRef(instruction, pkg, ref) {
     if (composerJson.trim() === '404: Not Found') {
       throw {message: `Unable to find composer.json for ${ref || instruction.ref}, skipping ${magentoName}`}
     }
+
+    if (instruction.vendor && instruction.vendor !== 'magento') {
+      const composerConfig = JSON.parse(composerJson);
+      applyVendorRename(composerConfig, instruction.vendor);
+      composerJson = JSON.stringify(composerConfig);
+    }
+
     const {name, version} = chooseNameAndVersion(instruction, pkg, magentoName, composerJson, null, ref || instruction.ref);
 
-    return {[name]: version}
+    // If version looks like a git ref (branch name) rather than a semver, treat it as unknown
+    // so it falls back to 0.0.1 in the nightly version transform (empty string triggers that path).
+    const resolvedVersion = (version && version.match(/^v?(?:\d+\.){0,3}\d+/)) ? version : '';
+    return {[name]: resolvedVersion}
   } catch (exception) {
     // This function is only used for nightly release branch builds.
     // Some refs do not have a version in the composer.json (e.g. the base package or the magento-composer-installer 0.4.0-beta1=
     // For those we use the ref as the version. This might be a problem, so for now we leave it as is.
     if (exception.kind === 'VERSION_UNKNOWN') {
-      return {[exception.name]: exception.ref}
+      const resolvedRef = (exception.ref && exception.ref.match(/^v?(?:\d+\.){0,3}\d+/)) ? exception.ref : '';
+      return {[exception.name]: resolvedRef}
     }
     console.log(`Unable to determine name and/or version for ${magentoName || instruction.repoUrl} in ${instruction.ref}: ${exception.message || exception}`);
     return {};
@@ -264,6 +308,10 @@ async function createPackageForRef(instruction, pkg, release) {
 
   let composerConfig = JSON.parse(composerJson);
 
+  if (instruction.vendor && instruction.vendor !== 'magento') {
+    applyVendorRename(composerConfig, instruction.vendor, release.dependencyVersions);
+  }
+
   let name, version;
 
   /*
@@ -291,7 +339,7 @@ async function createPackageForRef(instruction, pkg, release) {
   ({
     name,
     version
-  } = chooseNameAndVersion(instruction, pkg, magentoName, composerJson, (release.dependencyVersions[composerConfig.name] ?? null), release.fallbackVersion));
+  } = chooseNameAndVersion(instruction, pkg, magentoName, JSON.stringify(composerConfig), (release.dependencyVersions[composerConfig.name] ?? null), release.fallbackVersion));
   const packageWithVersion = {[name]: version};
 
   // Use fixed date for stable package checksum generation
@@ -534,6 +582,11 @@ async function createMetaPackageFromRepoDir(instruction, pkg, release) {
     pkg.dir,
     release.ref
   ));
+
+  if (instruction.vendor && instruction.vendor !== 'magento') {
+    applyVendorRename(composerConfig, instruction.vendor, release.dependencyVersions);
+  }
+
   let {version, name} = composerConfig;
   if (!name) {
     throw {message: `Unable find package name and in composer.json for metapackage ${release.ref} in ${pkg.dir}`}
@@ -580,7 +633,7 @@ async function createMetaPackage(instruction, metapackage, release) {
     type: metapackage.type,
     license: composerConfig.license || [],
     require: composerConfig.require || {},
-    version: release.version || release.dependencyVersions[packageName] || release.ref
+    version: release.version || release.dependencyVersions[packageName] || release.dependencyVersions[`${instruction.vendor}/${metapackage.name}`] || release.ref
   });
 
   // Apply transforms
@@ -592,6 +645,16 @@ async function createMetaPackage(instruction, metapackage, release) {
 
   for (const fn of metapackage.transform) {
     composerConfig = await fn(composerConfig, instruction, metapackage, release);
+  }
+
+  // Rename any remaining magento/ deps to the instruction vendor (e.g. for nightly builds).
+  // For release builds the transforms already handle renaming; applyVendorRename is a no-op there
+  // since no magento/ deps remain after updateComposerConfigFromMagentoToMageOs has run.
+  if (instruction.vendor && instruction.vendor !== 'magento') {
+    applyVendorRename(composerConfig, instruction.vendor, release.dependencyVersions);
+    // Re-run after rename so renamed deps (e.g. mage-os/composer) get their nightly versions.
+    // setDependencyVersions inside transforms ran against magento/ keys and couldn't find them.
+    setDependencyVersions(instruction, release, composerConfig);
   }
 
   // Create package

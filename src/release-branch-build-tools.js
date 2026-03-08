@@ -40,6 +40,11 @@ async function getPackagesForBuildInstruction(instruction) {
   for (const pkg of (instruction.packageMetaFromDirs || [])) {
     console.log(`Inspecting ${pkg.label}`);
     toBeBuilt = await determineMetaPackageFromRepoDir(instruction.repoUrl, pkg.dir, baseVersionsOnRef, undefined);
+    if (instruction.vendor && instruction.vendor !== 'magento') {
+      toBeBuilt = Object.fromEntries(
+        Object.entries(toBeBuilt).map(([name, ver]) => [name.replace(/^magento\//, `${instruction.vendor}/`), ver])
+      );
+    }
     Object.assign(packages, toBeBuilt);
   }
 
