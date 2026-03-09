@@ -123,26 +123,17 @@ function getVersionStability(version) {
 }
 
 /**
- * @param {repositoryBuildDefinition} instruction
- * @param {packageDefinition} pkg
- * @param {*} magentoName
- * @param {*} composerJson
- * @param {*} definedVersion
- * @param {*} fallbackVersion
- * @returns
- */
-/**
  * Rename magento/ vendor prefix to the instruction vendor in a composerConfig object (mutates in place).
  * Used for nightly/release builds where the output vendor differs from the upstream magento/ vendor.
  *
  * When dependencyVersions is provided, only deps whose renamed form exists in that map are renamed.
- * This prevents renaming third-party magento/ packages (e.g. magento/magento-zf-captcha) that are
- * not built by Mage-OS and should stay resolvable from their original vendor on Packagist.
+ * This prevents renaming third-party magento/ packages that are not included in the Mage-OS build
+ * configuration and should stay resolvable from their original vendor on Packagist.
  * The package name itself (composerConfig.name) is always renamed regardless.
  *
- * @param {{}} composerConfig
+ * @param {Object} composerConfig - Parsed composer.json object, mutated in place
  * @param {String} vendor
- * @param {{}} [dependencyVersions]
+ * @param {Object.<string, string>} [dependencyVersions] - Map of renamed-vendor package names to version strings
  */
 function applyVendorRename(composerConfig, vendor, dependencyVersions) {
   if (!vendor || vendor === 'magento') return;
@@ -164,6 +155,15 @@ function applyVendorRename(composerConfig, vendor, dependencyVersions) {
   }
 }
 
+/**
+ * @param {repositoryBuildDefinition} instruction
+ * @param {packageDefinition} pkg
+ * @param {*} magentoName
+ * @param {*} composerJson
+ * @param {*} definedVersion
+ * @param {*} fallbackVersion
+ * @returns
+ */
 function chooseNameAndVersion(instruction, pkg, magentoName, composerJson, definedVersion, fallbackVersion) {
   let composerConfig = JSON.parse(composerJson);
   let {version, name} = composerConfig;
@@ -250,8 +250,12 @@ async function determinePackageForRef(instruction, pkg, ref) {
     const {name, version} = chooseNameAndVersion(instruction, pkg, magentoName, composerJson, null, ref || instruction.ref);
 
     // If version looks like a git ref (branch name) rather than a semver, treat it as unknown
-    // so it falls back to 0.0.1 in the nightly version transform (empty string triggers that path).
+    // so it falls back to 0.0.1 in the nightly version transform (see transformVersionsToNightlyBuildVersion
+    // in release-branch-build-tools.js). Empty string triggers that path.
     const resolvedVersion = (version && version.match(/^v?(?:\d+\.){0,3}\d+/)) ? version : '';
+    if (!resolvedVersion) {
+      console.log(`Version "${version}" for package "${name}" is not semver-like, will fall back to 0.0.1 for nightly build`);
+    }
     return {[name]: resolvedVersion}
   } catch (exception) {
     // This function is only used for nightly release branch builds.
@@ -259,9 +263,14 @@ async function determinePackageForRef(instruction, pkg, ref) {
     // For those we use the ref as the version. This might be a problem, so for now we leave it as is.
     if (exception.kind === 'VERSION_UNKNOWN') {
       const resolvedRef = (exception.ref && exception.ref.match(/^v?(?:\d+\.){0,3}\d+/)) ? exception.ref : '';
+      console.log(`Version unknown for package "${exception.name}", ref="${exception.ref}", resolved to "${resolvedRef || '(empty, will use 0.0.1)'}"`)
       return {[exception.name]: resolvedRef}
     }
-    console.log(`Unable to determine name and/or version for ${magentoName || instruction.repoUrl} in ${instruction.ref}: ${exception.message || exception}`);
+    if (exception.kind === 'NAME_UNKNOWN') {
+      console.log(`Skipping package in ${instruction.ref}: ${exception.message}`);
+      return {};
+    }
+    console.error(`ERROR: Failed to determine package for ${magentoName || instruction.repoUrl} at ref ${instruction.ref}:`, exception);
     return {};
   }
 }
@@ -384,8 +393,12 @@ async function createPackageForRef(instruction, pkg, release) {
   }
   setDependencyVersions(instruction, release, composerConfig);
 
-  if (instruction.transform[name]) {
-    for (const fn of instruction.transform[name]) {
+  // Look up transforms by both the current (possibly renamed) name and the original magento/ name,
+  // since transforms are registered under magento/ keys in the build config.
+  const originalName = name.replace(new RegExp(`^${instruction.vendor}/`), 'magento/');
+  const transformFns = instruction.transform[name] || instruction.transform[originalName];
+  if (transformFns) {
+    for (const fn of transformFns) {
       composerConfig = await fn(composerConfig, instruction, release);
     }
   }
@@ -598,8 +611,10 @@ async function createMetaPackageFromRepoDir(instruction, pkg, release) {
   composerConfig.version = version;
   setDependencyVersions(instruction, release, composerConfig);
 
-  if (instruction.transform[name]) {
-    for (const fn of instruction.transform[name]) {
+  const originalMetaName = name.replace(new RegExp(`^${instruction.vendor}/`), 'magento/');
+  const metaTransformFns = instruction.transform[name] || instruction.transform[originalMetaName];
+  if (metaTransformFns) {
+    for (const fn of metaTransformFns) {
       composerConfig = await fn(composerConfig, instruction, release);
     }
   }
@@ -633,7 +648,10 @@ async function createMetaPackage(instruction, metapackage, release) {
     type: metapackage.type,
     license: composerConfig.license || [],
     require: composerConfig.require || {},
-    version: release.version || release.dependencyVersions[packageName] || release.dependencyVersions[`${instruction.vendor}/${metapackage.name}`] || release.ref
+    version: release.version || release.dependencyVersions[packageName] || release.dependencyVersions[`${instruction.vendor}/${metapackage.name}`] || (() => {
+      console.log(`Warning: No version found for metapackage "${packageName}" in dependencyVersions (tried "${packageName}" and "${instruction.vendor}/${metapackage.name}"), falling back to ref "${release.ref}"`);
+      return release.ref;
+    })()
   });
 
   // Apply transforms
@@ -648,12 +666,13 @@ async function createMetaPackage(instruction, metapackage, release) {
   }
 
   // Rename any remaining magento/ deps to the instruction vendor (e.g. for nightly builds).
-  // For release builds the transforms already handle renaming; applyVendorRename is a no-op there
-  // since no magento/ deps remain after updateComposerConfigFromMagentoToMageOs has run.
+  // For release builds the transforms already handle renaming, so applyVendorRename finds no
+  // magento/ deps to rename and leaves the config unchanged.
   if (instruction.vendor && instruction.vendor !== 'magento') {
     applyVendorRename(composerConfig, instruction.vendor, release.dependencyVersions);
-    // Re-run after rename so renamed deps (e.g. mage-os/composer) get their nightly versions.
-    // setDependencyVersions inside transforms ran against magento/ keys and couldn't find them.
+    // Re-run setDependencyVersions after rename so that deps now keyed under the target vendor
+    // (e.g. mage-os/composer) can be matched against the dependencyVersions map, which uses
+    // renamed (mage-os/) keys.
     setDependencyVersions(instruction, release, composerConfig);
   }
 
