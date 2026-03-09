@@ -15,46 +15,14 @@ INSTALL_VERSION="${1:-}"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 
+# shellcheck source=bin/_lib.sh
+source "${SCRIPT_DIR}/_lib.sh"
+
 cd "$ROOT"
 
 BUILD_DIR="build-mirror"
 REPO_URL="https://mirror.mage-os.org"
 INSTALL_PACKAGE="magento/project-community-edition"
-
-# ─── Prerequisites ─────────────────────────────────────────────────────────────
-
-log() { echo ""; echo ">>> $*"; }
-
-check_prerequisites() {
-  log "Checking prerequisites"
-
-  if ! command -v node &>/dev/null; then
-    echo "ERROR: node is not installed"; exit 1
-  fi
-  if ! command -v composer &>/dev/null; then
-    echo "ERROR: composer is not installed"; exit 1
-  fi
-  if ! command -v jq &>/dev/null; then
-    echo "ERROR: jq is not installed"; exit 1
-  fi
-  if ! command -v php-classes.phar &>/dev/null; then
-    log "Installing php-classes.phar"
-    curl -L https://github.com/mage-os/php-dependency-list/raw/main/php-classes.phar \
-      -o /usr/local/bin/php-classes.phar && chmod +x /usr/local/bin/php-classes.phar
-  fi
-
-  log "Installing node dependencies"
-  npm ci
-
-  if [ ! -f satis/bin/satis ]; then
-    log "Installing satis"
-    git clone https://github.com/composer/satis.git satis
-    cd satis
-    git checkout fafc1c2eca6394235f12f8a3ee4da7fc7c9fc874
-    composer install
-    cd "$ROOT"
-  fi
-}
 
 # ─── Build ─────────────────────────────────────────────────────────────────────
 
@@ -90,8 +58,8 @@ build() {
   local ABSPATH
   ABSPATH="$(realpath "${BUILD_DIR}")"
 
-  find "${BUILD_DIR}" -name "*.json" | xargs sed -i '' \
-    "s|${REPO_URL}/|file://${ABSPATH}/|g"
+  find "${BUILD_DIR}" -name "*.json" -exec sed_inplace \
+    "s|${REPO_URL}/|file://${ABSPATH}/|g" {} +
 
   jq --arg url "file://${ABSPATH}/p2/%package%.json" \
     '."metadata-url" = $url' \
@@ -122,7 +90,7 @@ build() {
 
 # ─── Main ──────────────────────────────────────────────────────────────────────
 
-check_prerequisites
+check_prerequisites "$ROOT"
 build
 
 log "All done"
