@@ -109,7 +109,7 @@ function getVersionStability(version) {
   if (version.startsWith('dev-') || version.includes('-dev')) {
     return 'dev';
   }
-  if (version.includes('-alpha')) {
+  if (version.includes('-alpha') || version.match(/-a\d/)) {
     return 'alpha';
   }
   if (version.includes('-beta')) {

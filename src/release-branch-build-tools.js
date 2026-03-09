@@ -58,9 +58,9 @@ function getReleaseDateString() {
 }
 
 /**
- * @param {repositoryBuildDefinition[]} instructions 
- * @param {String} suffix 
- * @returns 
+ * @param {repositoryBuildDefinition[]} instructions
+ * @param {String} suffix
+ * @returns
  */
 async function getPackageVersionsForBuildInstructions(instructions, suffix) {
   console.log(`Determining package versions`);
@@ -157,7 +157,6 @@ async function processNightlyBuildInstructions(instructions) {
     dependencyVersions: await getPackageVersionsForBuildInstructions(instructions, releaseSuffix),
   });
 
-  // @TODO/future: Mage-OS Nightly probably doesn't handle vendor properly in the first place, and this isn't relevant for upstream nightlies.
   await fetchPackagistList('mage-os');
 
   for (const instruction of instructions) {
