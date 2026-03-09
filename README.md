@@ -41,7 +41,7 @@ This generates a release of the current development versions of Magento Open Sou
 
 #### `--target=mageos-nightly`
 
-  This generates a release of the current development versions of Mage-OS. This is known as a "nightly" build.
+This generates a release of the current development versions of Mage-OS. This is known as a "nightly" build.
 
 #### `--target=release`
 
