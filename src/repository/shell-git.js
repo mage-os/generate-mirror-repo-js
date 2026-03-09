@@ -52,18 +52,43 @@ function trimDir(dir) {
  * Escaping user supplied arguments is very hard, and since the ref names are based on what git repo branches exist,
  * this method will throw an exception if it determines anything fishy.
  *
+ * Rejects: empty/null values, leading hyphens (flag injection), spaces, backticks, dollar signs,
+ * newlines, tabs, carriage returns, null bytes, pipes, ampersands, and shell redirection characters.
+ *
  * @param {String} ref
  */
 function validateRefIsSecure(ref) {
   if (!ref || ref.substring(0, 1) === '-' || ref.includes(' ') || ref.includes('`') || ref.includes('$')) {
     throw new Error(`Rejecting the ref "${ref}" as potentially insecure`)
   }
+  // Check for additional shell metacharacters that could enable command injection
+  const shellMetacharacters = ['\n', '\t', '\r', '\0', '|', '&', '>', '<'];
+  for (const char of shellMetacharacters) {
+    if (ref.includes(char)) {
+      throw new Error(`Rejecting the ref "${ref}" as potentially insecure`)
+    }
+  }
   return ref;
 }
 
+/**
+ * Ensure branch name is secure to use as shell argument
+ *
+ * Rejects: empty/null values, leading hyphens (flag injection), spaces, backticks, dollar signs,
+ * newlines, tabs, carriage returns, null bytes, pipes, ampersands, and shell redirection characters.
+ *
+ * @param {String} branch
+ */
 function validateBranchIsSecure(branch) {
   if (!branch || branch.substring(0, 1) === '-' || branch.includes(' ') || branch.includes('`') || branch.includes('$')) {
     throw new Error(`Rejecting the branch "${branch}" as potentially insecure`)
+  }
+  // Check for additional shell metacharacters that could enable command injection
+  const shellMetacharacters = ['\n', '\t', '\r', '\0', '|', '&', '>', '<'];
+  for (const char of shellMetacharacters) {
+    if (branch.includes(char)) {
+      throw new Error(`Rejecting the branch "${branch}" as potentially insecure`)
+    }
   }
   return branch;
 }
@@ -214,7 +239,7 @@ module.exports = {
   async lastCommitTimeForFile(url, filepath, ref) {
     validateRefIsSecure(ref);
     const dir = await initRepo(url, ref);
-    const timestamp = exec(`git log -1 --pretty="format:%at" ${filepath}`, {cwd: dir})
+    const timestamp = await exec(`git log -1 --pretty="format:%at" ${filepath}`, {cwd: dir})
     return new Date(parseInt(timestamp) * 1000); // convert seconds to JS timestamp ms
   },
   async listTags(url) {
@@ -279,5 +304,13 @@ module.exports = {
   },
   testing: {
     dirForRepoUrl,
+    trimDir,
+    validateRefIsSecure,
+    validateBranchIsSecure,
+    exec,
+    memoizeWorkingCopyStat,
+    clearWorkingCopyStat,
+    initRepo,
+    fullRepoPath,
   }
 }

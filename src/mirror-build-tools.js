@@ -56,10 +56,10 @@ async function copyAdditionalPackages(archiveDir) {
 
 /**
  * @param {repositoryBuildDefinition} instruction
- * @param {packageDefinition} package
+ * @param {packageDefinition} pkg
  * @returns {Array<String>} Packaged tags
  */
-async function createMetaPackagesFromRepoDir(instruction, package) {
+async function createMetaPackagesFromRepoDir(instruction, pkg) {
   const tags = await listTagsFrom(instruction.repoUrl, instruction.fromTag, instruction.skipTags);
   console.log(`Versions to process: ${tags.join(', ')}`);
   const built = [];
@@ -75,7 +75,7 @@ async function createMetaPackagesFromRepoDir(instruction, package) {
     try {
       await createMetaPackageFromRepoDir(
         instruction,
-        package,
+        pkg,
         release
       );
       built.push(tag);
@@ -88,10 +88,10 @@ async function createMetaPackagesFromRepoDir(instruction, package) {
 
 /**
  * @param {repositoryBuildDefinition} instruction
- * @param {packageDefinition} package
+ * @param {packageDefinition} pkg
  * @returns {Array<String>} Packaged tags
  */
-async function createPackagesSinceTag(instruction, package) {
+async function createPackagesSinceTag(instruction, pkg) {
   const tags = await listTagsFrom(instruction.repoUrl, instruction.fromTag, instruction.skipTags);
   console.log(`Versions to process: ${tags.join(', ')}`);
   const built = [];
@@ -106,7 +106,7 @@ async function createPackagesSinceTag(instruction, package) {
     try {
       await createPackagesForRef(
         instruction,
-        package,
+        pkg,
         release
       );
       built.push(tag)
@@ -119,10 +119,10 @@ async function createPackagesSinceTag(instruction, package) {
 
 /**
  * @param {repositoryBuildDefinition} instruction
- * @param {packageDefinition} package
+ * @param {packageDefinition} pkg
  * @returns {Array<String>} Packaged tags
  */
-async function createPackageSinceTag(instruction, package) {
+async function createPackageSinceTag(instruction, pkg) {
   const tags = await listTagsFrom(instruction.repoUrl, instruction.fromTag, instruction.skipTags);
   const built = [];
 
@@ -133,16 +133,16 @@ async function createPackageSinceTag(instruction, package) {
 
     // Note: if the composerJsonFile ends with the "template.json" the composer dependencies will be calculated
     // This is only used for non-mirror magento2-base-package builds
-    package.composerJsonFile = null;
-    if (package.composerJsonPath && package.composerJsonPath.length) {
-      let composerJsonFile = package.composerJsonPath
+    pkg.composerJsonFile = null;
+    if (pkg.composerJsonPath && pkg.composerJsonPath.length) {
+      let composerJsonFile = pkg.composerJsonPath
         .replace('composer-templates', 'history')
         .replace('template.json', `${tag}.json`);
       composerJsonFile = fs.existsSync(composerJsonFile)
         ? composerJsonFile
-        : package.composerJsonPath;
+        : pkg.composerJsonPath;
 
-      package.composerJsonFile = composerJsonFile;
+      pkg.composerJsonFile = composerJsonFile;
     }
 
     let release = new buildState({
@@ -153,7 +153,7 @@ async function createPackageSinceTag(instruction, package) {
     try {
       await createPackageForRef(
         instruction,
-        package,
+        pkg,
         release
       );
       built.push(tag);
@@ -165,19 +165,19 @@ async function createPackageSinceTag(instruction, package) {
 }
 
 /**
- * @param {packageReplacement} package
+ * @param {packageReplacement} pkg
  * @return {void}
  */
-async function replacePackageFiles(package) {
-  const packageFilePath = archiveFilePath(package.name, package.version);
+async function replacePackageFiles(pkg) {
+  const packageFilePath = archiveFilePath(pkg.name, pkg.version);
   if (!fs.existsSync(packageFilePath)) {
-    throw {message: `Could not find archive ${packageFilePath} for replacement: ${package.name}:${package.version}.`};
+    throw {message: `Could not find archive ${packageFilePath} for replacement: ${pkg.name}:${pkg.version}.`};
   }
 
   fs.readFile(packageFilePath, function(_, data) {
     zip.loadAsync(data).then(function(contents) {
-      package.files.forEach(function(file) {
-        const replacementFilePath = `${__dirname}/../resource/replace/${package.name}/${package.version}/${file}`;
+      pkg.files.forEach(function(file) {
+        const replacementFilePath = `${__dirname}/../resource/replace/${pkg.name}/${pkg.version}/${file}`;
         if (!fs.existsSync(replacementFilePath)) {
           throw {message: `Replacement file does not exist: ${replacementFilePath}`}
         }
@@ -256,22 +256,22 @@ async function processMirrorInstruction(instruction, releaseContext) {
     )
   );
 
-  for (const package of (instruction.packageDirs)) {
-    console.log(`Packaging ${package.label}`);
-    tags = await createPackagesSinceTag(instruction, package)
-    console.log(package.label, tags);
+  for (const pkg of (instruction.packageDirs)) {
+    console.log(`Packaging ${pkg.label}`);
+    tags = await createPackagesSinceTag(instruction, pkg)
+    console.log(pkg.label, tags);
   }
 
-  for (const package of (instruction.packageIndividual)) {
-    console.log(`Packaging ${package.label}`);
-    tags = await createPackageSinceTag(instruction, package);
-    console.log(package.label, tags);
+  for (const pkg of (instruction.packageIndividual)) {
+    console.log(`Packaging ${pkg.label}`);
+    tags = await createPackageSinceTag(instruction, pkg);
+    console.log(pkg.label, tags);
   }
 
-  for (const package of (instruction.packageMetaFromDirs)) {
-    console.log(`Packaging ${package.label}`);
-    tags = await createMetaPackagesFromRepoDir(instruction, package);
-    console.log(package.label, tags);
+  for (const pkg of (instruction.packageMetaFromDirs)) {
+    console.log(`Packaging ${pkg.label}`);
+    tags = await createMetaPackagesFromRepoDir(instruction, pkg);
+    console.log(pkg.label, tags);
   }
 
   for (const packageReplacement of (instruction.packageReplacements)) {
