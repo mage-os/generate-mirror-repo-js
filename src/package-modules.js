@@ -227,6 +227,7 @@ function setDependencyVersions(instruction, release, composerConfig) {
  *
  * @param {repositoryBuildDefinition} instruction
  * @param {packageDefinition} pkg
+ * @param {String|null} ref
  * @returns {Promise<Object.<String, String>>}
  */
 async function determinePackageForRef(instruction, pkg, ref) {
@@ -282,6 +283,7 @@ async function determinePackageForRef(instruction, pkg, ref) {
  *
  * @param {repositoryBuildDefinition} instruction
  * @param {packageDefinition} pkg
+ * @param {String} ref
  * @returns {Promise<Object.<String, String>>}
  */
 async function determinePackagesForRef(instruction, pkg, ref) {
@@ -515,6 +517,7 @@ async function getAdditionalConfiguration(packageName, ref) {
 /**
  * @param {repositoryBuildDefinition} instruction
  * @param {packageDefinition} pkg
+ * @param {String|null} ref
  * @returns Array<String>
  */
 async function findModulesToBuild(instruction, pkg, ref) {
