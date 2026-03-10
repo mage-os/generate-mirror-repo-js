@@ -109,6 +109,10 @@ const branchBuildConfig = {
     repoUrl: 'https://github.com/mage-os/mageos-magento-zend-memory.git',
     ref: 'main'
   },
+  'magento-zf-captcha': {
+    repoUrl: 'https://github.com/mage-os/mageos-magento-zf-captcha.git',
+    ref: 'main',
+  },
   'magento-zf-db': {
     repoUrl: 'https://github.com/mage-os/mageos-magento-zf-db.git',
     ref: 'main'
