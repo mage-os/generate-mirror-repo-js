@@ -58,8 +58,9 @@ build() {
   local ABSPATH
   ABSPATH="$(realpath "${BUILD_DIR}")"
 
-  find "${BUILD_DIR}" -name "*.json" -exec sed_inplace \
-    "s|${REPO_URL}/|file://${ABSPATH}/|g" {} +
+  while IFS= read -r f; do
+    sed_inplace "s|${REPO_URL}/|file://${ABSPATH}/|g" "$f"
+  done < <(find "${BUILD_DIR}" -name "*.json")
 
   jq --arg url "file://${ABSPATH}/p2/%package%.json" \
     '."metadata-url" = $url' \
@@ -72,9 +73,13 @@ build() {
   mkdir "${TEST_DIR}"
   cd "${TEST_DIR}"
 
-  composer init --no-interaction --name="test/${BUILD_TYPE}-nightly" --stability=alpha
+  composer init --no-interaction --name="test/${BUILD_TYPE}-nightly"
   composer config repositories.nightly \
     "{\"type\": \"composer\", \"url\": \"file://${ABSPATH}\"}"
+  # minimum-stability alpha is required because nightly packages carry an -a<date> pre-release
+  # suffix (alpha stability). Composer applies minimum-stability to the entire dependency tree,
+  # so @alpha on the top-level package alone is not sufficient. prefer-stable ensures stable
+  # versions are preferred where available.
   composer config minimum-stability alpha
   composer config prefer-stable true
 

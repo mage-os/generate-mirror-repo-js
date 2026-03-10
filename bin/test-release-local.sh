@@ -56,8 +56,9 @@ build() {
   local ABSPATH
   ABSPATH="$(realpath "${BUILD_DIR}")"
 
-  find "${BUILD_DIR}" -name "*.json" -exec sed_inplace \
-    "s|${REPO_URL}/|file://${ABSPATH}/|g" {} +
+  while IFS= read -r f; do
+    sed_inplace "s|${REPO_URL}/|file://${ABSPATH}/|g" "$f"
+  done < <(find "${BUILD_DIR}" -name "*.json")
 
   jq --arg url "file://${ABSPATH}/p2/%package%.json" \
     '."metadata-url" = $url' \
