@@ -6,7 +6,7 @@
     "magento/google-shopping-ads": "4.0.1",
     "magento/page-builder": "1.7.3-p14",
     "magento/security-package": "1.1.5-p14",
-    "paypal/module-braintree": "4.5.0-p11",
+    "paypal/module-braintree": "4.5.0-p10",
     "temando/module-shipping": "2.0.0"
   }
 }
