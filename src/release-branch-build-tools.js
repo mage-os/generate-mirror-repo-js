@@ -40,6 +40,11 @@ async function getPackagesForBuildInstruction(instruction) {
   for (const pkg of (instruction.packageMetaFromDirs || [])) {
     console.log(`Inspecting ${pkg.label}`);
     toBeBuilt = await determineMetaPackageFromRepoDir(instruction.repoUrl, pkg.dir, baseVersionsOnRef, undefined);
+    if (instruction.vendor && instruction.vendor !== 'magento') {
+      toBeBuilt = Object.fromEntries(
+        Object.entries(toBeBuilt).map(([name, ver]) => [name.replace(/^magento\//, `${instruction.vendor}/`), ver])
+      );
+    }
     Object.assign(packages, toBeBuilt);
   }
 
@@ -58,9 +63,9 @@ function getReleaseDateString() {
 }
 
 /**
- * @param {repositoryBuildDefinition[]} instructions 
- * @param {String} suffix 
- * @returns 
+ * @param {repositoryBuildDefinition[]} instructions
+ * @param {String} suffix
+ * @returns
  */
 async function getPackageVersionsForBuildInstructions(instructions, suffix) {
   console.log(`Determining package versions`);
@@ -161,7 +166,6 @@ async function processNightlyBuildInstructions(instructions, repoUrl) {
     dependencyVersions: await getPackageVersionsForBuildInstructions(instructions, releaseSuffix),
   });
 
-  // @TODO/future: Mage-OS Nightly probably doesn't handle vendor properly in the first place, and this isn't relevant for upstream nightlies.
   await fetchPackagistList('mage-os');
 
   for (const instruction of instructions) {

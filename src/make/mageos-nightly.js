@@ -31,5 +31,9 @@ if (options.gitRepoDir) {
   repo.setStorageDir(options.gitRepoDir);
 }
 
+for (const instruction of branchBuildInstructions) {
+  instruction.vendor = 'mage-os';
+}
+
 processNightlyBuildInstructions(branchBuildInstructions, options.repoUrl || 'https://nightly.mage-os.org/');
 
