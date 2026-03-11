@@ -8,20 +8,21 @@ const {
   processBuildInstructions,
   validateVersionString,
 } = require('./../release-build-tools');
-const {
-  setArchiveBaseDir,
-} = require("../package-modules");
+const packageModules = require("../package-modules");
+const {setArchiveBaseDir} = packageModules;
+const {generateAliasesFromBuiltPackages} = require("../package-aliases");
 const {buildConfig: releaseInstructions} = require('./../build-config/mageos-release-build-config');
 const {processMirrorInstruction} = require("../mirror-build-tools");
 const {fetchPackagistList} = require('../packagist');
 const buildState = require('../type/build-state');
 
 const options = parseOptions(
-  `$outputDir $gitRepoDir $repoUrl $mageosVendor $mageosRelease $upstreamRelease @skipHistory @help|h`,
+  `$outputDir $gitRepoDir $repoUrl $mageosVendor $mageosRelease $upstreamRelease @skipHistory @skipAliases @help|h`,
   process.argv
 );
 
 const skipHistory = options.skipHistory;
+const skipAliases = options.skipAliases;
 
 if (options.help) {
   console.log(`Build Mage-OS release packages from github.com/mage-os git repositories.
@@ -38,6 +39,7 @@ Options:
   --releaseRefsFile= JS file exporting a map with the git repo refs to use for the release
   --upstreamRelease= Upstream Magento Open Source release to use for package compatibility
   --skipHistory      Skip rebuilding of historic releases
+  --skipAliases      Skip building package magento/* aliases to mage-os/* packages
 `);
   process.exit(1);
 }
@@ -91,7 +93,7 @@ let distroRelease = new buildState({
       const upstreamVersionMap = upstreamRelease
         ? await getPackageVersionMap(upstreamRelease)
         : {};
-      
+
       distroRelease.replaceVersions = upstreamVersionMap;
 
       for (const instruction of releaseInstructions) {
@@ -112,6 +114,13 @@ let distroRelease = new buildState({
         instruction.ref = mageosRelease;
         await processBuildInstructions(instruction, distroRelease);
       }
+    }
+
+    if (! skipAliases) {
+      // Generate magento/* alias packages by scanning all built mage-os packages
+      console.log(`\nGenerating magento/* alias packages...`);
+      const aliasPackages = await generateAliasesFromBuiltPackages(archiveDir, packageModules);
+      console.log(`Alias generation complete. Created ${Object.keys(aliasPackages).length} alias packages.\n`);
     }
   } catch (exception) {
     console.log(exception);
