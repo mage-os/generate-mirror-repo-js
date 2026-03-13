@@ -73,6 +73,14 @@ runs:
       working-directory: ${{ inputs.install-directory }}
       if: ${{ !startsWith(inputs.composer-version, '1') }}
 
+    - name: Pin composer/composer library to match binary version
+      run: |
+        MAJOR_MINOR=$(echo "${{ inputs.composer-version }}" | cut -d. -f1,2)
+        composer require "composer/composer:~${MAJOR_MINOR}.0" --no-update
+      shell: bash
+      working-directory: ${{ inputs.install-directory }}
+      if: ${{ !startsWith(inputs.composer-version, '1') }}
+
     - name: Install dependencies
       run: composer install
       shell: bash
