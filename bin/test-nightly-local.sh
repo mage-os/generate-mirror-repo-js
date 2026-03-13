@@ -60,6 +60,7 @@ build() {
 
   while IFS= read -r f; do
     sed_inplace "s|${REPO_URL}/|file://${ABSPATH}/|g" "$f"
+    sed_inplace "s|\.\./${BUILD_DIR}/|file://${ABSPATH}/|g" "$f"
   done < <(find "${BUILD_DIR}" -name "*.json")
 
   jq --arg url "file://${ABSPATH}/p2/%package%.json" \
@@ -70,20 +71,22 @@ build() {
   log "[$BUILD_TYPE] Testing composer install"
   local TEST_DIR="test-install-${BUILD_TYPE}-nightly"
   rm -rf "${TEST_DIR}"
-  mkdir "${TEST_DIR}"
+
+  # Use create-project so minimum-stability is inherited from the package's own composer.json
+  # (nightly packages carry -a<date> alpha pre-release versions, and the project package's
+  # composer.json already sets minimum-stability: alpha for the full dependency tree).
+  composer create-project \
+    --repository="{\"type\": \"composer\", \"url\": \"file://${ABSPATH}\"}" \
+    --no-interaction \
+    --no-install \
+    "${INSTALL_PACKAGE}:@alpha" "${TEST_DIR}"
   cd "${TEST_DIR}"
-
-  composer init --no-interaction --name="test/${BUILD_TYPE}-nightly"
-  composer config repositories.nightly \
-    "{\"type\": \"composer\", \"url\": \"file://${ABSPATH}\"}"
-  # minimum-stability alpha is required because nightly packages carry an -a<date> pre-release
-  # suffix (alpha stability). Composer applies minimum-stability to the entire dependency tree,
-  # so @alpha on the top-level package alone is not sufficient. prefer-stable ensures stable
-  # versions are preferred where available.
-  composer config minimum-stability alpha
-  composer config prefer-stable true
-
-  composer require "${INSTALL_PACKAGE}" --no-interaction
+  # Prepend the local build repo so it takes priority over the live nightly URL
+  # embedded in the extracted project's composer.json
+  jq --arg url "file://${ABSPATH}" \
+    '.repositories = [{"type": "composer", "url": $url}] + .repositories' \
+    composer.json > /tmp/composer-patched.json && mv /tmp/composer-patched.json composer.json
+  composer install --no-interaction
 
   cd "$ROOT"
   log "[$BUILD_TYPE] SUCCESS - ${INSTALL_PACKAGE} installed"
