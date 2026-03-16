@@ -5,7 +5,24 @@ const {mergeBuildConfigs} = require('../utils');
 const branchBuildConfig = {
   'magento2': {
     repoUrl: 'https://github.com/mage-os/mirror-magento2.git',
-    ref: '2.4-develop'
+    ref: '2.4-develop',
+    transform: {
+      // The develop branch replaced lib/web/extjs and lib/web/tiny_mce_5/7 with lib/web/hugerte.
+      // Remove stale map entries (that would cause magento-composer-installer to abort deployment
+      // silently when the source directory doesn't exist, preventing setup/ from being deployed).
+      'magento/magento2-base': [
+        (composerJson) => {
+          if (composerJson?.extra?.map) {
+            const removed = new Set(['lib/web/extjs', 'lib/web/tiny_mce_5', 'lib/web/tiny_mce_7']);
+            composerJson.extra.map = composerJson.extra.map.filter(([src]) => !removed.has(src));
+            if (!composerJson.extra.map.some(([src]) => src === 'lib/web/hugerte')) {
+              composerJson.extra.map.push(['lib/web/hugerte', 'lib/web/hugerte']);
+            }
+          }
+          return composerJson;
+        }
+      ]
+    }
   },
   'security-package': {
     repoUrl: 'https://github.com/mage-os/mirror-security-package.git',
