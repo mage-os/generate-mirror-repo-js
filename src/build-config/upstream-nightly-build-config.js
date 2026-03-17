@@ -5,7 +5,7 @@ const {mergeBuildConfigs} = require('../utils');
 const branchBuildConfig = {
   'magento2': {
     repoUrl: 'https://github.com/mage-os/mirror-magento2.git',
-    ref: '2.4-develop'
+    ref: '2.4-develop',
   },
   'security-package': {
     repoUrl: 'https://github.com/mage-os/mirror-security-package.git',

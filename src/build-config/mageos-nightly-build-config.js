@@ -16,7 +16,7 @@ const branchBuildConfig = {
           }
           return composerJson;
         }
-      ]
+      ],
     }
   },
   'security-package': {

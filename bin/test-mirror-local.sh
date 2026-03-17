@@ -60,6 +60,7 @@ build() {
 
   while IFS= read -r f; do
     sed_inplace "s|${REPO_URL}/|file://${ABSPATH}/|g" "$f"
+    sed_inplace "s|\.\./${BUILD_DIR}/|file://${ABSPATH}/|g" "$f"
   done < <(find "${BUILD_DIR}" -name "*.json")
 
   jq --arg url "file://${ABSPATH}/p2/%package%.json" \
