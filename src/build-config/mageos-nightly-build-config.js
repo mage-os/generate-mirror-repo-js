@@ -1,4 +1,12 @@
 
+const {
+  transformMagentoCommunityEditionProject,
+  transformMagentoCommunityEditionProduct
+} = require('../build-metapackage/magento-community-edition');
+const {
+  transformMageOSCommunityEditionProject,
+  transformMageOSCommunityEditionProduct
+} = require('../build-metapackage/mage-os-community-edition');
 const packagesConfig = require('./packages-config');
 const {mergeBuildConfigs} = require('../utils');
 
@@ -6,6 +14,26 @@ const branchBuildConfig = {
   'magento2': {
     repoUrl: 'https://github.com/mage-os/mageos-magento2.git',
     ref: 'main',
+    extraMetapackages: [
+      {
+        name: 'project-community-edition',
+        type: 'project',
+        description: 'Mage-OS Community Edition Project',
+        transform: [
+          transformMagentoCommunityEditionProject,
+          transformMageOSCommunityEditionProject,
+        ]
+      },
+      {
+        name: 'product-community-edition',
+        type: 'metapackage',
+        description: 'Mage-OS Community Edition',
+        transform: [
+          transformMagentoCommunityEditionProduct,
+          transformMageOSCommunityEditionProduct,
+        ]
+      }
+    ],
     transform: {
       // For magento/elasticsearch-8, remove the elasticsearch/elasticsearch dependency.
       // See https://github.com/magento/magento2/issues/36687
