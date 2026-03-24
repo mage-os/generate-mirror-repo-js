@@ -31,9 +31,9 @@ if (options.gitRepoDir) {
   repo.setStorageDir(options.gitRepoDir);
 }
 
-let releaseContext = new buildState({
-  composerRepoUrl: options.repoUrl || 'https://nightly.mage-os.org/',
-});
+for (const instruction of branchBuildInstructions) {
+  instruction.vendor = 'mage-os';
+}
 
-processNightlyBuildInstructions(branchBuildInstructions, releaseContext);
+processNightlyBuildInstructions(branchBuildInstructions, options.repoUrl || 'https://nightly.mage-os.org/');
 

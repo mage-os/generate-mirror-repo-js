@@ -168,10 +168,20 @@ const releaseBuildConfig = {
     ref: 'mage-os',
     fromTag: '1.0.0',
   },
+  'magento-zf-captcha': {
+    repoUrl: 'https://github.com/mage-os/mageos-magento-zf-captcha.git',
+    ref: 'main',
+    fromTag: '3.0.0',
+  },
   'magento-zf-db': {
     repoUrl: 'https://github.com/mage-os/mageos-magento-zf-db.git',
     ref: 'main',
     fromTag: '1.1.0',
+  },
+  'magento-zf-soap': {
+    repoUrl: 'https://github.com/mage-os/mageos-magento-zf-soap.git',
+    ref: 'main',
+    fromTag: '3.0.0',
   },
   'php-compatibility-fork': {
     repoUrl: 'https://github.com/mage-os/mageos-PHPCompatibilityFork.git',
