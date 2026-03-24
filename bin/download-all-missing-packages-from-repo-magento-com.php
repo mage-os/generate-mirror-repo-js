@@ -44,6 +44,11 @@ foreach ($versions as $version) {
 foreach ($latestVersions as $version) {
     echo "Processing version: $version\n";
 
+    // Remove project directory
+    echo "Cleaning up project directory...\n";
+    $command = "rm -rf project-community-edition";
+    passthru($command);
+
     // Create project directory using composer
     echo "Creating Magento project with version $version...\n";
     $command = "composer create-project --repository-url=https://repo.magento.com/ magento/project-community-edition:$version --ignore-platform-reqs --no-progress -q -n --no-plugins";
@@ -59,12 +64,12 @@ foreach ($latestVersions as $version) {
     $command = "php bin/download-missing-packages-from-repo-magento-com.php project-community-edition/composer.lock build resource/additional-packages";
     passthru($command, $returnCode);
 
-    // Remove project directory
-    echo "Cleaning up project directory...\n";
-    $command = "rm -rf project-community-edition";
-    passthru($command);
-
     echo "\n\n";
 }
+
+// Remove project directory
+echo "Cleaning up project directory...\n";
+$command = "rm -rf project-community-edition";
+passthru($command);
 
 echo "Done!\n";

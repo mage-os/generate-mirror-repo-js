@@ -32,6 +32,7 @@ jobs:
       - uses: mage-os/github-actions/supported-version@main
         with:
           kind: nightly
+          project: mage-os
         id: supported-version
   integration-check:
     needs: [deploy, compute-nightly-service-versions]

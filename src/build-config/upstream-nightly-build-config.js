@@ -5,7 +5,7 @@ const {mergeBuildConfigs} = require('../utils');
 const branchBuildConfig = {
   'magento2': {
     repoUrl: 'https://github.com/mage-os/mirror-magento2.git',
-    ref: '2.4-develop'
+    ref: '2.4-develop',
   },
   'security-package': {
     repoUrl: 'https://github.com/mage-os/mirror-security-package.git',
@@ -97,9 +97,17 @@ const branchBuildConfig = {
     repoUrl: 'https://github.com/mage-os/mirror-magento-zend-memory.git',
     ref: 'main'
   },
+  'magento-zf-captcha': {
+    repoUrl: 'https://github.com/mage-os/mirror-magento-zf-captcha.git',
+    ref: '2.20.x'
+  },
   'magento-zf-db': {
     repoUrl: 'https://github.com/mage-os/mirror-magento-zf-db.git',
     ref: '2.21.x'
+  },
+  'magento-zf-soap': {
+    repoUrl: 'https://github.com/mage-os/mirror-magento-zf-soap.git',
+    ref: '2.15.x'
   },
 };
 

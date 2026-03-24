@@ -13,10 +13,17 @@ const {
  * @param {buildState} release 
  */
 async function transformMageOSCommunityEditionProject(composerConfig, instruction, metapackage, release) {
+  const versionBeforeTransform = composerConfig.version;
   updateComposerConfigFromMagentoToMageOs(instruction, release, composerConfig);
+  // updateComposerConfigFromMagentoToMageOs sets version to release.version || release.ref.
+  // For nightly builds release.version is not set, so restore the version already set by
+  // previous transforms (e.g. the nightly version from transformMagentoCommunityEditionProject).
+  if (!release.version && versionBeforeTransform) {
+    composerConfig.version = versionBeforeTransform;
+  }
 
   // Versions 2.0.0 and below had a different description
-  if (compareVersions(composerConfig.version, '2.0.0') <= 0) {
+  if (/^\d+\.\d+/.test(composerConfig.version) && compareVersions(composerConfig.version, '2.0.0') <= 0) {
     composerConfig.description = 'eCommerce Platform for Growth (Community Edition)';
   }
 
@@ -30,7 +37,11 @@ async function transformMageOSCommunityEditionProject(composerConfig, instructio
  * @param {buildState} release 
  */
 async function transformMageOSCommunityEditionProduct(composerConfig, instruction, metapackage, release) {
+  const versionBeforeTransform = composerConfig.version;
   updateComposerConfigFromMagentoToMageOs(instruction, release, composerConfig)
+  if (!release.version && versionBeforeTransform) {
+    composerConfig.version = versionBeforeTransform;
+  }
 
   if (release.replaceVersions['magento/product-community-edition']) {
     // Add upstreamRelease to composer extra data for reference

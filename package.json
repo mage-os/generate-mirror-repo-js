@@ -4,7 +4,7 @@
   "description": "Generate the Mage-OS composer package archives from git repositories",
   "main": "src/mirror.js",
   "scripts": {
-    "test": "jest $(pwd)/tests"
+    "test": "jest"
   },
   "keywords": [
     "mage-os",

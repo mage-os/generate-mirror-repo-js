@@ -1,11 +1,39 @@
 
+const {
+  transformMagentoCommunityEditionProject,
+  transformMagentoCommunityEditionProduct
+} = require('../build-metapackage/magento-community-edition');
+const {
+  transformMageOSCommunityEditionProject,
+  transformMageOSCommunityEditionProduct
+} = require('../build-metapackage/mage-os-community-edition');
 const packagesConfig = require('./packages-config');
 const {mergeBuildConfigs} = require('../utils');
 
 const branchBuildConfig = {
   'magento2': {
     repoUrl: 'https://github.com/mage-os/mageos-magento2.git',
-    ref: '2.4-develop',
+    ref: 'main',
+    extraMetapackages: [
+      {
+        name: 'project-community-edition',
+        type: 'project',
+        description: 'Mage-OS Community Edition Project',
+        transform: [
+          transformMagentoCommunityEditionProject,
+          transformMageOSCommunityEditionProject,
+        ]
+      },
+      {
+        name: 'product-community-edition',
+        type: 'metapackage',
+        description: 'Mage-OS Community Edition',
+        transform: [
+          transformMagentoCommunityEditionProduct,
+          transformMageOSCommunityEditionProduct,
+        ]
+      }
+    ],
     transform: {
       // For magento/elasticsearch-8, remove the elasticsearch/elasticsearch dependency.
       // See https://github.com/magento/magento2/issues/36687
@@ -16,24 +44,24 @@ const branchBuildConfig = {
           }
           return composerJson;
         }
-      ]
+      ],
     }
   },
   'security-package': {
     repoUrl: 'https://github.com/mage-os/mageos-security-package.git',
-    ref: 'develop',
+    ref: 'main',
   },
   'inventory': {
     repoUrl: 'https://github.com/mage-os/mageos-inventory.git',
-    ref: 'develop',
+    ref: 'main',
   },
   'inventory-composer-installer': {
     repoUrl: 'https://github.com/mage-os/mageos-inventory-composer-installer.git',
-    ref: 'master',
+    ref: 'main',
   },
   'page-builder': {
     repoUrl: 'https://github.com/mage-os/mageos-magento2-page-builder.git',
-    ref: 'develop',
+    ref: 'main',
   },
   // Starting from Adobe Commerce and Magento Open Source 2.4.5 release Adobe IMS Integration package became part of Magento Open Source project.
   // 'adobe-ims': {
@@ -42,19 +70,19 @@ const branchBuildConfig = {
   // },
   'adobe-stock-integration': {
     repoUrl: 'https://github.com/mage-os/mageos-adobe-stock-integration.git',
-    ref: 'develop',
+    ref: 'main',
   },
   'magento-composer-installer': {
     repoUrl: 'https://github.com/mage-os/mageos-magento-composer-installer.git',
-    ref: 'master',
+    ref: 'main',
   },
   'composer': {
     repoUrl: 'https://github.com/mage-os/mageos-composer.git',
-    ref: 'develop',
+    ref: 'main',
   },
   'composer-root-update-plugin': {
     repoUrl: 'https://github.com/mage-os/mageos-composer-root-update-plugin.git',
-    ref: 'develop',
+    ref: 'main',
   },
   'composer-dependency-version-audit-plugin': {
     repoUrl: 'https://github.com/mage-os/mageos-composer-dependency-version-audit-plugin.git',
@@ -62,7 +90,7 @@ const branchBuildConfig = {
   },
   'magento2-sample-data': {
     repoUrl: 'https://github.com/mage-os/mageos-magento2-sample-data.git',
-    ref: '2.4-develop',
+    ref: 'main',
   },
   // Keep disabled until someone takes up maintenance of commerce-data-export tags
   // 'commerce-data-export': {
@@ -75,11 +103,11 @@ const branchBuildConfig = {
   },
   'magento-coding-standard': {
     repoUrl: 'https://github.com/mage-os/mageos-magento-coding-standard.git',
-    ref: 'develop'
+    ref: 'main'
   },
   'magento2-functional-testing-framework': {
     repoUrl: 'https://github.com/mage-os/mageos-magento2-functional-testing-framework.git',
-    ref: 'develop'
+    ref: 'main'
   },
   'magento-zend-db': {
     repoUrl: 'https://github.com/mage-os/mageos-magento-zend-db.git',
@@ -109,9 +137,53 @@ const branchBuildConfig = {
     repoUrl: 'https://github.com/mage-os/mageos-magento-zend-memory.git',
     ref: 'main'
   },
+  'magento-zf-captcha': {
+    repoUrl: 'https://github.com/mage-os/mageos-magento-zf-captcha.git',
+    ref: 'main',
+  },
   'magento-zf-db': {
     repoUrl: 'https://github.com/mage-os/mageos-magento-zf-db.git',
-    ref: '2.21.x'
+    ref: 'main'
+  },
+  'module-automatic-translation': {
+    repoUrl: 'https://github.com/mage-os/module-automatic-translation.git',
+    ref: 'main'
+  },
+  'module-inventory-reservations-grid': {
+    repoUrl: 'https://github.com/mage-os/module-inventory-reservations-grid.git',
+    ref: 'main'
+  },
+  'module-meta-robots-tag': {
+    repoUrl: 'https://github.com/mage-os/module-meta-robots-tag.git',
+    ref: 'main'
+  },
+  'module-page-builder-template-import-export': {
+    repoUrl: 'https://github.com/mage-os/module-pagebuilder-template-import-export.git',
+    ref: 'master'
+  },
+  'module-page-builder-widget': {
+    repoUrl: 'https://github.com/mage-os/module-page-builder-widget.git',
+    ref: 'master'
+  },
+  'module-theme-optimization': {
+    repoUrl: 'https://github.com/mage-os/module-theme-optimization.git',
+    ref: 'main'
+  },
+  'theme-adminhtml-m137': {
+    repoUrl: 'https://github.com/mage-os/theme-adminhtml-m137.git',
+    ref: 'main'
+  },
+  'module-theme-adminhtml-switcher': {
+    repoUrl: 'https://github.com/mage-os/module-theme-adminhtml-switcher.git',
+    ref: 'main'
+  },
+  'magento-zf-soap': {
+    repoUrl: 'https://github.com/mage-os/mageos-magento-zf-soap.git',
+    ref: 'main'
+  },
+  'magento-zf-captcha': {
+    repoUrl: 'https://github.com/mage-os/mageos-magento-zf-captcha.git',
+    ref: 'main'
   },
 };
 
