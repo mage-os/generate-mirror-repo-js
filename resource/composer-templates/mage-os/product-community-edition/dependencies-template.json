@@ -2,6 +2,7 @@
   "dependencies": {
     "aligent/magento2-pci-4-compatibility": "https://github.com/aligent/magento2-pci-4-compatibility.git",
     "creatuity/magento2-interceptors": "https://github.com/creatuity/magento2-interceptors.git",
+    "elgentos/magento2-varnish-extended": "https://github.com/elgentos/magento2-varnish-extended.git",
     "mage-os/inventory-metapackage": "https://github.com/mage-os/mageos-inventory.git",
     "mage-os/module-automatic-translation": "https://github.com/mage-os/module-automatic-translation.git",
     "mage-os/module-inventory-reservations-grid": "https://github.com/mage-os/module-inventory-reservations-grid.git",
