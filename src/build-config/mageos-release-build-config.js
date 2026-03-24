@@ -48,7 +48,7 @@ const releaseBuildConfig = {
       {
         name: 'project-minimal-edition',
         type: 'project',
-        fromTag: '2.2.0',
+        fromTag: '3.0.0',
         description: 'Mage-OS Minimal Edition Project',
         transform: [
           transformMagentoCommunityEditionProject,
@@ -58,7 +58,7 @@ const releaseBuildConfig = {
       {
         name: 'product-minimal-edition',
         type: 'metapackage',
-        fromTag: '2.2.0',
+        fromTag: '3.0.0',
         description: 'Mage-OS Minimal Edition',
         transform: [
           transformMagentoCommunityEditionProduct,
