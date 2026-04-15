@@ -1,6 +1,6 @@
 {
-    "require": {
-        "mage-os/composer-dependency-version-audit-plugin": "2.2.1",
-        "mage-os/composer-root-update-plugin": "2.2.1"
-    }
+  "require": {
+    "mage-os/composer-dependency-version-audit-plugin": "2.2.1",
+    "mage-os/composer-root-update-plugin": "2.2.1"
+  }
 }
