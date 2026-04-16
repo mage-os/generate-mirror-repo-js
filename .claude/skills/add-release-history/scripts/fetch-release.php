@@ -193,71 +193,10 @@ class PackageFetcher
     }
 }
 
-class CorePackageDetector
-{
-    private const CORE_PREFIXES = [
-        'colinmollenhour/', 'composer/', 'duosecurity/', 'elasticsearch/',
-        'ext-', 'ezyang/', 'guzzlehttp/', 'laminas/', 'league/', 'lib-',
-        'monolog/', 'opensearch-', 'pelago/', 'php-amqplib/', 'phpseclib/',
-        'psr/', 'ramsey/', 'symfony/', 'tedivm/', 'tubalmartin/',
-        'web-token/', 'webonyx/', 'wikimedia/',
-    ];
-
-    private const CORE_SUFFIXES = [
-        'composer', 'composer-dependency-version-audit-plugin',
-        'framework', 'framework-amqp', 'framework-bulk', 'framework-message-queue',
-        'magento-composer-installer', 'magento-zf-db', 'magento2-base',
-        'theme-adminhtml-backend', 'theme-frontend-blank', 'theme-frontend-luma',
-        'zend-cache', 'zend-db', 'zend-pdf',
-    ];
-
-    /** @param list<string> $addonModuleNames module-* packages that are known add-ons */
-    public function __construct(
-        private readonly string $vendor,
-        private readonly array $addonModuleNames = [],
-    ) {}
-
-    public function isCore(string $name): bool
-    {
-        if ($name === 'php') {
-            return true;
-        }
-
-        foreach (self::CORE_PREFIXES as $prefix) {
-            if (str_starts_with($name, $prefix)) {
-                return true;
-            }
-        }
-
-        foreach (self::CORE_SUFFIXES as $suffix) {
-            if ($name === "{$this->vendor}/{$suffix}") {
-                return true;
-            }
-        }
-
-        if (str_starts_with($name, "{$this->vendor}/language-")) {
-            return true;
-        }
-
-        if (str_starts_with($name, "{$this->vendor}/module-")
-            && !in_array($name, $this->addonModuleNames, true)) {
-            return true;
-        }
-
-        // For magento vendor, all magento/* packages are core
-        if ($this->vendor === 'magento' && str_starts_with($name, 'magento/')) {
-            return true;
-        }
-
-        return false;
-    }
-}
-
 class HistoryFileBuilder
 {
     public function __construct(
         private readonly string $vendor,
-        private readonly CorePackageDetector $detector,
     ) {}
 
     public function buildMagento2Base(array $pkg): array
@@ -275,48 +214,39 @@ class HistoryFileBuilder
         ];
     }
 
-    public function buildProductCommunityEdition(array $pkg, ?array $prevData): array
+    /**
+     * @param array $pkg           Upstream product-community-edition package data
+     * @param array $basePkg       The full magento2-base package data for this version
+     * @param ?array $prevData     Previous version's product-community-edition history (or null)
+     */
+    public function buildProductCommunityEdition(array $pkg, array $basePkg, ?array $prevData): array
     {
         $req = $pkg['require'] ?? [];
 
-        $addonKeys = [];
-        if ($prevData !== null) {
-            $addonKeys = array_keys($prevData['require'] ?? []);
-        }
-        $addonKeys = array_flip($addonKeys);
+        // Add-on = anything in product-ce require that is NOT already provided by
+        // magento2-base (via its require or replace sections). The generation code
+        // also injects {vendor}/magento2-base explicitly, so exclude that too.
+        $basePackages = ($basePkg['require'] ?? []) + ($basePkg['replace'] ?? []);
+        $basePackages["{$this->vendor}/magento2-base"] = true;
+        $addons = array_diff_key($req, $basePackages);
 
-        $newPackages = [];
-        foreach ($req as $name => $ver) {
-            if (!isset($addonKeys[$name]) && !$this->detector->isCore($name)) {
-                $addonKeys[$name] = true;
-                $newPackages[] = $name;
-            }
-        }
-
+        // Report new/removed relative to previous version history.
+        $prevKeys = array_keys($prevData['require'] ?? []);
+        $newPackages = array_diff(array_keys($addons), $prevKeys);
         if ($newPackages) {
             sort($newPackages);
             echo "  New add-on packages detected: " . implode(', ', $newPackages) . "\n";
         }
 
-        $removed = array_diff(array_keys($addonKeys), array_keys($req));
+        $removed = array_diff($prevKeys, array_keys($addons));
         if ($removed) {
             sort($removed);
             echo "  Removed add-on packages: " . implode(', ', $removed) . "\n";
-            foreach ($removed as $r) {
-                unset($addonKeys[$r]);
-            }
         }
 
-        $filtered = [];
-        $keys = array_keys($addonKeys);
-        sort($keys);
-        foreach ($keys as $key) {
-            if (isset($req[$key])) {
-                $filtered[$key] = $req[$key];
-            }
-        }
+        ksort($addons);
 
-        $result = ['require' => $filtered];
+        $result = ['require' => $addons];
 
         $magentoVersion = $pkg['extra']['magento_version'] ?? '';
         if ($this->vendor === 'mage-os' && $magentoVersion !== '') {
@@ -401,17 +331,7 @@ class ReleaseHistoryCommand
 
         [$prevName, $prevData] = $this->getPreviousVersion();
 
-        $addonModuleNames = [];
-        if ($prevData !== null) {
-            foreach (array_keys($prevData['require'] ?? []) as $key) {
-                if (str_starts_with($key, "{$this->vendor}/module-")) {
-                    $addonModuleNames[] = $key;
-                }
-            }
-        }
-
-        $detector = new CorePackageDetector($this->vendor, $addonModuleNames);
-        $this->builder = new HistoryFileBuilder($this->vendor, $detector);
+        $this->builder = new HistoryFileBuilder($this->vendor);
 
         return $this->fetchAndWrite($prevData);
     }
@@ -462,6 +382,44 @@ class ReleaseHistoryCommand
         return [$prior, $data];
     }
 
+    /**
+     * Get the Magento upstream composer.json that drives the generation process.
+     *
+     * The generation code reads the root composer.json from the Magento git repo.
+     * Its require + replace sections define what's "core" — anything in
+     * product-ce's require that ISN'T in the upstream is an add-on.
+     *
+     * For Magento vendor the tag is the release version itself.
+     * For Mage-OS vendor the tag is extra.magento_version from product-ce.
+     */
+    private function getUpstreamBase(array $productCePkg): array
+    {
+        if ($this->vendor === 'mage-os') {
+            $tag = $productCePkg['extra']['magento_version'] ?? '';
+            if ($tag === '') {
+                throw new \RuntimeException('No magento_version in product-ce extra; cannot determine upstream.');
+            }
+        } else {
+            $tag = $this->version;
+        }
+
+        echo "  Fetching Magento upstream composer.json for tag {$tag}...\n";
+        $url = "https://raw.githubusercontent.com/magento/magento2/refs/tags/{$tag}/composer.json";
+        $http = new HttpClient();
+        $upstream = $http->getJson($url);
+
+        // Rename magento/ → {vendor}/ so the diff matches product-ce package names.
+        $renamed = [];
+        foreach (($upstream['require'] ?? []) + ($upstream['replace'] ?? []) as $name => $ver) {
+            $renamedName = str_starts_with($name, 'magento/')
+                ? "{$this->vendor}/" . substr($name, 8)
+                : $name;
+            $renamed[$renamedName] = $ver;
+        }
+
+        return ['require' => $renamed, 'replace' => []];
+    }
+
     private function fetchAndWrite(?array $prevData): int
     {
         $v = $this->vendor;
@@ -469,13 +427,15 @@ class ReleaseHistoryCommand
 
         try {
             echo "\n1. {$v}/magento2-base\n";
-            $baseData = $this->builder->buildMagento2Base(
-                $this->fetcher->fetch("{$v}/magento2-base", $this->version)
-            );
+            $basePkg = $this->fetcher->fetch("{$v}/magento2-base", $this->version);
+            $baseData = $this->builder->buildMagento2Base($basePkg);
 
             echo "\n2. {$v}/product-community-edition\n";
+            $productCePkg = $this->fetcher->fetch("{$v}/product-community-edition", $this->version);
+            $upstreamBase = $this->getUpstreamBase($productCePkg);
             $productData = $this->builder->buildProductCommunityEdition(
-                $this->fetcher->fetch("{$v}/product-community-edition", $this->version),
+                $productCePkg,
+                $upstreamBase,
                 $prevData
             );
 

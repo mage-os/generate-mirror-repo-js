@@ -4,7 +4,6 @@
     "adobe-commerce/os-extensions-metapackage": "^1.0.3-beta1",
     "magento/inventory-metapackage": "1.2.9-beta1",
     "magento/page-builder": "1.7.6-beta1",
-    "magento/security-package": "1.1.8-beta1",
-    "stomp-php/stomp-php": "^5.1"
+    "magento/security-package": "1.1.8-beta1"
   }
 }

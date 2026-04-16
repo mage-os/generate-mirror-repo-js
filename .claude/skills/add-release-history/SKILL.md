@@ -17,7 +17,7 @@ The `resource/history/{vendor}/` directory stores composer package snapshots for
 | `product-community-edition/{VERSION}.json` | Vendor-specific add-on packages | Only the add-on packages that differentiate from core, plus `extra.magento_version` (Mage-OS only) |
 | `project-community-edition/{VERSION}.json` | Project installer plugins | Just the composer plugin dependencies |
 
-The product-community-edition file is the trickiest — it must include only the vendor-specific add-on packages (like `aligent/magento2-pci-4-compatibility`, `mage-os/module-automatic-translation`, etc. for Mage-OS; or `adobe-commerce/os-extensions-metapackage`, `magento/inventory-metapackage`, etc. for Magento), not the hundreds of core modules. The helper script handles this filtering automatically.
+The product-community-edition file is the trickiest — it must include only the vendor-specific add-on packages (like `aligent/magento2-pci-4-compatibility`, `mage-os/module-automatic-translation`, etc. for Mage-OS; or `adobe-commerce/os-extensions-metapackage`, `magento/inventory-metapackage`, etc. for Magento), not packages already required by magento2-base. The helper script determines this by diffing product-community-edition's require against magento2-base's require for the same version.
 
 ## Vendor differences
 
@@ -55,8 +55,8 @@ php .claude/skills/add-release-history/scripts/fetch-release.php {VERSION} --ven
 
 This script:
 - Fetches all three packages from the upstream composer repository
-- Finds the previous version's product-community-edition file to determine the add-on package set
-- Filters each package into the correct history file format
+- Determines add-on packages by diffing product-community-edition's require against magento2-base's require for the same version (anything not in magento2-base is an add-on)
+- Reports new/removed add-ons compared to the previous version's history file
 - Writes the three JSON files with correct per-vendor indentation
 - Validates the JSON
 
