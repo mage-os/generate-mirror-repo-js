@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(php .claude/skills/*/scripts/*)",
+      "Bash(git clone *github.com/mage-os/*)",
+      "Bash(git ls-remote *github.com/mage-os/*)",
+      "Bash(git log *)",
+      "Bash(git diff *)",
+      "Bash(git show *)",
+      "Bash(curl *repo.mage-os.org*)",
+      "Bash(curl *preview-repo.mage-os.org*)"
+    ]
+  }
+}
