@@ -61,7 +61,7 @@ jobs:
       - uses: mage-os/github-actions/supported-version@main
         with:
           project: 'mage-os'
-          kind: 'all'
+          kind: 'usable'
         id: supported-version
   integration-check:
     name: "installation check"
