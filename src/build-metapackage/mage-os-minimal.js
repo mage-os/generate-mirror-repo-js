@@ -16,7 +16,6 @@ async function transformMageOSMinimalProduct(composerConfig, instruction, metapa
     'ext-ctype',
     'ext-curl',
     'ext-dom',
-    'ext-ftp',
     'ext-gd',
     'ext-hash',
     'ext-iconv',
