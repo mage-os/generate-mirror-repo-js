@@ -2,7 +2,6 @@ const compareVersions = require("compare-versions");
 const http = require('https');
 const {URL} = require('url');
 const repositoryBuildDefinition = require('./type/repository-build-definition');
-const packagesConfig = require("./build-config/packages-config");
 
 /**
  * If a and b are the same, return 0. Return pos number if a > b, or neg number if a < b
@@ -87,7 +86,7 @@ module.exports = {
         res.on('data', chunk => data += chunk);
         res.on('end', () => resolve(data));
       });
-      request.on('error', err => reject(e.message));
+      request.on('error', err => reject(err.message));
       request.end();
     });
   },

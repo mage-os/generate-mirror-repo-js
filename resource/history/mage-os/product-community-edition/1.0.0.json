@@ -3,5 +3,8 @@
     "mage-os/security-package": "1.0.0",
     "mage-os/inventory-metapackage": "1.0.0",
     "mage-os/page-builder": "1.0.0"
+  },
+  "extra": {
+    "magento_version": "2.4.6-p2"
   }
 }

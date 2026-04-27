@@ -1,9 +1,11 @@
+const {
+  transformMagentoCommunityEditionProject,
+  transformMagentoCommunityEditionProduct
+} = require('../build-metapackage/magento-community-edition');
+
 const packageDefs = {
   'magento2': {
     repoUrl: 'https://github.com/mage-os/mirror-magento2.git',
-
-    magentoCommunityEditionProject: true,
-    magentoCommunityEditionMetapackage: true,
 
     packageDirs: [
       {label: 'Magento Core Modules', dir: 'app/code/Magento'},
@@ -69,6 +71,24 @@ const packageDefs = {
       },
     ],
     packageMetaFromDirs: [],
+    extraMetapackages: [
+      {
+        name: 'project-community-edition',
+        type: 'project',
+        description: 'Magento Community Edition Project',
+        transform: [
+          transformMagentoCommunityEditionProject
+        ]
+      },
+      {
+        name: 'product-community-edition',
+        type: 'metapackage',
+        description: 'Magento Community Edition',
+        transform: [
+          transformMagentoCommunityEditionProduct
+        ]
+      }
+    ]
   },
   'security-package': {
     repoUrl: 'https://github.com/mage-os/mirror-security-package.git',
@@ -375,6 +395,18 @@ const packageDefs = {
     ],
     packageMetaFromDirs: [],
   },
+  'magento-zf-captcha': {
+    repoUrl: 'https://github.com/mage-os/mirror-magento-zf-captcha.git',
+
+    packageDirs: [],
+    packageIndividual: [
+      {
+        label: 'Magento fork of Zend_Captcha',
+        dir: ''
+      }
+    ],
+    packageMetaFromDirs: [],
+  },
   'magento-zf-db': {
     repoUrl: 'https://github.com/mage-os/mirror-magento-zf-db.git',
 
@@ -382,6 +414,126 @@ const packageDefs = {
     packageIndividual: [
       {
         label: 'Magento fork of Zend_Db',
+        dir: ''
+      }
+    ],
+    packageMetaFromDirs: [],
+  },
+  'module-automatic-translation': {
+    repoUrl: 'https://github.com/mage-os/module-automatic-translation.git',
+
+    packageDirs: [],
+    packageIndividual: [
+      {
+        label: 'Mage-OS Automatic Translation Module',
+        dir: ''
+      }
+    ],
+    packageMetaFromDirs: [],
+  },
+  'module-inventory-reservations-grid': {
+    repoUrl: 'https://github.com/mage-os/module-inventory-reservations-grid.git',
+
+    packageDirs: [],
+    packageIndividual: [
+      {
+        label: 'Mage-OS Inventory Reservations Grid Module',
+        dir: ''
+      }
+    ],
+    packageMetaFromDirs: [],
+  },
+  'module-meta-robots-tag': {
+    repoUrl: 'https://github.com/mage-os/module-meta-robots-tag.git',
+
+    packageDirs: [],
+    packageIndividual: [
+      {
+        label: 'Mage-OS Meta Robots Tag Module',
+        dir: ''
+      }
+    ],
+    packageMetaFromDirs: [],
+  },
+  'module-page-builder-template-import-export': {
+    repoUrl: 'https://github.com/mage-os/module-pagebuilder-template-import-export.git',
+
+    packageDirs: [],
+    packageIndividual: [
+      {
+        label: 'Mage-OS Page Builder Template Import Export Module',
+        dir: ''
+      }
+    ],
+    packageMetaFromDirs: [],
+  },
+  'module-page-builder-widget': {
+    repoUrl: 'https://github.com/mage-os/module-page-builder-widget.git',
+
+    packageDirs: [],
+    packageIndividual: [
+      {
+        label: 'Mage-OS Page Builder Widget Module',
+        dir: ''
+      }
+    ],
+    packageMetaFromDirs: [],
+  },
+  'module-theme-optimization': {
+    repoUrl: 'https://github.com/mage-os/module-theme-optimization.git',
+
+    packageDirs: [],
+    packageIndividual: [
+      {
+        label: 'Mage-OS Theme Optimization Module',
+        dir: ''
+      }
+    ],
+    packageMetaFromDirs: [],
+  },
+  'theme-adminhtml-m137': {
+    repoUrl: 'https://github.com/mage-os/theme-adminhtml-m137.git',
+
+    packageDirs: [],
+    packageIndividual: [
+      {
+        label: 'Mage-OS M137 Admin Theme',
+        dir: ''
+      }
+    ],
+    packageMetaFromDirs: [],
+  },
+  'module-theme-adminhtml-switcher': {
+    repoUrl: 'https://github.com/mage-os/module-theme-adminhtml-switcher.git',
+
+    packageDirs: [],
+    packageIndividual: [
+      {
+        label: 'Mage-OS Theme Adminhtml Switcher Module',
+        dir: ''
+      }
+    ],
+    packageMetaFromDirs: [],
+  },
+  'magento-zf-soap': {
+    repoUrl: 'https://github.com/mage-os/mirror-magento-zf-soap.git',
+
+    packageDirs: [],
+    packageIndividual: [
+      {
+        label: 'Magento fork of Zend_Soap',
+        dir: ''
+      }
+    ],
+    packageMetaFromDirs: [],
+  },
+  'magento-zf-captcha': {
+    repoUrl: 'https://github.com/mage-os/mirror-magento-zf-captcha.git',
+
+    packageDirs: [],
+    packageIndividual: [
+      {
+        label: 'Magento fork of Zend_Captcha',
         dir: ''
       }
     ],

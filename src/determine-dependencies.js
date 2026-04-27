@@ -426,5 +426,10 @@ module.exports = {
   async determineSourceDependencies(dir, files) {
     const analyzer = new DependencyAnalyzer(dir);
     return analyzer.determineSourceDependencies(files);
+  },
+  // For testing
+  _internal: {
+    DependencyAnalyzer,
+    CONFIG
   }
 };

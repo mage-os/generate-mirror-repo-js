@@ -2,14 +2,11 @@ const repo = require("./repository");
 const {
   createPackagesForRef,
   createPackageForRef,
-  createMagentoCommunityEditionMetapackage,
-  createMagentoCommunityEditionProject,
+  createMetaPackage,
   createMetaPackageFromRepoDir,
   determinePackagesForRef,
   determinePackageForRef,
   determineMetaPackageFromRepoDir,
-  determineMagentoCommunityEditionMetapackage,
-  determineMagentoCommunityEditionProject,
   getLatestTag
 } = require('./package-modules');
 const repositoryBuildDefinition = require("./type/repository-build-definition");
@@ -28,34 +25,32 @@ async function getPackagesForBuildInstruction(instruction) {
   const baseVersionsOnRef = await getLatestTag(instruction.repoUrl) || instruction.ref || 'HEAD';
   console.log(`Basing ${instruction.repoUrl} package versions on those from reference ${baseVersionsOnRef}`);
 
-  for (const package of (instruction.packageDirs || [])) {
-    console.log(`Inspecting ${package.label}`);
-    toBeBuilt = await determinePackagesForRef(instruction, package, baseVersionsOnRef);
+  for (const pkg of (instruction.packageDirs || [])) {
+    console.log(`Inspecting ${pkg.label}`);
+    toBeBuilt = await determinePackagesForRef(instruction, pkg, baseVersionsOnRef);
     Object.assign(packages, toBeBuilt);
   }
 
-  for (const package of (instruction.packageIndividual || [])) {
-    console.log(`Inspecting ${package.label}`);
-    toBeBuilt = await determinePackageForRef(instruction, package, baseVersionsOnRef);
+  for (const pkg of (instruction.packageIndividual || [])) {
+    console.log(`Inspecting ${pkg.label}`);
+    toBeBuilt = await determinePackageForRef(instruction, pkg, baseVersionsOnRef);
     Object.assign(packages, toBeBuilt);
   }
 
-  for (const package of (instruction.packageMetaFromDirs || [])) {
-    console.log(`Inspecting ${package.label}`);
-    toBeBuilt = await determineMetaPackageFromRepoDir(instruction.repoUrl, package.dir, baseVersionsOnRef, undefined);
+  for (const pkg of (instruction.packageMetaFromDirs || [])) {
+    console.log(`Inspecting ${pkg.label}`);
+    toBeBuilt = await determineMetaPackageFromRepoDir(instruction.repoUrl, pkg.dir, baseVersionsOnRef, undefined);
+    if (instruction.vendor && instruction.vendor !== 'magento') {
+      toBeBuilt = Object.fromEntries(
+        Object.entries(toBeBuilt).map(([name, ver]) => [name.replace(/^magento\//, `${instruction.vendor}/`), ver])
+      );
+    }
     Object.assign(packages, toBeBuilt);
   }
 
-  if (instruction.magentoCommunityEditionMetapackage) {
-    console.log('Inspecting Magento Community Edition Product Metapackage');
-    toBeBuilt = await determineMagentoCommunityEditionMetapackage(instruction.repoUrl, baseVersionsOnRef);
-    Object.assign(packages, toBeBuilt);
-  }
-
-  if (instruction.magentoCommunityEditionProject) {
-    console.log('Inspecting Magento Community Edition Project');
-    toBeBuilt = await determineMagentoCommunityEditionProject(instruction.repoUrl, baseVersionsOnRef);
-    Object.assign(packages, toBeBuilt);
+  for (const metapackage of (instruction.extraMetapackages || [])) {
+    console.log(`Inspecting ${metapackage.name}`);
+    packages[`${instruction.vendor}/${metapackage.name}`] = baseVersionsOnRef;
   }
 
   repo.clearCache();
@@ -68,9 +63,9 @@ function getReleaseDateString() {
 }
 
 /**
- * @param {repositoryBuildDefinition[]} instructions 
- * @param {String} suffix 
- * @returns 
+ * @param {repositoryBuildDefinition[]} instructions
+ * @param {String} suffix
+ * @returns
  */
 async function getPackageVersionsForBuildInstructions(instructions, suffix) {
   console.log(`Determining package versions`);
@@ -82,9 +77,11 @@ async function getPackageVersionsForBuildInstructions(instructions, suffix) {
 }
 
 function addSuffixToVersion(version, buildSuffix) {
-  const match = version.match(/(?<versions>(?:[\d]+\.?){1,4})(?<suffix>-[^+]+)?(?<legacy>\+.+)?/)
+  const match = version.match(/(?<prefix>v?)(?<versions>(?:[\d]+\.?){1,4})(?<suffix>-[^+]+)?(?<legacy>\+.+)?/)
   if (match) {
-    return `${match.groups.versions}-a${buildSuffix}${match.groups.legacy ? match.groups.legacy : ''}`
+    const prefix = match.groups.prefix || '';
+    const legacy = match.groups.legacy || '';
+    return `${prefix}${match.groups.versions}-a${buildSuffix || ''}${legacy}`
   }
   return `${version}-a${buildSuffix || 'lpha'}`
 }
@@ -126,38 +123,30 @@ async function processBuildInstruction(instruction, release) {
   let packages = {};
   let built = {};
 
+  release.ref = instruction.ref;
   await repo.pull(instruction.repoUrl, instruction.ref);
 
-  for (const package of (instruction.packageDirs || [])) {
-    console.log(`Packaging ${package.label}`);
-    built = await createPackagesForRef(instruction, package, release);
+  for (const pkg of (instruction.packageDirs || [])) {
+    console.log(`Packaging ${pkg.label}`);
+    built = await createPackagesForRef(instruction, pkg, release);
     Object.assign(packages, built);
   }
 
-  for (const package of (instruction.packageIndividual || [])) {
-    console.log(`Packaging ${package.label}`);
-    built = await createPackageForRef(instruction, package, release);
+  for (const pkg of (instruction.packageIndividual || [])) {
+    console.log(`Packaging ${pkg.label}`);
+    built = await createPackageForRef(instruction, pkg, release);
     Object.assign(packages, built);
   }
 
-  for (const package of (instruction.packageMetaFromDirs || [])) {
-    console.log(`Packaging ${package.label}`);
-    built = await createMetaPackageFromRepoDir(instruction, package, release);
+  for (const pkg of (instruction.packageMetaFromDirs || [])) {
+    console.log(`Packaging ${pkg.label}`);
+    built = await createMetaPackageFromRepoDir(instruction, pkg, release);
     Object.assign(packages, built);
   }
 
-  if (instruction.magentoCommunityEditionMetapackage) {
-    console.log('Packaging Magento Community Edition Product Metapackage');
-    built = await createMagentoCommunityEditionMetapackage(instruction, release);
-    Object.assign(packages, built);
-  }
-
-  if (instruction.magentoCommunityEditionProject) {
-    console.log('Packaging Magento Community Edition Project');
-    built = await createMagentoCommunityEditionProject(
-      instruction,
-      release
-    );
+  for (const metapackage of (instruction.extraMetapackages || [])) {
+    console.log(`Building metapackage ${metapackage.name}`);
+    const built = await createMetaPackage(instruction, metapackage, release);
     Object.assign(packages, built);
   }
 
@@ -169,14 +158,14 @@ async function processBuildInstruction(instruction, release) {
  * @param {Array<repositoryBuildDefinition>} instructions
  * @returns {Promise<void>}
  */
-async function processNightlyBuildInstructions(instructions) {
+async function processNightlyBuildInstructions(instructions, repoUrl) {
   const releaseSuffix = getReleaseDateString();
   let release = new buildState({
+    composerRepoUrl: repoUrl,
     fallbackVersion: transformVersionsToNightlyBuildVersion('0.0.1', releaseSuffix), // version to use for previously unreleased packages
     dependencyVersions: await getPackageVersionsForBuildInstructions(instructions, releaseSuffix),
   });
 
-  // @TODO/future: Mage-OS Nightly probably doesn't handle vendor properly in the first place, and this isn't relevant for upstream nightlies.
   await fetchPackagistList('mage-os');
 
   for (const instruction of instructions) {
@@ -190,4 +179,6 @@ module.exports = {
   transformVersionsToNightlyBuildVersions,
   calcNightlyBuildPackageBaseVersion,
   getReleaseDateString,
+  // Exported for testing
+  addSuffixToVersion,
 };

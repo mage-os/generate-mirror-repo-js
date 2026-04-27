@@ -5,10 +5,9 @@ const zip = require('jszip');
 const {
   createPackagesForRef,
   createPackageForRef,
-  createMagentoCommunityEditionMetapackage,
-  createMagentoCommunityEditionProject,
   createMetaPackageFromRepoDir,
-  archiveFilePath
+  archiveFilePath,
+  createComposerJsonOnlyPackage
 } = require('./package-modules');
 const repositoryBuildDefinition = require('./type/repository-build-definition');
 const packageDefinition = require('./type/package-definition');
@@ -17,10 +16,10 @@ const buildState = require('./type/build-state');
 
 
 /**
- * 
- * @param {String} url 
- * @param {String} fromTag 
- * @param {Array<String>} skipTags 
+ *
+ * @param {String} url
+ * @param {String} fromTag
+ * @param {Array<String>} skipTags
  * @returns {Promise<Array<String>>}
  */
 async function listTagsFrom(url, fromTag, skipTags) {
@@ -30,7 +29,7 @@ async function listTagsFrom(url, fromTag, skipTags) {
 }
 
 /**
- * @param {String} archiveDir 
+ * @param {String} archiveDir
  */
 async function copyAdditionalPackages(archiveDir) {
   const dir = `${__dirname}/../resource/additional-packages`;
@@ -56,59 +55,11 @@ async function copyAdditionalPackages(archiveDir) {
 }
 
 /**
- * @param {repositoryBuildDefinition} instruction 
+ * @param {repositoryBuildDefinition} instruction
+ * @param {packageDefinition} pkg
  * @returns {Array<String>} Packaged tags
  */
-async function createMagentoCommunityEditionMetapackagesSinceTag(instruction) {
-  const tags = await listTagsFrom(instruction.repoUrl, instruction.fromTag, instruction.skipTags);
-  console.log(`Versions to process: ${tags.join(', ')}`);
-  for (const tag of tags) {
-    console.log(`Processing ${tag}`);
-
-    let release = new buildState({
-      ref: tag,
-      fallbackVersion: tag,
-      dependencyVersions: (instruction.fixVersions?.[tag] ?? {})
-    });
-
-    await createMagentoCommunityEditionMetapackage(
-      instruction,
-      release
-    );
-  }
-  return tags;
-}
-
-/**
- * @param {repositoryBuildDefinition} instruction 
- * @returns {Array<String>} Packaged tags
- */
-async function createProjectPackagesSinceTag(instruction) {
-  const tags = await listTagsFrom(instruction.repoUrl, instruction.fromTag, instruction.skipTags);
-  console.log(`Versions to process: ${tags.join(', ')}`);
-  for (const tag of tags) {
-    console.log(`Processing ${tag}`);
-
-    let release = new buildState({
-      ref: tag,
-      fallbackVersion: tag,
-      dependencyVersions: (instruction.fixVersions?.[tag] ?? {})
-    });
-
-    await createMagentoCommunityEditionProject(
-      instruction,
-      release
-    );
-  }
-  return tags;
-}
-
-/**
- * @param {repositoryBuildDefinition} instruction 
- * @param {packageDefinition} package 
- * @returns {Array<String>} Packaged tags
- */
-async function createMetaPackagesFromRepoDir(instruction, package) {
+async function createMetaPackagesFromRepoDir(instruction, pkg) {
   const tags = await listTagsFrom(instruction.repoUrl, instruction.fromTag, instruction.skipTags);
   console.log(`Versions to process: ${tags.join(', ')}`);
   const built = [];
@@ -124,7 +75,7 @@ async function createMetaPackagesFromRepoDir(instruction, package) {
     try {
       await createMetaPackageFromRepoDir(
         instruction,
-        package,
+        pkg,
         release
       );
       built.push(tag);
@@ -136,11 +87,11 @@ async function createMetaPackagesFromRepoDir(instruction, package) {
 }
 
 /**
- * @param {repositoryBuildDefinition} instruction 
- * @param {packageDefinition} package 
+ * @param {repositoryBuildDefinition} instruction
+ * @param {packageDefinition} pkg
  * @returns {Array<String>} Packaged tags
  */
-async function createPackagesSinceTag(instruction, package) {
+async function createPackagesSinceTag(instruction, pkg) {
   const tags = await listTagsFrom(instruction.repoUrl, instruction.fromTag, instruction.skipTags);
   console.log(`Versions to process: ${tags.join(', ')}`);
   const built = [];
@@ -151,11 +102,11 @@ async function createPackagesSinceTag(instruction, package) {
       ref: tag,
       dependencyVersions: (instruction.fixVersions?.[tag] ?? {})
     });
-    
+
     try {
       await createPackagesForRef(
         instruction,
-        package,
+        pkg,
         release
       );
       built.push(tag)
@@ -167,11 +118,11 @@ async function createPackagesSinceTag(instruction, package) {
 }
 
 /**
- * @param {repositoryBuildDefinition} instruction 
- * @param {packageDefinition} package 
+ * @param {repositoryBuildDefinition} instruction
+ * @param {packageDefinition} pkg
  * @returns {Array<String>} Packaged tags
  */
-async function createPackageSinceTag(instruction, package) {
+async function createPackageSinceTag(instruction, pkg) {
   const tags = await listTagsFrom(instruction.repoUrl, instruction.fromTag, instruction.skipTags);
   const built = [];
 
@@ -182,16 +133,16 @@ async function createPackageSinceTag(instruction, package) {
 
     // Note: if the composerJsonFile ends with the "template.json" the composer dependencies will be calculated
     // This is only used for non-mirror magento2-base-package builds
-    package.composerJsonFile = null;
-    if (package.composerJsonPath && package.composerJsonPath.length) {
-      let composerJsonFile = package.composerJsonPath
+    pkg.composerJsonFile = null;
+    if (pkg.composerJsonPath && pkg.composerJsonPath.length) {
+      let composerJsonFile = pkg.composerJsonPath
         .replace('composer-templates', 'history')
         .replace('template.json', `${tag}.json`);
       composerJsonFile = fs.existsSync(composerJsonFile)
         ? composerJsonFile
-        : package.composerJsonPath;
+        : pkg.composerJsonPath;
 
-      package.composerJsonFile = composerJsonFile;
+      pkg.composerJsonFile = composerJsonFile;
     }
 
     let release = new buildState({
@@ -202,7 +153,7 @@ async function createPackageSinceTag(instruction, package) {
     try {
       await createPackageForRef(
         instruction,
-        package,
+        pkg,
         release
       );
       built.push(tag);
@@ -214,19 +165,19 @@ async function createPackageSinceTag(instruction, package) {
 }
 
 /**
- * @param {packageReplacement} package 
+ * @param {packageReplacement} pkg
  * @return {void}
  */
-async function replacePackageFiles(package) {
-  const packageFilePath = archiveFilePath(package.name, package.version);
+async function replacePackageFiles(pkg) {
+  const packageFilePath = archiveFilePath(pkg.name, pkg.version);
   if (!fs.existsSync(packageFilePath)) {
-    throw {message: `Could not find archive ${packageFilePath} for replacement: ${package.name}:${package.version}.`};
+    throw {message: `Could not find archive ${packageFilePath} for replacement: ${pkg.name}:${pkg.version}.`};
   }
 
   fs.readFile(packageFilePath, function(_, data) {
     zip.loadAsync(data).then(function(contents) {
-      package.files.forEach(function(file) {
-        const replacementFilePath = `${__dirname}/../resource/replace/${package.name}/${package.version}/${file}`;
+      pkg.files.forEach(function(file) {
+        const replacementFilePath = `${__dirname}/../resource/replace/${pkg.name}/${pkg.version}/${file}`;
         if (!fs.existsSync(replacementFilePath)) {
           throw {message: `Replacement file does not exist: ${replacementFilePath}`}
         }
@@ -244,9 +195,59 @@ async function replacePackageFiles(package) {
 
 /**
  * @param {repositoryBuildDefinition} instruction
+ * @param {Object} metapackage
+ * @param {buildState} releaseContext
+ * @returns {Array<String>} Packaged tags
+ */
+async function createMetaPackagesSinceTag(instruction, metapackage, releaseContext) {
+  const packageName = `${instruction.vendor}/${metapackage.name}`;
+  const tags = await listTagsFrom(
+    instruction.repoUrl,
+    metapackage.fromTag || instruction.fromTag,
+    instruction.skipTags
+  );
+  console.log(`Versions to process for metapackage ${packageName}: ${tags.join(', ')}`);
+
+  for (const tag of tags) {
+    console.log(`Processing ${tag}`);
+    let release = new buildState({
+      ref: tag,
+      composerRepoUrl: releaseContext.composerRepoUrl,
+      fallbackVersion: tag,
+      dependencyVersions: (instruction.fixVersions?.[tag] ?? {})
+    });
+
+    await createComposerJsonOnlyPackage(
+      instruction,
+      release,
+      packageName,
+      tag,
+      async composerConfig => {
+        if (metapackage.transform) {
+          for (const fn of metapackage.transform) {
+            composerConfig = await fn(composerConfig, instruction, metapackage, release);
+          }
+        }
+
+        if (instruction.transform[packageName]) {
+          for (const fn of instruction.transform[packageName]) {
+            composerConfig = await fn(composerConfig, instruction, metapackage, release);
+          }
+        }
+
+        return composerConfig;
+      }
+    );
+  }
+  return tags;
+}
+
+/**
+ * @param {repositoryBuildDefinition} instruction
+ * @param {buildState} releaseContext
  * @returns {Promise<void>}
  */
-async function processMirrorInstruction(instruction) {
+async function processMirrorInstruction(instruction, releaseContext) {
   let tags = [];
 
   await Promise.all(
@@ -255,38 +256,31 @@ async function processMirrorInstruction(instruction) {
     )
   );
 
-  for (const package of (instruction.packageDirs)) {
-    console.log(`Packaging ${package.label}`);
-    tags = await createPackagesSinceTag(instruction, package)
-    console.log(package.label, tags);
+  for (const pkg of (instruction.packageDirs)) {
+    console.log(`Packaging ${pkg.label}`);
+    tags = await createPackagesSinceTag(instruction, pkg)
+    console.log(pkg.label, tags);
   }
 
-  for (const package of (instruction.packageIndividual)) {
-    console.log(`Packaging ${package.label}`);
-    tags = await createPackageSinceTag(instruction, package);
-    console.log(package.label, tags);
+  for (const pkg of (instruction.packageIndividual)) {
+    console.log(`Packaging ${pkg.label}`);
+    tags = await createPackageSinceTag(instruction, pkg);
+    console.log(pkg.label, tags);
   }
 
-  for (const package of (instruction.packageMetaFromDirs)) {
-    console.log(`Packaging ${package.label}`);
-    tags = await createMetaPackagesFromRepoDir(instruction, package);
-    console.log(package.label, tags);
+  for (const pkg of (instruction.packageMetaFromDirs)) {
+    console.log(`Packaging ${pkg.label}`);
+    tags = await createMetaPackagesFromRepoDir(instruction, pkg);
+    console.log(pkg.label, tags);
   }
 
   for (const packageReplacement of (instruction.packageReplacements)) {
     await replacePackageFiles(packageReplacement);
   }
 
-  if (instruction.magentoCommunityEditionMetapackage) {
-    console.log('Packaging Magento Community Edition Product Metapackage');
-    tags = await createMagentoCommunityEditionMetapackagesSinceTag(instruction);
-    console.log('Magento Community Edition Product Metapackage', tags);
-  }
-
-  if (instruction.magentoCommunityEditionProject) {
-    console.log('Packaging Magento Community Edition Project');
-    tags = await createProjectPackagesSinceTag(instruction);
-    console.log('Magento Community Edition Project', tags);
+  for (const metapackage of instruction.extraMetapackages) {
+    console.log(`Packaging ${metapackage.name}`);
+    tags = await createMetaPackagesSinceTag(instruction, metapackage, releaseContext);
   }
 
   repo.clearCache();

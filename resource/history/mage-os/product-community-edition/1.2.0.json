@@ -5,5 +5,8 @@
     "mage-os/inventory-metapackage": "1.2.0",
     "mage-os/page-builder": "1.2.0",
     "mage-os/theme-adminhtml-m137": "1.2.0"
+  },
+  "extra": {
+    "magento_version": "2.4.8-p1"
   }
 }

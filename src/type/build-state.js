@@ -21,6 +21,11 @@ class buildState {
   version = null;
 
   /**
+   * @type String|null Git Repository URL
+   */
+  composerRepoUrl = null;
+
+  /**
    * @type {String|null} Fallback version to use in composer.json version tag and
    *  in the package archive name (used for nightly releases)
   */
@@ -39,13 +44,14 @@ class buildState {
   replaceVersions = {};
 
   /**
-   * @param {{ref: String, origRef: String, version: String, fallbackVersion: String, dependencyVersions: Object.<string, string>, replaceVersions: Object.<string, string>}}} options 
+   * @param {{ref: String, origRef: String, version: String, composerRepoUrl: String, fallbackVersion: String, dependencyVersions: Object.<string, string>, replaceVersions: Object.<string, string>}}} options 
    */
   constructor(options) {
     this.ref = options.ref || this.ref;
     this.origRef = options.origRef || this.origRef;
     this.version = options.version || this.version;
     this.fallbackVersion = options.fallbackVersion || this.fallbackVersion;
+    this.composerRepoUrl = options.composerRepoUrl || this.composerRepoUrl;
     this.dependencyVersions = options.dependencyVersions || this.dependencyVersions;
     this.replaceVersions = options.replaceVersions || this.replaceVersions;
   }
