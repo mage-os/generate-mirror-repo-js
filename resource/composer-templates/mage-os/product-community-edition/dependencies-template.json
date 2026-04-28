@@ -5,6 +5,7 @@
     "element119/module-custom-admin-logo": "https://github.com/element119/module-custom-admin-logo.git",
     "elgentos/magento2-varnish-extended": "https://github.com/elgentos/magento2-varnish-extended.git",
     "mage-os/inventory-metapackage": "https://github.com/mage-os/mageos-inventory.git",
+    "mage-os/module-admin-activity-log": "https://github.com/mage-os-lab/module-admin-activity-log.git",
     "mage-os/module-automatic-translation": "https://github.com/mage-os/module-automatic-translation.git",
     "mage-os/module-inventory-reservations-grid": "https://github.com/mage-os/module-inventory-reservations-grid.git",
     "mage-os/module-meta-robots-tag": "https://github.com/mage-os/module-meta-robots-tag.git",
