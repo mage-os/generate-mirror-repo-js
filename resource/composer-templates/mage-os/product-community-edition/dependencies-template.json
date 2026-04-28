@@ -13,6 +13,6 @@
     "mage-os/page-builder": "https://github.com/mage-os/mageos-magento2-page-builder.git",
     "mage-os/security-package": "https://github.com/mage-os/mageos-security-package.git",
     "mage-os/theme-adminhtml-m137": "https://github.com/mage-os/theme-adminhtml-m137.git",
-    "n98/magerun2-dist": "https://github.com/netz98/n98-magerun2-dist.git"
+    "n98/magerun2-dist": "^9.4"
   }
 }
