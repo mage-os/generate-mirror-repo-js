@@ -14,6 +14,7 @@
     "mage-os/module-theme-optimization": "https://github.com/mage-os/module-theme-optimization.git",
     "mage-os/page-builder": "https://github.com/mage-os/mageos-magento2-page-builder.git",
     "mage-os/security-package": "https://github.com/mage-os/mageos-security-package.git",
-    "mage-os/theme-adminhtml-m137": "https://github.com/mage-os/theme-adminhtml-m137.git"
+    "mage-os/theme-adminhtml-m137": "https://github.com/mage-os/theme-adminhtml-m137.git",
+    "n98/magerun2-dist": "^9.4"
   }
 }
