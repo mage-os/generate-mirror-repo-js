@@ -15,6 +15,7 @@
     "mage-os/page-builder": "https://github.com/mage-os/mageos-magento2-page-builder.git",
     "mage-os/security-package": "https://github.com/mage-os/mageos-security-package.git",
     "mage-os/theme-adminhtml-m137": "https://github.com/mage-os/theme-adminhtml-m137.git",
-    "n98/magerun2-dist": "^9.4"
+    "n98/magerun2-dist": "^9.4",
+    "swissup/module-ignition": "https://github.com/swissup/module-ignition.git"
   }
 }
