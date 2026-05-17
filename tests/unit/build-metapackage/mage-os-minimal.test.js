@@ -32,7 +32,6 @@ const PHP_EXTENSIONS = [
   'ext-ctype',
   'ext-curl',
   'ext-dom',
-  'ext-ftp',
   'ext-gd',
   'ext-hash',
   'ext-iconv',
