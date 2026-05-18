@@ -1,0 +1,6 @@
+{
+  "dependencies": {
+    "mage-os/composer-root-update-plugin": "^2.0.4",
+    "mage-os/composer-dependency-version-audit-plugin": "~0.1"
+  }
+}
