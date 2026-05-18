@@ -26,13 +26,22 @@ class VendorConfig
         public readonly int $baseIndent,
     ) {}
 
-    public static function get(string $vendor): self
+    public static function get(string $vendor, ?string $repoOverride = null): self
     {
-        return match ($vendor) {
+        $config = match ($vendor) {
             'mage-os' => new self('mage-os', 'https://repo.mage-os.org', 'v2', 2),
             'magento' => new self('magento', 'https://repo.magento.com', 'v1', 4),
             default => throw new \InvalidArgumentException("Unknown vendor '{$vendor}'. Use 'mage-os' or 'magento'."),
         };
+
+        if ($repoOverride !== null && $repoOverride !== '') {
+            // Allow fetching from a non-default repo (e.g. preview-repo.mage-os.org)
+            // for pre-publish release history generation. Bare hosts get https://.
+            $repo = preg_match('#^https?://#', $repoOverride) ? $repoOverride : "https://{$repoOverride}";
+            $config = new self($config->vendor, rtrim($repo, '/'), $config->api, $config->baseIndent);
+        }
+
+        return $config;
     }
 }
 
@@ -316,8 +325,9 @@ class ReleaseHistoryCommand
         private readonly string $vendor,
         private readonly string $version,
         private readonly bool $dryRun,
+        private readonly ?string $repoOverride = null,
     ) {
-        $this->config = VendorConfig::get($vendor);
+        $this->config = VendorConfig::get($vendor, $repoOverride);
         $http = new HttpClient();
         $this->fetcher = new PackageFetcher($this->config, $http);
         $this->writer = new HistoryFileWriter($vendor);
@@ -480,14 +490,18 @@ class ReleaseHistoryCommand
 $vendor = 'mage-os';
 $version = null;
 $dryRun = false;
+$source = null;
 
 foreach (array_slice($argv, 1) as $arg) {
     if ($arg === '--dry-run') {
         $dryRun = true;
     } elseif (str_starts_with($arg, '--vendor=')) {
         $vendor = substr($arg, 9);
+    } elseif (str_starts_with($arg, '--source=')) {
+        $source = substr($arg, 9);
     } elseif ($arg === '--help' || $arg === '-h') {
-        echo "Usage: php fetch-release.php <version> [--vendor=mage-os|magento] [--dry-run]\n";
+        echo "Usage: php fetch-release.php <version> [--vendor=mage-os|magento] [--source=<host>] [--dry-run]\n";
+        echo "  --source=<host>  Fetch from a non-default composer repo (e.g. preview-repo.mage-os.org)\n";
         exit(0);
     } elseif ($version === null) {
         $version = $arg;
@@ -500,7 +514,7 @@ if ($version === null) {
 }
 
 try {
-    $command = new ReleaseHistoryCommand($vendor, $version, $dryRun);
+    $command = new ReleaseHistoryCommand($vendor, $version, $dryRun, $source);
     exit($command->run());
 } catch (\InvalidArgumentException $e) {
     fwrite(STDERR, "ERROR: {$e->getMessage()}\n");
