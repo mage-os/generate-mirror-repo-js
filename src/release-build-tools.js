@@ -36,15 +36,11 @@ async function composerCreateMagentoProject(version) {
       console.log(`Running ${command}`)
       const bufferBytes = 4 * 1024 * 1024; // 4M
       childProcess.exec(command, {maxBuffer: bufferBytes}, (error, stdout, stderr) => {
-        //if (stderr && stderr.includes('Warning: The lock file is not up-to-date with the latest changes in composer.json')) stderr = '';
-        if (stderr && stderr.includes('Generating autoload files')) stderr = '';
-        if (stderr) stderr = stderr.split('\n').filter(line => !line.startsWith('Deprecation Notice:')).join('\n').trim();
         if (error) {
-          reject(`Error executing command: ${error.message}`)
+          reject(`Error executing command: ${error.message}\n${stdout}\n${stderr}`)
+          return;
         }
-        if (stderr) {
-          reject(`[error] ${stderr}`)
-        }
+        // composer & git write progress/warnings to stderr; trust the exit code.
         resolve(workDir)
       })
     }
@@ -58,12 +54,9 @@ async function installSampleData(dir) {
   const bufferBytes = 4 * 1024 * 1024; // 4M
   const output = await (new Promise((resolve, reject) => {
     childProcess.exec(listCommand, {maxBuffer: bufferBytes, cwd: dir}, (error, stdout, stderr) => {
-      if (stderr) stderr = stderr.split('\n').filter(line => !line.startsWith('Deprecation Notice:')).join('\n').trim();
       if (error) {
-        reject(`Error executing command: ${error.message}`)
-      }
-      if (stderr) {
-        reject(`[error] ${stderr}`)
+        reject(`Error executing command: ${error.message}\n${stdout}\n${stderr}`)
+        return;
       }
       resolve(stdout.trim())
     })
@@ -80,13 +73,9 @@ async function installSampleData(dir) {
       const installCommand = `composer require --ignore-platform-reqs "${packages.join('" "')}"`
       console.log(`Installing sample data packages`)
       childProcess.exec(installCommand, {maxBuffer: bufferBytes, cwd: dir}, (error, stdout, stderr) => {
-        if (stderr && stderr.includes('Generating autoload files')) stderr = '';
-        if (stderr) stderr = stderr.split('\n').filter(line => !line.startsWith('Deprecation Notice:')).join('\n').trim();
         if (error) {
-          reject(`Error executing command: ${error.message}`)
-        }
-        if (stderr) {
-          reject(`[error] ${stderr}`)
+          reject(`Error executing command: ${error.message}\n${stdout}\n${stderr}`)
+          return;
         }
         resolve(true)
       })
@@ -98,12 +87,9 @@ async function getInstalledPackageMap(dir) {
   const bufferBytes = 4 * 1024 * 1024; // 4M
   const output = await (new Promise((resolve, reject) => {
     childProcess.exec(command, {maxBuffer: bufferBytes, cwd: dir}, (error, stdout, stderr) => {
-      if (stderr) stderr = stderr.split('\n').filter(line => !line.startsWith('Deprecation Notice:')).join('\n').trim();
       if (error) {
-        reject(`Error executing command: ${error.message}`)
-      }
-      if (stderr) {
-        reject(`[error] ${stderr}`)
+        reject(`Error executing command: ${error.message}\n${stdout}\n${stderr}`)
+        return;
       }
       resolve(stdout)
     })
@@ -243,9 +229,11 @@ async function prepPackageForRelease(instruction, pkg, release, workingCopyPath)
 module.exports = {
   validateVersionString,
   updateComposerConfigFromMagentoToMageOs,
-  async getPackageVersionMap(releaseVersion) {
+  async getPackageVersionMap(releaseVersion, {skipSampleData = false} = {}) {
     const dir = await composerCreateMagentoProject(releaseVersion);
-    await installSampleData(dir);
+    if (!skipSampleData) {
+      await installSampleData(dir);
+    }
     return getInstalledPackageMap(dir);
   },
   /**

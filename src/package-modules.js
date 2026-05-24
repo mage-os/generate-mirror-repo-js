@@ -131,11 +131,18 @@ function getVersionStability(version) {
  * configuration and should stay resolvable from their original vendor on Packagist.
  * The package name itself (composerConfig.name) is always renamed regardless.
  *
+ * When replaceVersions is provided and the package is renamed from a magento/* name, a `replace`
+ * entry is added pointing back to the original magento/* name with the real upstream Magento
+ * version. This is what lets third-party packages still requiring magento/* by the original
+ * name (e.g. `element119/module-custom-admin-logo` requiring `magento/framework`) resolve
+ * against the renamed mage-os/* package.
+ *
  * @param {Object} composerConfig - Parsed composer.json object, mutated in place
  * @param {String} vendor
  * @param {Object.<string, string>} [dependencyVersions] - Map of renamed-vendor package names to version strings
+ * @param {Object.<string, string>} [replaceVersions] - Map of original magento/* package names to upstream versions
  */
-function applyVendorRename(composerConfig, vendor, dependencyVersions) {
+function applyVendorRename(composerConfig, vendor, dependencyVersions, replaceVersions) {
   if (!vendor || vendor === 'magento') return;
   const toVendor = name => name.replace(/^magento\//, `${vendor}/`);
   const shouldRename = name => {
@@ -144,6 +151,7 @@ function applyVendorRename(composerConfig, vendor, dependencyVersions) {
     return toVendor(name) in dependencyVersions;
   };
   const rename = name => shouldRename(name) ? toVendor(name) : name;
+  const originalName = composerConfig.name;
   composerConfig.name = toVendor(composerConfig.name);
   for (const depType of ['require', 'require-dev', 'suggest', 'replace', 'conflict']) {
     if (!composerConfig[depType]) continue;
@@ -152,6 +160,10 @@ function applyVendorRename(composerConfig, vendor, dependencyVersions) {
       renamed[rename(pkg)] = val;
     }
     composerConfig[depType] = renamed;
+  }
+  if (replaceVersions && originalName && originalName.startsWith('magento/') && replaceVersions[originalName]) {
+    composerConfig.replace = composerConfig.replace || {};
+    composerConfig.replace[originalName] = replaceVersions[originalName];
   }
 }
 
@@ -320,7 +332,7 @@ async function createPackageForRef(instruction, pkg, release) {
   let composerConfig = JSON.parse(composerJson);
 
   if (instruction.vendor && instruction.vendor !== 'magento') {
-    applyVendorRename(composerConfig, instruction.vendor, release.dependencyVersions);
+    applyVendorRename(composerConfig, instruction.vendor, release.dependencyVersions, release.replaceVersions);
   }
 
   let name, version;
@@ -600,7 +612,7 @@ async function createMetaPackageFromRepoDir(instruction, pkg, release) {
   ));
 
   if (instruction.vendor && instruction.vendor !== 'magento') {
-    applyVendorRename(composerConfig, instruction.vendor, release.dependencyVersions);
+    applyVendorRename(composerConfig, instruction.vendor, release.dependencyVersions, release.replaceVersions);
   }
 
   let {version, name} = composerConfig;
@@ -672,7 +684,7 @@ async function createMetaPackage(instruction, metapackage, release) {
   // For release builds the transforms already handle renaming, so applyVendorRename finds no
   // magento/ deps to rename and leaves the config unchanged.
   if (instruction.vendor && instruction.vendor !== 'magento') {
-    applyVendorRename(composerConfig, instruction.vendor, release.dependencyVersions);
+    applyVendorRename(composerConfig, instruction.vendor, release.dependencyVersions, release.replaceVersions);
     // Re-run setDependencyVersions after rename so that deps now keyed under the target vendor
     // (e.g. mage-os/composer) can be matched against the dependencyVersions map, which uses
     // renamed (mage-os/) keys.

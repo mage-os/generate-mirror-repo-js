@@ -98,11 +98,11 @@ async function exec(cmd, options) {
     const bufferBytes = 4 * 1024 * 1024; // 4M
     childProcess.exec(cmd, {maxBuffer: bufferBytes, ...(options || {})}, (error, stdout, stderr) => {
       if (error) {
-        reject(`Error executing command${options?.cwd ? ` in ${options.cwd}` : ''}: ${error.message}\n${stdout}`)
+        reject(`Error executing command${options?.cwd ? ` in ${options.cwd}` : ''}: ${error.message}\n${stdout}\n${stderr}`);
+        return;
       }
-      if (stderr) {
-        reject(`[error] ${stderr}`);
-      }
+      // git writes progress (e.g. "Updating files: 50%") and harmless warnings to stderr
+      // when stderr is a TTY. The exit code is the authoritative signal of failure.
       resolve(stdout);
     });
   });
