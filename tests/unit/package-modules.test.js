@@ -35,10 +35,6 @@ jest.mock('../../src/utils', () => ({
     if (a === b) return 0;
     return a < b ? -1 : 1;
   }),
-  sortObjectKeys: jest.fn((obj) => Object.keys(obj || {}).sort().reduce((sorted, key) => {
-    sorted[key] = obj[key];
-    return sorted;
-  }, {})),
 }));
 
 const fs = require('fs');

@@ -3,7 +3,6 @@ const {
   setDependencyVersions,
   getAdditionalConfiguration
 } = require('../package-modules');
-const {sortObjectKeys} = require('../utils');
 const buildState = require('../type/build-state');
 const metapackageDefinition = require('../type/metapackage-definition');
 const repositoryBuildDefinition = require('../type/repository-build-definition');
@@ -44,10 +43,6 @@ async function transformMagentoCommunityEditionProject(composerConfig, instructi
   }
 
   setDependencyVersions(instruction, release, composerConfig);
-
-  // Keep require ordering deterministic so freshly built releases match the
-  // sorted pinned history files (see sortObjectKeys), avoiding checksum changes.
-  composerConfig.require = sortObjectKeys(composerConfig.require);
 
   return composerConfig;
 }
@@ -95,10 +90,6 @@ async function transformMagentoCommunityEditionProduct(composerConfig, instructi
     delete composerConfig[k];
   }
   setDependencyVersions(instruction, release, composerConfig);
-
-  // Keep require ordering deterministic so freshly built releases match the
-  // sorted pinned history files (see sortObjectKeys), avoiding checksum changes.
-  composerConfig.require = sortObjectKeys(composerConfig.require);
 
   return composerConfig;
 }

@@ -28,13 +28,6 @@ function requireKeys(file) {
   return Object.keys(config.require || {});
 }
 
-function latestVersionFile(dir) {
-  const files = versionFiles(dir);
-  const versions = files.map(f => f.replace(/\.json$/, ''));
-  versions.sort(compareVersions);
-  return path.join(dir, `${versions[versions.length - 1]}.json`);
-}
-
 describe('release history require ordering (issue #325)', () => {
   describe('mage-os/magento2-base', () => {
     const dir = path.join(historyRoot, 'magento2-base');
@@ -50,17 +43,29 @@ describe('release history require ordering (issue #325)', () => {
   });
 
   // The community-edition metapackages only adopted sorted ordering once the generator
-  // started sorting them, so we guard the latest release of each (the one a new release
-  // is compared against) rather than the legacy unsorted files.
-  for (const pkg of ['product-community-edition', 'project-community-edition']) {
+  // started sorting them. The generator gates its sort on these same boundaries (see
+  // PRODUCT_REQUIRE_SORTED_SINCE / PROJECT_REQUIRE_SORTED_SINCE in
+  // src/build-metapackage/mage-os-community-edition.js); keep these values in sync.
+  const sortedSince = {
+    'product-community-edition': '2.0.0',
+    'project-community-edition': '2.2.1',
+  };
+
+  for (const [pkg, threshold] of Object.entries(sortedSince)) {
     describe(`mage-os/${pkg}`, () => {
       const dir = path.join(historyRoot, pkg);
 
-      test('latest release has require sorted by package name', () => {
-        const file = latestVersionFile(dir);
-        const keys = requireKeys(file);
-        expect(keys).toEqual([...keys].sort());
-      });
+      // Every release at or above the boundary must be sorted, matching what the
+      // (gated) generator now emits, so a freshly built release stays byte-identical
+      // to its pinned historic counterpart.
+      for (const file of versionFiles(dir)) {
+        const version = file.replace(/\.json$/, '');
+        if (compareVersions(version, threshold) < 0) continue;
+        test(`${file} (>= ${threshold}) has require sorted by package name`, () => {
+          const keys = requireKeys(path.join(dir, file));
+          expect(keys).toEqual([...keys].sort());
+        });
+      }
     });
   }
 });

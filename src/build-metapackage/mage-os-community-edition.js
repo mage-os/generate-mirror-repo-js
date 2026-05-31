@@ -1,10 +1,37 @@
 const buildState = require('../type/build-state');
 const metapackageDefinition = require('../type/metapackage-definition');
 const repositoryBuildDefinition = require('../type/repository-build-definition');
-const {compareVersions, sortObjectKeys} = require('../utils');
+const {compareVersions, isVersionGreaterOrEqual, sortObjectKeys} = require('../utils');
 const {
   updateComposerConfigFromMagentoToMageOs
 } = require('../release-build-tools');
+
+// The pinned history files store the require section sorted (PHP ksort), so freshly
+// generated release packages are sorted to match and stay byte-identical when they
+// transition from a "latest" to a pinned historic release (issue #325). Releases
+// below these versions predate the sorted convention and were published with their
+// require in insertion order; they are left untouched so already-published checksums
+// do not change. The boundaries are derived from the committed history files:
+// mage-os/product-community-edition is sorted from 2.0.0, project-community-edition
+// from 2.2.1.
+const PRODUCT_REQUIRE_SORTED_SINCE = '2.0.0';
+const PROJECT_REQUIRE_SORTED_SINCE = '2.2.1';
+
+/**
+ * Whether the require section of a community-edition metapackage should be sorted for
+ * the given release version. Numeric versions below the sorted-convention boundary keep
+ * their original order; newer and non-numeric (e.g. nightly) versions are sorted.
+ *
+ * @param {string} version
+ * @param {string} sortedSince
+ * @returns {boolean}
+ */
+function shouldSortRequire(version, sortedSince) {
+  if (/^\d+\.\d+/.test(version)) {
+    return isVersionGreaterOrEqual(version, sortedSince);
+  }
+  return true;
+}
 
 /**
  * @param {{}} composerConfig 
@@ -28,8 +55,9 @@ async function transformMageOSCommunityEditionProject(composerConfig, instructio
   }
 
   // Re-sort require after the magento/ -> mage-os/ rename so the final key order
-  // matches the sorted pinned history files (see sortObjectKeys).
-  if (composerConfig.require) {
+  // matches the sorted pinned history files (see sortObjectKeys), gated to releases
+  // that adopted the sorted convention.
+  if (composerConfig.require && shouldSortRequire(composerConfig.version, PROJECT_REQUIRE_SORTED_SINCE)) {
     composerConfig.require = sortObjectKeys(composerConfig.require);
   }
 
@@ -56,8 +84,9 @@ async function transformMageOSCommunityEditionProduct(composerConfig, instructio
   }
 
   // Re-sort require after the magento/ -> mage-os/ rename so the final key order
-  // matches the sorted pinned history files (see sortObjectKeys).
-  if (composerConfig.require) {
+  // matches the sorted pinned history files (see sortObjectKeys), gated to releases
+  // that adopted the sorted convention.
+  if (composerConfig.require && shouldSortRequire(composerConfig.version, PRODUCT_REQUIRE_SORTED_SINCE)) {
     composerConfig.require = sortObjectKeys(composerConfig.require);
   }
 
