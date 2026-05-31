@@ -82,6 +82,25 @@ describe('magento-community-edition', () => {
         expect(setDependencyVersions).not.toHaveBeenCalled();
       });
 
+      test('should output require with keys sorted alphabetically', async () => {
+        // The pinned history files store require sorted; the generator must match
+        // so a release stays byte-identical when it transitions latest -> historic.
+        getAdditionalConfiguration.mockResolvedValue({
+          require: {
+            'magento/zzz-plugin': '1.0.0',
+            'magento/aaa-plugin': '1.0.0',
+          }
+        });
+        const { composerConfig, instruction, metapackage, release } = createMockInputs();
+
+        const result = await transformMagentoCommunityEditionProject(
+          composerConfig, instruction, metapackage, release
+        );
+
+        const keys = Object.keys(result.require);
+        expect(keys).toEqual([...keys].sort());
+      });
+
       test('should correctly construct package name from vendor and metapackage name', async () => {
         const { composerConfig, instruction, metapackage, release } = createMockInputs();
 
@@ -323,6 +342,27 @@ describe('magento-community-edition', () => {
     };
 
     describe('Happy Path Tests', () => {
+      test('should output require with keys sorted alphabetically', async () => {
+        // The pinned history files store require sorted (ksort); the generator must
+        // match so a release stays byte-identical when latest -> historic.
+        getAdditionalConfiguration.mockResolvedValue({
+          require: {
+            'magento/zzz-metapackage': '*',
+            'magento/aaa-metapackage': '*',
+          }
+        });
+        const { composerConfig, instruction, metapackage, release } = createProductMockInputs({
+          composerConfig: { require: { 'magento/mmm-module': '*' }, replace: {} }
+        });
+
+        const result = await transformMagentoCommunityEditionProduct(
+          composerConfig, instruction, metapackage, release
+        );
+
+        const keys = Object.keys(result.require);
+        expect(keys).toEqual([...keys].sort());
+      });
+
       test('should return full additionalConfig when not a new release and additionalConfig has prefer-stable', async () => {
         const additionalConfig = {
           'prefer-stable': true,

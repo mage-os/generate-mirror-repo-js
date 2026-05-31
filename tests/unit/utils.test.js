@@ -12,7 +12,8 @@ const {
   isVersionLessOrEqual,
   isVersionEqual,
   httpSlurp,
-  mergeBuildConfigs
+  mergeBuildConfigs,
+  sortObjectKeys
 } = require('../../src/utils');
 
 // Mock the https module for httpSlurp tests
@@ -813,5 +814,34 @@ describe('mergeBuildConfigs', () => {
       expect(fooItem.excludes).toEqual([]);
       expect(mooItem.label).toBe('Moo');
     });
+  });
+});
+
+describe('sortObjectKeys', () => {
+  test('returns a new object with keys sorted alphabetically', () => {
+    const result = sortObjectKeys({b: 1, a: 2, c: 3});
+    expect(Object.keys(result)).toEqual(['a', 'b', 'c']);
+  });
+
+  test('preserves values', () => {
+    const result = sortObjectKeys({zebra: 'z', alpha: 'a'});
+    expect(result).toEqual({alpha: 'a', zebra: 'z'});
+  });
+
+  test('does not mutate the input object', () => {
+    const input = {b: 1, a: 2};
+    sortObjectKeys(input);
+    expect(Object.keys(input)).toEqual(['b', 'a']);
+  });
+
+  test('handles undefined/null input by returning an empty object', () => {
+    expect(sortObjectKeys(undefined)).toEqual({});
+    expect(sortObjectKeys(null)).toEqual({});
+  });
+
+  test('orders composer-style package names like Array.prototype.sort', () => {
+    const keys = ['symfony/console', 'laminas/laminas-code', 'mage-os/composer', 'composer/composer'];
+    const obj = keys.reduce((o, k) => (o[k] = '*', o), {});
+    expect(Object.keys(sortObjectKeys(obj))).toEqual([...keys].sort());
   });
 });

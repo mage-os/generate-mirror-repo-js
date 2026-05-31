@@ -272,6 +272,33 @@ describe('mage-os-community-edition', () => {
       });
     });
 
+    describe('require ordering', () => {
+      it('re-sorts require keys alphabetically after the vendor rename', async () => {
+        // updateComposerConfigFromMagentoToMageOs is mocked (no rename), so the
+        // unsorted require passes straight through to the sort step.
+        const composerConfig = createSampleComposerConfig({
+          require: {
+            'mage-os/zzz': '2.4.6',
+            'mage-os/product-community-edition': '2.4.6',
+            'mage-os/aaa': '2.4.6',
+          },
+        });
+        const instruction = createSampleInstruction();
+        const metapackage = createSampleMetapackage();
+        const release = createSampleRelease();
+
+        const result = await transformMageOSCommunityEditionProject(
+          composerConfig,
+          instruction,
+          metapackage,
+          release
+        );
+
+        const keys = Object.keys(result.require);
+        expect(keys).toEqual([...keys].sort());
+      });
+    });
+
     describe('async behavior', () => {
       it('returns a promise', () => {
         const composerConfig = createSampleComposerConfig();
@@ -504,6 +531,33 @@ describe('mage-os-community-edition', () => {
         );
 
         expect(composerConfig.extra.magento_version).toBe('2.4.6-p3');
+      });
+    });
+
+    describe('require ordering', () => {
+      it('re-sorts require keys alphabetically after the vendor rename', async () => {
+        const composerConfig = createSampleComposerConfig({
+          name: 'magento/product-community-edition',
+          type: 'metapackage',
+          require: {
+            'mage-os/page-builder': '2.4.6',
+            'mage-os/inventory-metapackage': '2.4.6',
+            'creatuity/magento2-interceptors': '1.0.0',
+          },
+        });
+        const instruction = createSampleInstruction();
+        const metapackage = createSampleMetapackage();
+        const release = createSampleRelease();
+
+        const result = await transformMageOSCommunityEditionProduct(
+          composerConfig,
+          instruction,
+          metapackage,
+          release
+        );
+
+        const keys = Object.keys(result.require);
+        expect(keys).toEqual([...keys].sort());
       });
     });
 

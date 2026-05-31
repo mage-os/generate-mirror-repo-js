@@ -3,7 +3,7 @@ const path = require('path');
 const {determineSourceDependencies} = require('./determine-dependencies');
 const JSZip = require('jszip');
 const repo = require("./repository");
-const {lastTwoDirs, httpSlurp, compareVersions} = require('./utils');
+const {lastTwoDirs, httpSlurp, compareVersions, sortObjectKeys} = require('./utils');
 const {isOnPackagist} = require('./packagist');
 const repositoryBuildDefinition = require('./type/repository-build-definition');
 const packageDefinition = require('./type/package-definition');
@@ -385,13 +385,18 @@ async function createPackageForRef(instruction, pkg, release) {
     const dir = await repo.checkout(instruction.repoUrl, release.origRef || release.ref);
     const deps = await determineSourceDependencies(dir, files);
     release.origRef && await repo.checkout(instruction.repoUrl, release.ref);
-    composerConfig.require = {};
-    Object.keys(deps).sort().forEach(dependency => {
+    // Rename to the target vendor first, then sort by the final package name, so the
+    // require order matches the sorted pinned history files regardless of how the
+    // magento/ -> vendor/ rename shifts a package's alphabetical position. This keeps
+    // a freshly built base package byte-identical to its pinned historic counterpart.
+    const renamedDeps = {};
+    for (const dependency of Object.keys(deps)) {
       const dependencyName = instruction.vendor && dependency.startsWith('magento/')
         ? dependency.replace(/^magento\//, instruction.vendor + '/')
         : dependency
-      composerConfig.require[dependencyName] = deps[dependency]
-    });
+      renamedDeps[dependencyName] = deps[dependency]
+    }
+    composerConfig.require = sortObjectKeys(renamedDeps);
   }
   setDependencyVersions(instruction, release, composerConfig);
 
