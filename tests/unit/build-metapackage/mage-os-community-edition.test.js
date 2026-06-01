@@ -280,8 +280,7 @@ describe('mage-os-community-edition', () => {
       });
 
       it('re-sorts require keys alphabetically for releases at or above 2.2.1', async () => {
-        // updateComposerConfigFromMagentoToMageOs is mocked (no rename), so the
-        // unsorted require passes straight through to the sort step.
+        // rename is mocked, so unsorted require passes straight to the sort step
         const composerConfig = createSampleComposerConfig({
           version: '2.2.1',
           require: unsortedRequire(),

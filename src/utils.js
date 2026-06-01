@@ -71,15 +71,7 @@ module.exports = {
   },
   compareVersions: compareTags,
   /**
-   * Return a new object with the same entries as the given object, but with keys
-   * sorted alphabetically.
-   *
-   * Used to keep the composer "require" key order of generated metapackages
-   * deterministic. The release-history tooling stores pinned history files with
-   * their require section sorted (PHP ksort), so freshly generated release
-   * packages must use the same ordering to remain byte-identical to their pinned
-   * historic counterpart. Otherwise a package's checksum changes when it
-   * transitions from a freshly-built "latest" release to a pinned historic one.
+   * Return a new object with the same entries but keys sorted alphabetically.
    */
   sortObjectKeys(obj) {
     return Object.keys(obj || {}).sort().reduce((sorted, key) => {
