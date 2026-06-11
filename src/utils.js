@@ -70,6 +70,15 @@ module.exports = {
     return dir.split('/').slice(-2).join(sep || '/');
   },
   compareVersions: compareTags,
+  /**
+   * Return a new object with the same entries but keys sorted alphabetically.
+   */
+  sortObjectKeys(obj) {
+    return Object.keys(obj || {}).sort().reduce((sorted, key) => {
+      sorted[key] = obj[key];
+      return sorted;
+    }, {});
+  },
   isVersionGreaterOrEqual(a, b) {
     return compareTags(a, b) >= 0;
   },
