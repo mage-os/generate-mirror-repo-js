@@ -13,7 +13,6 @@ const repositoryBuildDefinition = require("./type/repository-build-definition");
 const buildState = require("./type/build-state");
 const {fetchPackagistList} = require("./packagist");
 const {httpSlurp, compareVersions} = require("./utils");
-const {getPackageVersionMap} = require("./release-build-tools");
 
 const DEFAULT_UPSTREAM_MIRROR_URL = 'https://mirror.mage-os.org';
 const UPSTREAM_VERSION_REFERENCE_PACKAGE = 'magento/product-community-edition';
