@@ -411,23 +411,22 @@ describe('shell-git', () => {
           .rejects.toMatch(/Error executing command.*Command failed/);
       });
 
-      it('should reject on stderr output', async () => {
+      it('should resolve when only stderr is present (git progress is not an error)', async () => {
         childProcess.exec.mockImplementation((cmd, options, callback) => {
-          callback(null, '', 'error message from stderr');
+          callback(null, 'ok', 'Updating files: 100% (38034/38034), done.');
         });
 
-        await expect(sut.testing.exec('command-with-stderr'))
-          .rejects.toBe('[error] error message from stderr');
+        await expect(sut.testing.exec('git checkout main')).resolves.toBe('ok');
       });
 
-      it('should include cwd in error message when provided', async () => {
+      it('should include cwd and stderr in error message when command fails', async () => {
         const mockError = new Error('Command failed');
         childProcess.exec.mockImplementation((cmd, options, callback) => {
-          callback(mockError, '', '');
+          callback(mockError, 'stdout context', 'stderr context');
         });
 
         await expect(sut.testing.exec('git status', { cwd: '/path/to/repo' }))
-          .rejects.toMatch(/Error executing command in \/path\/to\/repo/);
+          .rejects.toMatch(/Error executing command in \/path\/to\/repo.*stdout context.*stderr context/s);
       });
     });
   });

@@ -12,6 +12,13 @@ const {
 const repositoryBuildDefinition = require("./type/repository-build-definition");
 const buildState = require("./type/build-state");
 const {fetchPackagistList} = require("./packagist");
+const {httpSlurp, compareVersions} = require("./utils");
+
+const DEFAULT_UPSTREAM_MIRROR_URL = 'https://mirror.mage-os.org';
+const UPSTREAM_VERSION_REFERENCE_PACKAGE = 'magento/product-community-edition';
+// Matches plain stable releases (X.Y, X.Y.Z) and patch suffixes (-p1, -p2.3),
+// rejecting pre-release labels like -alpha, -beta, -rc, -dev.
+const STABLE_VERSION_RE = /^v?\d+\.\d+(?:\.\d+)?(?:-p\d+(?:\.\d+)?)?$/i;
 
 /**
  * @param {repositoryBuildDefinition} instruction
@@ -155,15 +162,47 @@ async function processBuildInstruction(instruction, release) {
 }
 
 /**
+ * Picks the highest stable magento/product-community-edition version published on
+ * the given composer repo. Nightly mage-os/* packages use that version when writing
+ * their `replace` map so third-party packages requiring magento/* by the original
+ * name can resolve against them (e.g. `magento/framework >=103.0.7`).
+ *
+ * @param {string} mirrorUrl
+ * @returns {Promise<string>}
+ */
+async function determineLatestUpstreamMagentoRelease(mirrorUrl = DEFAULT_UPSTREAM_MIRROR_URL) {
+  const url = `${mirrorUrl.replace(/\/$/, '')}/p2/${UPSTREAM_VERSION_REFERENCE_PACKAGE}.json`;
+  const body = await httpSlurp(url);
+  let data;
+  try {
+    data = JSON.parse(body);
+  } catch (err) {
+    throw new Error(`Could not parse package metadata from ${url}: ${err.message}`);
+  }
+  const versions = (data?.packages?.[UPSTREAM_VERSION_REFERENCE_PACKAGE] || [])
+    .map(v => v.version)
+    .filter(v => STABLE_VERSION_RE.test(v));
+  if (versions.length === 0) {
+    throw new Error(`No stable ${UPSTREAM_VERSION_REFERENCE_PACKAGE} versions found at ${url}`);
+  }
+  versions.sort(compareVersions);
+  return versions[versions.length - 1];
+}
+
+/**
  * @param {Array<repositoryBuildDefinition>} instructions
+ * @param {string} repoUrl
+ * @param {{replaceVersions?: Object<string, string>}} [options]
  * @returns {Promise<void>}
  */
-async function processNightlyBuildInstructions(instructions, repoUrl) {
+async function processNightlyBuildInstructions(instructions, repoUrl, options = {}) {
   const releaseSuffix = getReleaseDateString();
+
   let release = new buildState({
     composerRepoUrl: repoUrl,
     fallbackVersion: transformVersionsToNightlyBuildVersion('0.0.1', releaseSuffix), // version to use for previously unreleased packages
     dependencyVersions: await getPackageVersionsForBuildInstructions(instructions, releaseSuffix),
+    replaceVersions: options.replaceVersions || {},
   });
 
   await fetchPackagistList('mage-os');
@@ -175,6 +214,7 @@ async function processNightlyBuildInstructions(instructions, repoUrl) {
 
 module.exports = {
   processNightlyBuildInstructions,
+  determineLatestUpstreamMagentoRelease,
   getPackageVersionsForBuildInstructions,
   transformVersionsToNightlyBuildVersions,
   calcNightlyBuildPackageBaseVersion,

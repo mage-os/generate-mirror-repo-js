@@ -864,4 +864,90 @@ describe('release-branch-build-tools', () => {
       });
     });
   });
+
+  // ============================================================================
+  // determineLatestUpstreamMagentoRelease Tests
+  // ============================================================================
+  describe('determineLatestUpstreamMagentoRelease', () => {
+    let mockHttpSlurp;
+
+    beforeEach(() => {
+      jest.resetModules();
+      mockHttpSlurp = jest.fn();
+      jest.doMock('../../src/utils', () => ({
+        ...jest.requireActual('../../src/utils'),
+        httpSlurp: mockHttpSlurp,
+      }));
+    });
+
+    afterEach(() => {
+      jest.resetModules();
+    });
+
+    const mockPayload = (versions) => JSON.stringify({
+      packages: {
+        'magento/product-community-edition': versions.map(v => ({version: v})),
+      },
+    });
+
+    it('picks the highest stable version', async () => {
+      mockHttpSlurp.mockResolvedValue(mockPayload(['2.4.6', '2.4.8', '2.4.7']));
+      const { determineLatestUpstreamMagentoRelease } = require('../../src/release-branch-build-tools');
+
+      const result = await determineLatestUpstreamMagentoRelease('https://mirror.example/');
+
+      expect(result).toBe('2.4.8');
+    });
+
+    it('treats -pN patch versions as stable and prefers them over the unpatched release', async () => {
+      mockHttpSlurp.mockResolvedValue(mockPayload(['2.4.7', '2.4.7-p1', '2.4.7-p3', '2.4.7-p2']));
+      const { determineLatestUpstreamMagentoRelease } = require('../../src/release-branch-build-tools');
+
+      const result = await determineLatestUpstreamMagentoRelease('https://mirror.example');
+
+      expect(result).toBe('2.4.7-p3');
+    });
+
+    it('filters out pre-release suffixes (alpha/beta/rc/dev)', async () => {
+      mockHttpSlurp.mockResolvedValue(mockPayload([
+        '2.4.7',
+        '2.4.8-alpha1',
+        '2.4.8-beta',
+        '2.4.8-rc1',
+        '2.4.8-dev',
+      ]));
+      const { determineLatestUpstreamMagentoRelease } = require('../../src/release-branch-build-tools');
+
+      const result = await determineLatestUpstreamMagentoRelease('https://mirror.example');
+
+      expect(result).toBe('2.4.7');
+    });
+
+    it('throws when no stable versions are available', async () => {
+      mockHttpSlurp.mockResolvedValue(mockPayload(['2.4.8-alpha1', '2.4.8-rc1']));
+      const { determineLatestUpstreamMagentoRelease } = require('../../src/release-branch-build-tools');
+
+      await expect(determineLatestUpstreamMagentoRelease('https://mirror.example'))
+        .rejects.toThrow(/No stable magento\/product-community-edition versions/);
+    });
+
+    it('throws a clear error when the payload is not valid JSON', async () => {
+      mockHttpSlurp.mockResolvedValue('<html>504 Gateway Timeout</html>');
+      const { determineLatestUpstreamMagentoRelease } = require('../../src/release-branch-build-tools');
+
+      await expect(determineLatestUpstreamMagentoRelease('https://mirror.example'))
+        .rejects.toThrow(/Could not parse package metadata/);
+    });
+
+    it('strips a trailing slash from the mirror URL', async () => {
+      mockHttpSlurp.mockResolvedValue(mockPayload(['2.4.8']));
+      const { determineLatestUpstreamMagentoRelease } = require('../../src/release-branch-build-tools');
+
+      await determineLatestUpstreamMagentoRelease('https://mirror.example/');
+
+      expect(mockHttpSlurp).toHaveBeenCalledWith(
+        'https://mirror.example/p2/magento/product-community-edition.json'
+      );
+    });
+  });
 });
