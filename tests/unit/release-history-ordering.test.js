@@ -34,9 +34,14 @@ describe('release history require ordering (issue #325)', () => {
   });
 
   // Keep in sync with PRODUCT/PROJECT_REQUIRE_SORTED_SINCE in the generator.
+  // The minimal editions are stored as full composer.json snapshots (used verbatim
+  // for historic rebuilds), but their require is still emitted sorted, so the same
+  // byte-compatibility guard applies from their first release (3.0.0).
   const sortedSince = {
     'product-community-edition': '2.0.0',
     'project-community-edition': '2.2.1',
+    'product-minimal-edition': '3.0.0',
+    'project-minimal-edition': '3.0.0',
   };
 
   for (const [pkg, threshold] of Object.entries(sortedSince)) {

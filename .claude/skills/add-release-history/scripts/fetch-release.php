@@ -115,6 +115,41 @@ class PackageFetcher
     }
 
     /**
+     * Fetch the COMPLETE composer.json from the published package zip.
+     *
+     * The p2/provider APIs normalize package metadata and drop fields the build
+     * relies on when it emits a stored snapshot verbatim (prefer-stable, config,
+     * minimum-stability, repositories). The minimal-edition history files are
+     * used as-is for historic rebuilds, so they must carry those fields exactly —
+     * hence we read composer.json straight from the dist zip rather than the API.
+     *
+     * @return ?array Parsed composer.json, or null if the package/version is not published.
+     */
+    public function fetchDistComposerJson(string $packageName, string $version): ?array
+    {
+        try {
+            $entry = $this->fetch($packageName, $version);
+        } catch (\RuntimeException) {
+            return null; // not published (e.g. minimal editions predate 3.0.0)
+        }
+
+        $distUrl = $entry['dist']['url'] ?? '';
+        if ($distUrl === '') {
+            throw new \RuntimeException("No dist url for {$packageName} {$version}.");
+        }
+
+        $tmp = tempnam(sys_get_temp_dir(), 'mageos-pkg-') . '.zip';
+        file_put_contents($tmp, $this->http->get($distUrl));
+        $json = @file_get_contents('zip://' . $tmp . '#composer.json');
+        @unlink($tmp);
+
+        if ($json === false) {
+            throw new \RuntimeException("Could not read composer.json from {$packageName} {$version} dist zip.");
+        }
+        return json_decode($json, true, 512, JSON_THROW_ON_ERROR);
+    }
+
+    /**
      * Composer v2 (p2) API — repo.mage-os.org.
      * Packages listed as an array, keyed by version in each entry.
      */
@@ -262,6 +297,24 @@ class HistoryFileBuilder
         unset($req["{$this->vendor}/product-community-edition"]);
         return ['require' => $req];
     }
+
+    /**
+     * Full composer.json snapshot for a minimal-edition metapackage.
+     *
+     * Unlike the community-edition files (which store only the add-on diff and are
+     * merged onto the git-tag composer.json at build time), the minimal editions
+     * cannot be reconstructed from a diff: their package list is a curated subset
+     * that exists only in the published metapackage. The build detects the complete
+     * snapshot and emits it verbatim, so we keep the whole composer.json. require is
+     * sorted to match the generator's sorted output (issue #325 byte-compatibility).
+     */
+    public function buildMinimalEdition(array $composerJson): array
+    {
+        if (isset($composerJson['require']) && is_array($composerJson['require'])) {
+            ksort($composerJson['require']);
+        }
+        return $composerJson;
+    }
 }
 
 class HistoryFileWriter
@@ -338,7 +391,12 @@ class ReleaseHistoryCommand
 
     private function checkExistingFiles(): bool
     {
-        foreach (['magento2-base', 'product-community-edition', 'project-community-edition'] as $subdir) {
+        $subdirs = ['magento2-base', 'product-community-edition', 'project-community-edition'];
+        if ($this->vendor === 'mage-os') {
+            $subdirs[] = 'product-minimal-edition';
+            $subdirs[] = 'project-minimal-edition';
+        }
+        foreach ($subdirs as $subdir) {
             $path = HISTORY_ROOT . '/' . $this->vendor . '/' . $subdir . '/' . $this->version . '.json';
             if (file_exists($path)) {
                 fwrite(STDERR, "ERROR: {$path} already exists. Remove it first to regenerate.\n");
@@ -443,6 +501,22 @@ class ReleaseHistoryCommand
             $projectData = $this->builder->buildProjectCommunityEdition(
                 $this->fetcher->fetch("{$v}/project-community-edition", $this->version)
             );
+
+            // 4 & 5: minimal editions — mage-os only, introduced in 3.0.0. Stored as
+            // the FULL composer.json (read from the dist zip) because the build emits
+            // them verbatim for historic rebuilds; they can't be reconstructed from a diff.
+            $minimalData = [];
+            if ($v === 'mage-os') {
+                foreach (['product-minimal-edition', 'project-minimal-edition'] as $i => $minimalPkg) {
+                    echo "\n" . (4 + $i) . ". {$v}/{$minimalPkg}\n";
+                    $full = $this->fetcher->fetchDistComposerJson("{$v}/{$minimalPkg}", $this->version);
+                    if ($full === null) {
+                        echo "  Not published for {$this->version} — skipping (minimal editions start at 3.0.0).\n";
+                        continue;
+                    }
+                    $minimalData[$minimalPkg] = $this->builder->buildMinimalEdition($full);
+                }
+            }
         } catch (\RuntimeException $e) {
             fwrite(STDERR, "ERROR: {$e->getMessage()}\n");
             return 1;
@@ -456,6 +530,9 @@ class ReleaseHistoryCommand
         $paths[] = $this->writer->write('magento2-base', $this->version, $baseData, $baseIndent, $this->dryRun);
         $paths[] = $this->writer->write('product-community-edition', $this->version, $productData, 2, $this->dryRun);
         $paths[] = $this->writer->write('project-community-edition', $this->version, $projectData, 2, $this->dryRun);
+        foreach ($minimalData as $minimalPkg => $data) {
+            $paths[] = $this->writer->write($minimalPkg, $this->version, $data, 2, $this->dryRun);
+        }
 
         if (!$this->dryRun) {
             echo "\nValidating JSON...\n";

@@ -5,19 +5,31 @@ description: Add release history files for Mage-OS or Magento versions by fetchi
 
 # Add Release History Files
 
-This skill automates adding release history files for a new Mage-OS or Magento version. It fetches package metadata from the upstream composer repository, creates the three required history JSON files, validates them, details all changes vs the prior version, and opens a PR.
+This skill automates adding release history files for a new Mage-OS or Magento version. It fetches package metadata from the upstream composer repository, creates the required history JSON files, validates them, details all changes vs the prior version, and opens a PR.
 
 ## What are history files?
 
-The `resource/history/{vendor}/` directory stores composer package snapshots for each release. Three files per version:
+The `resource/history/{vendor}/` directory stores composer package snapshots for each release. Three core files per version, plus two minimal-edition files for Mage-OS from 3.0.0 onward:
 
 | File | Purpose | Content |
 |------|---------|---------|
 | `magento2-base/{VERSION}.json` | Core platform dependencies and file map | Full composer.json: name, require, conflict, replace, extra (chmod, component_paths, map) |
 | `product-community-edition/{VERSION}.json` | Vendor-specific add-on packages | Only the add-on packages that differentiate from core, plus `extra.magento_version` (Mage-OS only) |
 | `project-community-edition/{VERSION}.json` | Project installer plugins | Just the composer plugin dependencies |
+| `product-minimal-edition/{VERSION}.json` | Minimal distribution metapackage (Mage-OS, ≥ 3.0.0) | **Entire** composer.json, verbatim |
+| `project-minimal-edition/{VERSION}.json` | Minimal distribution project installer (Mage-OS, ≥ 3.0.0) | **Entire** composer.json, verbatim |
 
 The product-community-edition file is the trickiest — it must include only the vendor-specific add-on packages (like `aligent/magento2-pci-4-compatibility`, `mage-os/module-automatic-translation`, etc. for Mage-OS; or `adobe-commerce/os-extensions-metapackage`, `magento/inventory-metapackage`, etc. for Magento), not packages already required by magento2-base. The helper script determines this by diffing product-community-edition's require against magento2-base's require for the same version.
+
+### Why the minimal-edition files are different
+
+The community-edition files store only a **diff** (the add-on packages); the build reconstructs the full package by reading the git-tag composer.json and merging the diff on top. That cannot work for the minimal editions: their package list is a curated **subset** produced by a build-time filter that is deliberately skipped for historic rebuilds, so a re-build can't recreate it. Instead, the build detects a complete stored snapshot (it carries `prefer-stable`/`name`, which diff files don't) and emits it **verbatim**. Therefore the minimal files must contain the whole composer.json.
+
+Two consequences the helper script handles automatically:
+- **Source is the dist zip, not the p2 API.** The Composer v2 p2 API strips fields the verbatim emit depends on (`prefer-stable`, `config`, `minimum-stability`, `repositories`). The script reads composer.json directly from the published package zip so those survive.
+- **`require` is sorted.** The generator emits `require` sorted by package name (issue #325 byte-compatibility), so the script ksorts `require` in the stored snapshot to match — otherwise the package checksum would change at the latest→historic transition. The `release-history-ordering` unit test guards this for `*-minimal-edition` from 3.0.0.
+
+Minimal editions are **Mage-OS only** and **start at 3.0.0**. For Magento, or for Mage-OS versions before 3.0.0, the script skips them (the packages aren't published).
 
 ## Vendor differences
 
@@ -54,10 +66,11 @@ php .claude/skills/add-release-history/scripts/fetch-release.php {VERSION} --ven
 ```
 
 This script:
-- Fetches all three packages from the upstream composer repository
+- Fetches the three community-edition packages from the upstream composer repository
 - Determines add-on packages by diffing product-community-edition's require against magento2-base's require for the same version (anything not in magento2-base is an add-on)
 - Reports new/removed add-ons compared to the previous version's history file
-- Writes the three JSON files with correct per-vendor indentation
+- For Mage-OS ≥ 3.0.0, also fetches the two minimal-edition packages' full composer.json from their dist zips and writes them verbatim (require ksorted); for Magento or older Mage-OS versions these are skipped automatically
+- Writes the JSON files with correct per-vendor indentation
 - Validates the JSON
 
 If the script reports new or removed add-on packages, mention this to the user — it means the distribution changed what it bundles.
@@ -82,6 +95,9 @@ Show the user this summary before proceeding.
 git add resource/history/{vendor}/magento2-base/{VERSION}.json \
       resource/history/{vendor}/product-community-edition/{VERSION}.json \
       resource/history/{vendor}/project-community-edition/{VERSION}.json
+# Mage-OS >= 3.0.0 also writes the minimal-edition snapshots:
+git add resource/history/mage-os/product-minimal-edition/{VERSION}.json \
+      resource/history/mage-os/project-minimal-edition/{VERSION}.json 2>/dev/null || true
 ```
 
 Commit with message: `Add history files for {Vendor} {VERSION}`
