@@ -311,7 +311,7 @@ class HistoryFileBuilder
     public function buildMinimalEdition(array $composerJson): array
     {
         if (isset($composerJson['require']) && is_array($composerJson['require'])) {
-            ksort($composerJson['require']);
+            ksort($composerJson['require'], SORT_STRING);
         }
         return $composerJson;
     }
