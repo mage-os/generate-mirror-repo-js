@@ -190,6 +190,43 @@ async function listFileNames(repoDir, path, excludes) {
 
 }
 
+/**
+ * Return the set of repo-root-relative paths that git records as executable (tree mode 100755).
+ *
+ * The executable bit must come from git's committed tree mode, not from fs.statSync() on the
+ * checked-out file: the working-tree mode depends on the checkout environment (core.fileMode,
+ * umask, filesystem) and varies between machines, which makes the generated package zip
+ * non-reproducible and can silently drop the exec bit (e.g. bin/magento). `git ls-tree` reads
+ * the tree object directly and is environment-independent. Paths are scoped to pathInRepo and
+ * returned relative to the repo root, matching listFileNames() output.
+ *
+ * @param {String} repoDir
+ * @param {String} pathInRepo
+ * @returns {Promise<Set<String>>}
+ */
+async function listExecutablePaths(repoDir, pathInRepo) {
+  // -z: NUL-terminated records with no path quoting, so paths match listFileNames() byte-for-byte.
+  // Raise maxBuffer because a full-repo listing (e.g. magento2-base) can exceed the 4M default.
+  // Use execFile with an argv array (no shell) and pass pathInRepo after the `--` separator so it
+  // can never be parsed as a git option or interpreted by a shell, even though it originates from
+  // trusted build config rather than user input.
+  const args = ['ls-tree', '-r', '-z', 'HEAD'];
+  if (pathInRepo) args.push('--', pathInRepo);
+  const out = await new Promise((resolve, reject) => {
+    childProcess.execFile('git', args, {cwd: repoDir, maxBuffer: 256 * 1024 * 1024}, (error, stdout, stderr) => {
+      error ? reject(`Error executing git ls-tree in ${repoDir}: ${error.message}\n${stderr}`) : resolve(stdout);
+    });
+  });
+  const executable = new Set();
+  for (const entry of out.split("\0")) {
+    // Each record is "<mode> <type> <sha>\t<path>"; only 100755 blobs are executable.
+    if (entry.slice(0, 7) === '100755 ') {
+      executable.add(entry.slice(entry.indexOf("\t") + 1));
+    }
+  }
+  return executable;
+}
+
 async function createBranch(url, branch, ref) {
   const dir = fullRepoPath(url);
 
@@ -222,12 +259,13 @@ module.exports = {
     if (! fs.existsSync(path.join(dir, pathInRepo))) return [];
     const excludeStrings = excludes.map(exclude => typeof exclude === 'function' ? exclude(ref) : exclude).filter(exclude => exclude.length > 0);
     const fileNames = await listFileNames(dir, pathInRepo, excludeStrings || []);
+    const executablePaths = await listExecutablePaths(dir, pathInRepo);
     return fileNames.map(filepath => {
       const fullPath = path.join(dir, filepath);
       return {
         filepath,
         contentBuffer: fs.readFileSync(fullPath),
-        isExecutable: 0o100755 === fs.statSync(fullPath).mode
+        isExecutable: executablePaths.has(filepath)
       }
     });
   },

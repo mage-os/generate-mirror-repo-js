@@ -750,6 +750,10 @@ describe('shell-git', () => {
       fs.readFileSync.mockReset();
       fs.statSync.mockReset();
       childProcess.exec.mockReset();
+      childProcess.execFile.mockReset();
+      // listFiles reads the executable bit from `git ls-tree` (via execFile); default to
+      // "no executable files". Tests that need executables override this per-case.
+      childProcess.execFile.mockImplementation((file, args, options, callback) => callback(null, '', ''));
     });
 
     describe('happy path', () => {
@@ -781,7 +785,6 @@ describe('shell-git', () => {
       it('should mark executable files correctly', async () => {
         fs.existsSync.mockReturnValue(true);
         fs.readFileSync.mockReturnValue(Buffer.from('#!/bin/bash'));
-        fs.statSync.mockReturnValue({ mode: 0o100755 });
 
         childProcess.exec.mockImplementation((cmd, options, callback) => {
           if (cmd.includes('git describe')) {
@@ -795,9 +798,47 @@ describe('shell-git', () => {
           }
         });
 
+        // The executable bit comes from git's recorded tree mode (100755), not the
+        // checked-out file's filesystem mode.
+        childProcess.execFile.mockImplementation((file, args, options, callback) =>
+          callback(null, '100755 blob 0000000000000000000000000000000000000000\tbin/script.sh\0', ''));
+
         const result = await sut.listFiles('https://github.com/mage-os/test-repo.git', 'bin', 'main', []);
 
         expect(result[0].isExecutable).toBe(true);
+      });
+
+      it('should source the executable bit from git tree mode, not the filesystem mode', async () => {
+        // Regression: the checked-out file's fs mode is environment-dependent (core.fileMode,
+        // umask, filesystem) and must NOT drive the exec bit. Here the on-disk file reports
+        // 0644 but git records it as 100755 -> it must be marked executable, so rebuilt zips
+        // stay byte-reproducible with the published packages (e.g. bin/magento).
+        fs.existsSync.mockReturnValue(true);
+        fs.readFileSync.mockReturnValue(Buffer.from('#!/usr/bin/env php'));
+        fs.statSync.mockReturnValue({ mode: 0o100644 });
+
+        childProcess.exec.mockImplementation((cmd, options, callback) => {
+          if (cmd.includes('git describe') || cmd.includes('git branch --show-current')) {
+            callback(null, 'main\n', '');
+          } else if (cmd.includes('find')) {
+            callback(null, 'bin/magento\n', '');
+          } else {
+            callback(null, '', '');
+          }
+        });
+        childProcess.execFile.mockImplementation((file, args, options, callback) =>
+          callback(null, '100755 blob 0000000000000000000000000000000000000000\tbin/magento\0', ''));
+
+        const result = await sut.listFiles('https://github.com/mage-os/test-repo.git', 'bin', 'main', []);
+
+        expect(result[0].isExecutable).toBe(true);
+        // git must be invoked without a shell (execFile), with pathInRepo after the `--` separator.
+        expect(childProcess.execFile).toHaveBeenCalledWith(
+          'git',
+          expect.arrayContaining(['ls-tree', '-r', '-z', 'HEAD', '--', 'bin']),
+          expect.any(Object),
+          expect.any(Function)
+        );
       });
 
       it('should validate ref security', async () => {
