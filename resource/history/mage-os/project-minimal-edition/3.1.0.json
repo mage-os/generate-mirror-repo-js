@@ -1,0 +1,83 @@
+{
+  "name": "mage-os/project-minimal-edition",
+  "description": "Community-built eCommerce Platform for Growth",
+  "type": "project",
+  "license": [
+    "OSL-3.0",
+    "AFL-3.0"
+  ],
+  "config": {
+    "allow-plugins": {
+      "dealerdirect/phpcodesniffer-composer-installer": true,
+      "laminas/laminas-dependency-plugin": true,
+      "mage-os/*": true,
+      "php-http/discovery": true
+    },
+    "preferred-install": "dist",
+    "sort-packages": true
+  },
+  "require": {
+    "mage-os/product-minimal-edition": "3.1.0"
+  },
+  "require-dev": {
+    "allure-framework/allure-phpunit": "^3.2",
+    "dealerdirect/phpcodesniffer-composer-installer": "^0.7 || ^1.0",
+    "dg/bypass-finals": "^1.4",
+    "friendsofphp/php-cs-fixer": "^3.22",
+    "mage-os/magento-coding-standard": "3.1.0",
+    "mage-os/magento2-functional-testing-framework": "3.1.0",
+    "pdepend/pdepend": "^3@dev",
+    "phpmd/phpmd": "^3@dev",
+    "phpstan/phpstan": "^1.9",
+    "phpunit/phpunit": "^12.0",
+    "symfony/finder": "^7.4"
+  },
+  "autoload": {
+    "psr-4": {
+      "Magento\\Framework\\": "lib/internal/Magento/Framework/",
+      "Magento\\Setup\\": "setup/src/Magento/Setup/",
+      "Magento\\": "app/code/Magento/",
+      "MageOS\\Installer\\": "setup/src/MageOS/Installer/"
+    },
+    "psr-0": {
+      "": [
+        "app/code/",
+        "generated/code/"
+      ]
+    },
+    "files": [
+      "app/etc/NonComposerComponentRegistration.php"
+    ],
+    "exclude-from-classmap": [
+      "**/dev/**",
+      "**/update/**",
+      "**/Test/Fixture/**",
+      "**/Test/Integration/**",
+      "**/Test/Mftf/**",
+      "**/Test/Unit/**"
+    ]
+  },
+  "autoload-dev": {
+    "psr-4": {
+      "Magento\\Sniffs\\": "dev/tests/static/framework/Magento/Sniffs/",
+      "Magento\\Tools\\": "dev/tools/Magento/Tools/",
+      "Magento\\Tools\\Sanity\\": "dev/build/publication/sanity/Magento/Tools/Sanity/",
+      "Magento\\TestFramework\\Inspection\\": "dev/tests/static/framework/Magento/TestFramework/Inspection/",
+      "Magento\\TestFramework\\Utility\\": "dev/tests/static/framework/Magento/TestFramework/Utility/",
+      "Magento\\PhpStan\\": "dev/tests/static/framework/Magento/PhpStan/",
+      "MageOS\\Installer\\Test\\": "setup/tests/"
+    }
+  },
+  "prefer-stable": true,
+  "minimum-stability": "stable",
+  "version": "3.1.0",
+  "extra": {
+    "magento-force": "override"
+  },
+  "repositories": [
+    {
+      "type": "composer",
+      "url": "https://repo.mage-os.org/"
+    }
+  ]
+}
