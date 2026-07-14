@@ -59,7 +59,8 @@ jobs:
       - run: node src/integrity-test/validate-package-versions-match.js ${{ github.workspace }}/mageos/vendor ${{ github.workspace }}/magento/vendor
         name: Package Versions Validate
 
-      # Ignore composer.json, composer.log, generated composer autoload files and files in var/cache that start with `mage---`
-      - run: diff -rq -x "*composer*" -x "*autoload*" -x "*mage---*" -x "debug.log" -x ".git" ${{ github.workspace }}/magento ${{ github.workspace }}/mageos
+      # Ignore composer.json, composer.log, generated composer autoload files and files in var/cache that start with `mage---`,
+      # plus the var/cache and var/page_cache runtime dirs, whose hashed cache-ID subdirectories differ per install path
+      - run: diff -rq -x "*composer*" -x "*autoload*" -x "*mage---*" -x "cache" -x "page_cache" -x "debug.log" -x ".git" ${{ github.workspace }}/magento ${{ github.workspace }}/mageos
         if: always()
         name: Files Integrity Check
