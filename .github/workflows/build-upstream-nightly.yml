@@ -11,6 +11,11 @@ on:
         required: false
         default: ''
 
+# Queue rather than cancel so an in-progress deploy is never interrupted
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: false
+
 jobs:
   deploy:
     uses: ./.github/workflows/deploy.yml

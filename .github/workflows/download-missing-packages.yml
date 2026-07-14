@@ -5,6 +5,11 @@ on:
   schedule:
     - cron: '0 0 * * *'
 
+# Concurrent runs would conflict on the update-packages PR branch; queue instead
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: false
+
 jobs:
   download-packages:
     runs-on: ubuntu-latest

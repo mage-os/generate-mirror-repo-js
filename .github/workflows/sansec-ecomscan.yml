@@ -5,6 +5,11 @@ on:
   pull_request_target:
   workflow_dispatch:
 
+# Only the latest scan per PR/branch matters; cancel superseded runs
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 jobs:
   run-ecomscan:
     # Skip if it's a push event on a PR (it can't access secrets)
