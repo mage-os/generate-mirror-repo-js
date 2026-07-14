@@ -19,9 +19,6 @@ on:
         options:
           - /var/www/preview-mirror.mage-os.org/html/
           - /var/www/mirror.mage-os.org/html/
-  push:
-    branches:
-      - main
 
 jobs:
   deploy:
