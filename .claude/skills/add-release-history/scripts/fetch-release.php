@@ -334,7 +334,6 @@ class HistoryFileWriter
                 if (file_get_contents($path) === $content) {
                     echo "  No change: {$path}\n";
                 } else {
-                    // Deterministic path (no tempnam()): overwrites on rerun instead of accumulating.
                     $tmp = sys_get_temp_dir() . '/mageos-dryrun-' . str_replace('/', '_', $path);
                     file_put_contents($tmp, $content);
                     echo "  DIFF: {$path} would change — new content written to {$tmp} for inspection\n";
