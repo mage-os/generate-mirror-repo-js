@@ -252,7 +252,7 @@ class HistoryFileBuilder
 
     /**
      * @param array $pkg           Upstream product-community-edition package data
-     * @param array $basePkg       magento2-base's composer.json for this version (from the dist zip)
+     * @param array $basePkg       Upstream require+replace (from getUpstreamBase(); magento/* renamed to {vendor}/*)
      * @param ?array $prevData     Previous version's product-community-edition history (or null)
      */
     public function buildProductCommunityEdition(array $pkg, array $basePkg, ?array $prevData): array
@@ -334,7 +334,8 @@ class HistoryFileWriter
                 if (file_get_contents($path) === $content) {
                     echo "  No change: {$path}\n";
                 } else {
-                    $tmp = tempnam(sys_get_temp_dir(), 'mageos-dryrun-') . '.json';
+                    // Deterministic path (no tempnam()): overwrites on rerun instead of accumulating.
+                    $tmp = sys_get_temp_dir() . '/mageos-dryrun-' . str_replace('/', '_', $path);
                     file_put_contents($tmp, $content);
                     echo "  DIFF: {$path} would change — new content written to {$tmp} for inspection\n";
                 }
