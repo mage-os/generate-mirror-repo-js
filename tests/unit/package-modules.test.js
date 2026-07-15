@@ -20,6 +20,13 @@
  */
 
 const path = require('path');
+const {PassThrough} = require('stream');
+
+function endedStream() {
+  const stream = new PassThrough();
+  stream.end();
+  return stream;
+}
 
 // Mock dependencies before requiring the module under test
 jest.mock('fs');
@@ -797,19 +804,16 @@ describe('createPackageForRef', () => {
     jest.clearAllMocks();
 
     // Setup JSZip mock
-    mockStream = {
-      pipe: jest.fn(),
-    };
     mockZip = {
       file: jest.fn(),
-      generateNodeStream: jest.fn().mockResolvedValue(mockStream),
+      generateNodeStream: jest.fn().mockImplementation(endedStream),
     };
     JSZip.mockImplementation(() => mockZip);
 
     // Setup fs mocks
     fs.existsSync.mockReturnValue(false);
     fs.mkdirSync.mockImplementation(() => {});
-    fs.createWriteStream.mockReturnValue({});
+    fs.createWriteStream.mockImplementation(() => new PassThrough());
 
     // Setup repo mocks
     repo.listFiles.mockResolvedValue([
@@ -979,17 +983,16 @@ describe('createPackagesForRef', () => {
     jest.clearAllMocks();
 
     // Setup JSZip mock
-    const mockStream = { pipe: jest.fn() };
     const mockZip = {
       file: jest.fn(),
-      generateNodeStream: jest.fn().mockResolvedValue(mockStream),
+      generateNodeStream: jest.fn().mockImplementation(endedStream),
     };
     JSZip.mockImplementation(() => mockZip);
 
     // Setup fs mocks
     fs.existsSync.mockReturnValue(false);
     fs.mkdirSync.mockImplementation(() => {});
-    fs.createWriteStream.mockReturnValue({});
+    fs.createWriteStream.mockImplementation(() => new PassThrough());
 
     // Reset archive base dir
     sut.setArchiveBaseDir('packages');
@@ -1079,17 +1082,16 @@ describe('createMetaPackageFromRepoDir', () => {
     jest.clearAllMocks();
 
     // Setup JSZip mock
-    mockStream = { pipe: jest.fn() };
     mockZip = {
       file: jest.fn(),
-      generateNodeStream: jest.fn().mockResolvedValue(mockStream),
+      generateNodeStream: jest.fn().mockImplementation(endedStream),
     };
     JSZip.mockImplementation(() => mockZip);
 
     // Setup fs mocks
     fs.existsSync.mockReturnValue(false);
     fs.mkdirSync.mockImplementation(() => {});
-    fs.createWriteStream.mockReturnValue({});
+    fs.createWriteStream.mockImplementation(() => new PassThrough());
 
     // Reset archive base dir
     sut.setArchiveBaseDir('packages');
@@ -1173,17 +1175,16 @@ describe('createMetaPackage', () => {
     jest.clearAllMocks();
 
     // Setup JSZip mock
-    mockStream = { pipe: jest.fn() };
     mockZip = {
       file: jest.fn(),
-      generateNodeStream: jest.fn().mockResolvedValue(mockStream),
+      generateNodeStream: jest.fn().mockImplementation(endedStream),
     };
     JSZip.mockImplementation(() => mockZip);
 
     // Setup fs mocks
     fs.existsSync.mockReturnValue(false);
     fs.mkdirSync.mockImplementation(() => {});
-    fs.createWriteStream.mockReturnValue({});
+    fs.createWriteStream.mockImplementation(() => new PassThrough());
 
     // Reset archive base dir
     sut.setArchiveBaseDir('packages');
@@ -1268,17 +1269,16 @@ describe('createComposerJsonOnlyPackage', () => {
     jest.clearAllMocks();
 
     // Setup JSZip mock
-    mockStream = { pipe: jest.fn() };
     mockZip = {
       file: jest.fn(),
-      generateNodeStream: jest.fn().mockResolvedValue(mockStream),
+      generateNodeStream: jest.fn().mockImplementation(endedStream),
     };
     JSZip.mockImplementation(() => mockZip);
 
     // Setup fs mocks
     fs.existsSync.mockReturnValue(false);
     fs.mkdirSync.mockImplementation(() => {});
-    fs.createWriteStream.mockReturnValue({});
+    fs.createWriteStream.mockImplementation(() => new PassThrough());
     fs.readFileSync.mockReturnValue(Buffer.from('# .gitignore'));
 
     // Reset archive base dir
@@ -1496,17 +1496,16 @@ describe('ZIP creation behavior', () => {
     jest.clearAllMocks();
 
     // Setup JSZip mock
-    mockStream = { pipe: jest.fn() };
     mockZip = {
       file: jest.fn(),
-      generateNodeStream: jest.fn().mockResolvedValue(mockStream),
+      generateNodeStream: jest.fn().mockImplementation(endedStream),
     };
     JSZip.mockImplementation(() => mockZip);
 
     // Setup fs mocks
     fs.existsSync.mockReturnValue(false);
     fs.mkdirSync.mockImplementation(() => {});
-    fs.createWriteStream.mockReturnValue({});
+    fs.createWriteStream.mockImplementation(() => new PassThrough());
 
     // Setup repo mocks
     repo.listFiles.mockResolvedValue([

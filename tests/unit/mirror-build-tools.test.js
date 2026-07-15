@@ -2,6 +2,7 @@
 
 const sut = require('../../src/mirror-build-tools');
 const fs = require('fs');
+const {PassThrough} = require('stream');
 const repo = require('../../src/repository');
 const { isVersionGreaterOrEqual } = require('../../src/utils');
 const {
@@ -34,7 +35,8 @@ describe('mirror-build-tools', () => {
     fs.copyFile.mockImplementation((_, __, cb) => cb(null));
     fs.readFile.mockImplementation((_, cb) => cb(null, Buffer.from('test')));
     fs.readFileSync.mockReturnValue(Buffer.from('test'));
-    fs.createWriteStream.mockReturnValue({ on: jest.fn() });
+    fs.createWriteStream.mockImplementation(() => new PassThrough());
+    fs.promises = { readFile: jest.fn().mockResolvedValue(Buffer.from('test')) };
 
     // Default mocks for repository
     repo.listTags.mockResolvedValue(['1.0.0', '2.0.0', '2.1.0']);
@@ -59,8 +61,10 @@ describe('mirror-build-tools', () => {
     // Mock JSZip - loadAsync returns a promise that resolves to the zip contents
     const mockZipContents = {
       file: jest.fn(),
-      generateNodeStream: jest.fn().mockReturnValue({
-        pipe: jest.fn()
+      generateNodeStream: jest.fn().mockImplementation(() => {
+        const stream = new PassThrough();
+        stream.end();
+        return stream;
       })
     };
     JSZip.loadAsync = jest.fn().mockResolvedValue(mockZipContents);
@@ -351,22 +355,12 @@ describe('mirror-build-tools', () => {
 
       // Mock for replacePackageFiles
       fs.existsSync.mockReturnValue(true);
-      fs.readFile.mockImplementation((filepath, cb) => {
-        cb(null, Buffer.from('PK' + '\x00'.repeat(100))); // Mock ZIP file
-      });
-
-      const mockZip = {
-        file: jest.fn(),
-        generateNodeStream: jest.fn().mockReturnValue({ pipe: jest.fn() })
-      };
-
-      // Since replacePackageFiles uses callback pattern, we need to mock appropriately
-      // The actual call happens through zip.loadAsync which we've mocked above
+      fs.promises.readFile.mockResolvedValue(Buffer.from('PK' + '\x00'.repeat(100))); // Mock ZIP file
 
       await sut.processMirrorInstruction(instruction, releaseContext);
 
-      // Verify readFile was called for package replacements
-      expect(fs.readFile).toHaveBeenCalled();
+      // Verify the archive was read for package replacements
+      expect(fs.promises.readFile).toHaveBeenCalled();
     });
 
     test('should process all extraMetapackages', async () => {
@@ -797,15 +791,17 @@ describe('mirror-build-tools', () => {
 
       archiveFilePath.mockReturnValue('/test/archive/vendor-pkg-1.0.0.zip');
 
-      fs.readFile.mockImplementation((_, cb) => cb(null, Buffer.from('test')));
       fs.readFileSync.mockReturnValue(Buffer.from('test'));
-      fs.createWriteStream.mockReturnValue({ on: jest.fn() });
+      fs.createWriteStream.mockImplementation(() => new PassThrough());
+      fs.promises.readFile.mockResolvedValue(Buffer.from('test'));
 
       // Mock JSZip load and file operations
       const mockContents = {
         file: jest.fn().mockReturnThis(),
-        generateNodeStream: jest.fn().mockReturnValue({
-          pipe: jest.fn()
+        generateNodeStream: jest.fn().mockImplementation(() => {
+          const stream = new PassThrough();
+          stream.end();
+          return stream;
         })
       };
       JSZip.loadAsync = jest.fn().mockResolvedValue(mockContents);
@@ -829,10 +825,7 @@ describe('mirror-build-tools', () => {
 
       await sut.processMirrorInstruction(instruction, { composerRepoUrl: 'https://repo.test' });
 
-      expect(fs.readFile).toHaveBeenCalledWith(
-        '/test/archive/vendor-pkg-1.0.0.zip',
-        expect.any(Function)
-      );
+      expect(fs.promises.readFile).toHaveBeenCalledWith('/test/archive/vendor-pkg-1.0.0.zip');
     });
   });
 
