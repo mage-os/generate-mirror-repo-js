@@ -4,8 +4,14 @@ const path = require('path');
 const {writePackage} = require('../../src/package-modules');
 
 describe('writePackage', () => {
+  let dir;
+
+  afterAll(() => {
+    fs.rmSync(dir, {recursive: true, force: true});
+  });
+
   test('resolves only after the archive is fully written to disk', async () => {
-    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'pkg-write-'));
+    dir = fs.mkdtempSync(path.join(os.tmpdir(), 'pkg-write-'));
     const target = path.join(dir, 'out.zip');
     await writePackage(target, [{
       filepath: 'composer.json',

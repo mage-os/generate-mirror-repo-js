@@ -784,6 +784,32 @@ describe('mirror-build-tools', () => {
         .rejects.toEqual({ message: expect.stringContaining('Could not find archive') });
     });
 
+    test('should throw if replacement file does not exist', async () => {
+      archiveFilePath.mockReturnValue('/test/archive/vendor-pkg-1.0.0.zip');
+      fs.existsSync.mockReset();
+      fs.existsSync.mockImplementation((p) => p === '/test/archive/vendor-pkg-1.0.0.zip');
+
+      const instruction = {
+        repoUrl: 'https://github.com/test/repo.git',
+        fromTag: '1.0.0',
+        vendor: 'test',
+        extraRefToRelease: [],
+        packageDirs: [],
+        packageIndividual: [],
+        packageMetaFromDirs: [],
+        packageReplacements: [
+          { name: 'vendor/pkg', version: '1.0.0', files: ['file.txt'] }
+        ],
+        extraMetapackages: [],
+        skipTags: {},
+        fixVersions: {},
+        transform: {}
+      };
+
+      await expect(sut.processMirrorInstruction(instruction, { composerRepoUrl: 'https://repo.test' }))
+        .rejects.toEqual({ message: expect.stringContaining('Replacement file does not exist') });
+    });
+
     test('should read existing package archive', async () => {
       // Completely reset existsSync and set up fresh implementation
       fs.existsSync.mockReset();

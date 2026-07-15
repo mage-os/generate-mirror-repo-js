@@ -798,7 +798,6 @@ describe('determineMetaPackageFromRepoDir', () => {
 
 describe('createPackageForRef', () => {
   let mockZip;
-  let mockStream;
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -1076,7 +1075,6 @@ describe('createPackagesForRef', () => {
 
 describe('createMetaPackageFromRepoDir', () => {
   let mockZip;
-  let mockStream;
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -1169,7 +1167,6 @@ describe('createMetaPackageFromRepoDir', () => {
 
 describe('createMetaPackage', () => {
   let mockZip;
-  let mockStream;
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -1263,7 +1260,6 @@ describe('createMetaPackage', () => {
 
 describe('createComposerJsonOnlyPackage', () => {
   let mockZip;
-  let mockStream;
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -1490,7 +1486,6 @@ describe('determinePackagesForRef', () => {
 
 describe('ZIP creation behavior', () => {
   let mockZip;
-  let mockStream;
 
   beforeEach(() => {
     jest.clearAllMocks();
