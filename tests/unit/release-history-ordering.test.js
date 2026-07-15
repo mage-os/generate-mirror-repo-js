@@ -7,6 +7,7 @@
 const fs = require('fs');
 const path = require('path');
 const {compareVersions} = require('../../src/utils');
+const {BASE_LINKS_SORTED_SINCE} = require('../../src/build-package/mage-os-base');
 
 const historyRoot = path.join(__dirname, '../../resource/history/mage-os');
 
@@ -18,6 +19,11 @@ function versionFiles(dir) {
 function requireKeys(file) {
   const config = JSON.parse(fs.readFileSync(file, 'utf8'));
   return Object.keys(config.require || {});
+}
+
+function replaceKeys(file) {
+  const config = JSON.parse(fs.readFileSync(file, 'utf8'));
+  return Object.keys(config.replace || {});
 }
 
 describe('release history require ordering (issue #325)', () => {
@@ -59,4 +65,44 @@ describe('release history require ordering (issue #325)', () => {
       }
     });
   }
+
+  describe('mage-os/magento2-base replace ordering', () => {
+    const dir = path.join(historyRoot, 'magento2-base');
+
+    const TEMPLATE_ORDER = [
+      'trentrichardson/jquery-timepicker-addon',
+      'components/jquery',
+      'components/jqueryui',
+      'twbs/bootstrap',
+    ];
+    const SORTED_ORDER = [
+      'components/jquery',
+      'components/jqueryui',
+      'trentrichardson/jquery-timepicker-addon',
+      'twbs/bootstrap',
+    ];
+
+    const frozen = {
+      '3.0.0': SORTED_ORDER,
+      '3.1.0': TEMPLATE_ORDER,
+      '3.2.0': TEMPLATE_ORDER,
+    };
+
+    for (const [version, expected] of Object.entries(frozen)) {
+      const file = path.join(dir, `${version}.json`);
+      if (!fs.existsSync(file)) continue;
+      test(`${version} keeps its published replace order`, () => {
+        expect(replaceKeys(file)).toEqual(expected);
+      });
+    }
+
+    for (const file of versionFiles(dir)) {
+      const version = file.replace(/\.json$/, '');
+      if (compareVersions(version, BASE_LINKS_SORTED_SINCE) < 0) continue;
+      test(`${file} (>= ${BASE_LINKS_SORTED_SINCE}) has replace sorted by package name`, () => {
+        const keys = replaceKeys(path.join(dir, file));
+        expect(keys).toEqual([...keys].sort());
+      });
+    }
+  });
 });
