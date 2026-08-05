@@ -35,6 +35,12 @@ on:
         default: false
         type: boolean
 
+# One release build per target repo at a time; never auto-cancel a release
+# mid-deploy or mid-tag-push
+concurrency:
+  group: ${{ github.workflow }}-${{ inputs.repo }}
+  cancel-in-progress: false
+
 jobs:
   deploy:
     uses: ./.github/workflows/deploy.yml

@@ -6,6 +6,11 @@ on:
   pull_request:
     branches: [main]
 
+# Cancel superseded PR test runs; queue (never cancel) runs for pushes to main
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
   test:
     runs-on: ubuntu-latest
