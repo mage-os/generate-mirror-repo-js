@@ -84,7 +84,7 @@ describe('release history require ordering (issue #325)', () => {
 
     const frozen = {
       '3.0.0': SORTED_ORDER,
-      '3.1.0': TEMPLATE_ORDER,
+      '3.1.0': SORTED_ORDER,
       '3.2.0': TEMPLATE_ORDER,
     };
 
