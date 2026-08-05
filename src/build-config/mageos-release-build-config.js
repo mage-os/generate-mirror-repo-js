@@ -9,6 +9,9 @@ const {
 const {
   transformMageOSMinimalProduct
 } = require('../build-metapackage/mage-os-minimal');
+const {
+  transformMageOSBaseSortLinks
+} = require('../build-package/mage-os-base');
 
 const packagesConfig = require('./packages-config');
 const {mergeBuildConfigs} = require('../utils');
@@ -66,7 +69,12 @@ const releaseBuildConfig = {
           transformMageOSMinimalProduct
         ]
       }
-    ]
+    ],
+    transform: {
+      'magento/magento2-base': [
+        transformMageOSBaseSortLinks
+      ],
+    }
   },
   'security-package': {
     repoUrl: 'https://github.com/mage-os/mageos-security-package.git',

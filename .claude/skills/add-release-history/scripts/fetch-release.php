@@ -117,11 +117,12 @@ class PackageFetcher
     /**
      * Fetch the COMPLETE composer.json from the published package zip.
      *
-     * The p2/provider APIs normalize package metadata and drop fields the build
-     * relies on when it emits a stored snapshot verbatim (prefer-stable, config,
-     * minimum-stability, repositories). The minimal-edition history files are
-     * used as-is for historic rebuilds, so they must carry those fields exactly —
-     * hence we read composer.json straight from the dist zip rather than the API.
+     * The p2/provider APIs normalize package metadata: they ksort link sections
+     * (breaking magento2-base's replace order) and drop fields the build relies
+     * on when it emits a stored snapshot verbatim (prefer-stable, config,
+     * minimum-stability, repositories, needed by the minimal editions). Both
+     * cases require reading composer.json straight from the dist zip rather
+     * than the API.
      *
      * @return ?array Parsed composer.json, or null if the package/version is not published.
      */
@@ -234,24 +235,24 @@ class HistoryFileBuilder
         private readonly string $vendor,
     ) {}
 
-    public function buildMagento2Base(array $pkg): array
+    public function buildMagento2Base(array $composerJson): array
     {
         return [
-            'name' => $pkg['name'],
-            'description' => $pkg['description'] ?? '',
-            'type' => $pkg['type'] ?? '',
-            'license' => $pkg['license'] ?? [],
-            'version' => $pkg['version'],
-            'require' => $pkg['require'] ?? [],
-            'conflict' => $pkg['conflict'] ?? (object)[],
-            'replace' => $pkg['replace'] ?? (object)[],
-            'extra' => $pkg['extra'] ?? (object)[],
+            'name' => $composerJson['name'],
+            'description' => $composerJson['description'] ?? '',
+            'type' => $composerJson['type'] ?? '',
+            'license' => $composerJson['license'] ?? [],
+            'version' => $composerJson['version'],
+            'require' => $composerJson['require'] ?? [],
+            'conflict' => $composerJson['conflict'] ?? (object)[],
+            'replace' => $composerJson['replace'] ?? (object)[],
+            'extra' => $composerJson['extra'] ?? (object)[],
         ];
     }
 
     /**
      * @param array $pkg           Upstream product-community-edition package data
-     * @param array $basePkg       The full magento2-base package data for this version
+     * @param array $basePkg       Upstream require+replace (from getUpstreamBase(); magento/* renamed to {vendor}/*)
      * @param ?array $prevData     Previous version's product-community-edition history (or null)
      */
     public function buildProductCommunityEdition(array $pkg, array $basePkg, ?array $prevData): array
@@ -329,7 +330,17 @@ class HistoryFileWriter
         $content = $this->formatJson($data, $indent) . "\n";
 
         if ($dryRun) {
-            echo "  Would write: {$path} (" . strlen($content) . " bytes)\n";
+            if (file_exists($path)) {
+                if (file_get_contents($path) === $content) {
+                    echo "  No change: {$path}\n";
+                } else {
+                    $tmp = sys_get_temp_dir() . '/mageos-dryrun-' . str_replace('/', '_', $path);
+                    file_put_contents($tmp, $content);
+                    echo "  DIFF: {$path} would change — new content written to {$tmp} for inspection\n";
+                }
+            } else {
+                echo "  Would write: {$path} (" . strlen($content) . " bytes)\n";
+            }
             return $path;
         }
 
@@ -378,7 +389,7 @@ class ReleaseHistoryCommand
 
     public function run(): int
     {
-        if (!$this->checkExistingFiles()) {
+        if (!$this->dryRun && !$this->checkExistingFiles()) {
             return 1;
         }
 
@@ -485,7 +496,10 @@ class ReleaseHistoryCommand
 
         try {
             echo "\n1. {$v}/magento2-base\n";
-            $basePkg = $this->fetcher->fetch("{$v}/magento2-base", $this->version);
+            $basePkg = $this->fetcher->fetchDistComposerJson("{$v}/magento2-base", $this->version);
+            if ($basePkg === null) {
+                throw new \RuntimeException("magento2-base {$this->version} is not published; cannot record history.");
+            }
             $baseData = $this->builder->buildMagento2Base($basePkg);
 
             echo "\n2. {$v}/product-community-edition\n";
