@@ -1,5 +1,6 @@
 const fs = require('fs');
 const path = require('path');
+const {pipeline} = require('stream/promises');
 const {determineSourceDependencies} = require('./determine-dependencies');
 const JSZip = require('jszip');
 const repo = require("./repository");
@@ -79,7 +80,7 @@ async function writePackage(packageFilepath, files) {
   ensureArchiveDirectoryExists(packageFilepath);
   const zip = zipFileWith(files);
   const stream = await zip.generateNodeStream({streamFiles: false, platform: 'UNIX'});
-  stream.pipe(fs.createWriteStream(packageFilepath));
+  await pipeline(stream, fs.createWriteStream(packageFilepath));
 }
 
 /**

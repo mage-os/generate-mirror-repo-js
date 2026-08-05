@@ -1,4 +1,5 @@
 const fs = require('fs');
+const {pipeline} = require('stream/promises');
 const repo = require('./repository');
 const {isVersionGreaterOrEqual} = require('./utils');
 const zip = require('jszip');
@@ -174,23 +175,22 @@ async function replacePackageFiles(pkg) {
     throw {message: `Could not find archive ${packageFilePath} for replacement: ${pkg.name}:${pkg.version}.`};
   }
 
-  fs.readFile(packageFilePath, function(_, data) {
-    zip.loadAsync(data).then(function(contents) {
-      pkg.files.forEach(function(file) {
-        const replacementFilePath = `${__dirname}/../resource/replace/${pkg.name}/${pkg.version}/${file}`;
-        if (!fs.existsSync(replacementFilePath)) {
-          throw {message: `Replacement file does not exist: ${replacementFilePath}`}
-        }
-        contents.file(
-          file,
-          fs.readFileSync(replacementFilePath),
-          {date: new Date('2022-02-22 22:02:22.000Z'), unixPermissions: '644'}
-        );
-      })
-      const stream = contents.generateNodeStream({streamFiles: false, platform: 'UNIX'});
-      stream.pipe(fs.createWriteStream(packageFilePath));
-    })
-  });
+  const contents = await zip.loadAsync(await fs.promises.readFile(packageFilePath));
+
+  for (const file of pkg.files) {
+    const replacementFilePath = `${__dirname}/../resource/replace/${pkg.name}/${pkg.version}/${file}`;
+    if (!fs.existsSync(replacementFilePath)) {
+      throw {message: `Replacement file does not exist: ${replacementFilePath}`};
+    }
+    contents.file(
+      file,
+      fs.readFileSync(replacementFilePath),
+      {date: new Date('2022-02-22 22:02:22.000Z'), unixPermissions: '644'}
+    );
+  }
+
+  const stream = contents.generateNodeStream({streamFiles: false, platform: 'UNIX'});
+  await pipeline(stream, fs.createWriteStream(packageFilePath));
 }
 
 /**
