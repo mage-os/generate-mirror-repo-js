@@ -101,6 +101,36 @@ const addRepoPackages = (toSource, {repoDir, ref, definition}) => {
   return toSource;
 };
 
+/**
+ * The repository's own top level entries at a ref: app, lib, setup, pub,
+ * nginx.conf.sample and the rest.
+ *
+ * A patch path outside vendor/ is only a source tree path if it starts with one
+ * of these. Without the check every unrecognised shape passes through unchanged
+ * and is counted as translated, which is how a module-relative patch
+ * (Model/GuestCart/..., etc/di.xml) reached git apply as if it were source
+ * relative. Reading the tree rather than listing roots here keeps this from
+ * drifting the way a hardcoded list would.
+ */
+const buildSourceRoots = ({repoDir, ref, gitRepoDir}) => {
+  const roots = new Set();
+  const dirs = gitRepoDir
+    ? fs.readdirSync(gitRepoDir, {withFileTypes: true})
+      .filter(entry => entry.isDirectory())
+      .map(entry => path.join(gitRepoDir, entry.name))
+      .filter(dir => fs.existsSync(path.join(dir, '.git')))
+    : [repoDir];
+
+  for (const dir of dirs) {
+    const head = ref || defaultRefOf(dir);
+    if (!head) continue;
+    const listing = gitFor(dir, head)(['ls-tree', '--name-only', head], {allowFailure: true});
+    if (!listing) continue;
+    for (const entry of listing.split('\n').filter(Boolean)) roots.add(entry.replace(/\/$/, ''));
+  }
+  return roots;
+};
+
 const dedupeBy = (entries, keyOf) => {
   const seen = new Set();
   return entries.filter(entry => {
@@ -180,7 +210,7 @@ const buildPackageMap = ({repoDir, ref, definitionKey = 'magento2', gitRepoDir})
  */
 const sortedByDepth = (map) => [...map.entries()].sort((a, b) => b[1].length - a[1].length);
 
-const makeTranslators = (packageMap) => {
+const makeTranslators = (packageMap, sourceRoots) => {
   const byDepth = sortedByDepth(packageMap);
 
   const sourceToVendor = (path) => {
@@ -198,9 +228,16 @@ const makeTranslators = (packageMap) => {
   const vendorToSource = (path) => {
     const match = path.match(/^vendor\/([^/]+\/[^/]+)(\/.*)?$/);
     // Some upstream patches address root relative paths directly, e.g.
-    // lib/web/mage/menu.js or app/etc/di.xml. Those are already source tree
-    // paths, so they pass through rather than counting as a failed lookup.
-    if (!match) return path.startsWith('vendor/') ? null : path;
+    // lib/web/mage/menu.js, app/etc/di.xml or nginx.conf.sample. Those are
+    // already source tree paths, so they pass through rather than counting as a
+    // failed lookup - but only when the repository really has that root, or a
+    // patch written relative to a module directory would pass through too and
+    // be reported as translated.
+    if (!match) {
+      if (path.startsWith('vendor/')) return null;
+      if (!sourceRoots) return path;
+      return sourceRoots.has(path.split('/')[0]) ? path : null;
+    }
     const [, name, rest] = match;
     // Adobe patches reference magento/*, the published packages are renamed to
     // mage-os/*, and a checkout may hold either depending on whether a release
@@ -312,11 +349,11 @@ const rewriteHeaderPaths = (lines, rewrite) => {
   });
 };
 
-const translatePatch = (patchText, packageMap, direction) => {
+const translatePatch = (patchText, packageMap, direction, sourceRoots) => {
   if (direction !== 'to-vendor' && direction !== 'to-source') {
     throw new Error(`Unknown direction "${direction}", expected to-vendor or to-source`);
   }
-  const {sourceToVendor, vendorToSource} = makeTranslators(packageMap);
+  const {sourceToVendor, vendorToSource} = makeTranslators(packageMap, sourceRoots);
   const translate = direction === 'to-vendor' ? sourceToVendor : vendorToSource;
 
   const stats = {translated: 0, untranslated: [], dropped: []};
@@ -379,4 +416,4 @@ const translatePatch = (patchText, packageMap, direction) => {
   return {text: output, stats};
 };
 
-module.exports = {buildPackageMap, translatePatch};
+module.exports = {buildPackageMap, buildSourceRoots, translatePatch};

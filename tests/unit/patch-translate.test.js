@@ -188,6 +188,34 @@ describe('translatePatch cases found in the upstream quality-patches corpus', ()
     expect(stats.untranslated).toEqual([]);
   });
 
+  it('passes through a root level file the repository really has', () => {
+    const roots = new Set(['app', 'lib', 'nginx.conf.sample']);
+    const patch = '--- a/nginx.conf.sample';
+
+    const {text, stats} = translatePatch(patch, packageMap, 'to-source', roots);
+
+    expect(text).toBe(patch);
+    expect(stats.untranslated).toEqual([]);
+  });
+
+  it('refuses a module relative path instead of passing it through', () => {
+    // Adobe's July 2026 quote supplement is written relative to the module
+    // directory, so every path looks source relative and none of it is. Passing
+    // these through reported a clean translation for a patch git apply rejects.
+    const roots = new Set(['app', 'lib', 'setup']);
+    const patch = [
+      '--- a/Model/GuestCart/GuestCartRepository.php',
+      '+++ b/etc/di.xml',
+    ].join('\n');
+
+    const {stats} = translatePatch(patch, packageMap, 'to-source', roots);
+
+    expect(stats.untranslated).toEqual([
+      'Model/GuestCart/GuestCartRepository.php',
+      'etc/di.xml',
+    ]);
+  });
+
   it('still refuses an unknown third party vendor package', () => {
     const patch = '--- a/vendor/paypal/module-braintree-core/Model/Ui.php';
     const {stats} = toSourceWith(patch);

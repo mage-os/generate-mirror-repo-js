@@ -17,10 +17,10 @@ const path = require('path');
 const os = require('os');
 const {execFileSync} = require('child_process');
 const parseOptions = require('parse-options');
-const {buildPackageMap, translatePatch} = require('../src/patch-translate');
+const {buildPackageMap, buildSourceRoots, translatePatch} = require('../src/patch-translate');
 
 const options = parseOptions(
-  `$repoDir $patch $branches $label $direction @partial @force @help|h`,
+  `$repoDir $patch $branches $label $direction $gitRepoDir @partial @force @help|h`,
   process.argv
 );
 
@@ -32,6 +32,8 @@ Usage:
 
 Options:
   --repoDir=   Path to a mageos-magento2 checkout (required)
+  --gitRepoDir= Dir holding several checkouts, to map packages that live in
+               their own repositories (inventory, page builder, security)
   --patch=     Adobe patch file, or - for STDIN (required)
   --branches=  Comma separated target branches (required), e.g. main,release/3.x
   --label=     Short name used for the created branches (default: security-patch)
@@ -115,10 +117,11 @@ for (const target of targets) {
       translated = {text: patchText, stats: {translated: 0, untranslated: []}};
     } else {
       // Only needed when translating, and it costs a git read per package.
-      const packageMap = buildPackageMap({repoDir, ref: target});
+      const packageMap = buildPackageMap({repoDir, ref: target, gitRepoDir: options.gitRepoDir});
       if (packageMap.size === 0) throw new Error(`no packages found at ${target}`);
+      const sourceRoots = buildSourceRoots({repoDir, ref: target, gitRepoDir: options.gitRepoDir});
 
-      translated = translatePatch(patchText, packageMap, 'to-source');
+      translated = translatePatch(patchText, packageMap, 'to-source', sourceRoots);
       if (translated.stats.untranslated.length) {
         results.push({
           target,

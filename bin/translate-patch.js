@@ -6,10 +6,10 @@
 
 const fs = require('fs');
 const parseOptions = require('parse-options');
-const {buildPackageMap, translatePatch} = require('../src/patch-translate');
+const {buildPackageMap, buildSourceRoots, translatePatch} = require('../src/patch-translate');
 
 const options = parseOptions(
-  `$repoDir $ref $direction $patch $out @help|h`,
+  `$repoDir $ref $direction $patch $out $gitRepoDir @help|h`,
   process.argv
 );
 
@@ -29,6 +29,8 @@ Usage:
 
 Options:
   --repoDir=   Path to a mageos-magento2 checkout (required)
+  --gitRepoDir= Dir holding several checkouts, to map packages that live in
+               their own repositories (inventory, page builder, security)
   --ref=       Git ref to read the package mapping from (default: main)
   --direction= to-source (vendor -> app/code) or to-vendor (default: to-source)
   --patch=     Patch file to translate, or - for STDIN (required)
@@ -44,13 +46,14 @@ const patchText = options.patch === '-'
   ? fs.readFileSync(0, 'utf8')
   : fs.readFileSync(options.patch, 'utf8');
 
-const packageMap = buildPackageMap({repoDir: options.repoDir, ref});
+const packageMap = buildPackageMap({repoDir: options.repoDir, ref, gitRepoDir: options.gitRepoDir});
+const sourceRoots = buildSourceRoots({repoDir: options.repoDir, ref, gitRepoDir: options.gitRepoDir});
 if (packageMap.size === 0) {
   console.error(`No packages found at ref "${ref}" in ${options.repoDir}`);
   process.exit(1);
 }
 
-const {text, stats} = translatePatch(patchText, packageMap, direction);
+const {text, stats} = translatePatch(patchText, packageMap, direction, sourceRoots);
 
 if (options.out) {
   fs.writeFileSync(options.out, text);
