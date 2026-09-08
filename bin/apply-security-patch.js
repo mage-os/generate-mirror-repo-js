@@ -20,7 +20,7 @@ const parseOptions = require('parse-options');
 const {buildPackageMap, buildSourceRoots, translatePatch} = require('../src/patch-translate');
 
 const options = parseOptions(
-  `$repoDir $patch $branches $label $direction $gitRepoDir @partial @force @help|h`,
+  `$repoDir $patch $branches $label $direction $gitRepoDir $report @partial @force @help|h`,
   process.argv
 );
 
@@ -41,6 +41,7 @@ Options:
   --partial    Apply what applies and leave .rej files for the rest, instead of
                rolling the whole patch back when one file conflicts
   --force      Replace an existing <label>-<branch>, discarding what is on it
+  --report=    Write the result table to this file as JSON
 
 Creates and commits one branch per target, named <label>-<branch>, and returns
 the repository to the ref it started on. A conflicted result is committed to its
@@ -362,4 +363,22 @@ if (conflicted.length) {
 }
 
 const needsAPerson = ['ERROR', 'UNMAPPED', 'REJECTED', 'CONFLICT', 'PARTIAL'];
-process.exit(results.some(r => needsAPerson.includes(r.status)) ? 1 : 0);
+const unresolved = results.filter(r => needsAPerson.includes(r.status));
+
+// Without this the table above is the only account of what happened, and it lives in
+// a terminal. A conflicted port is otherwise recorded by one parenthesis in a commit
+// subject, which is not enough to hand to CI, an issue, or a reviewer a week later.
+if (options.report) {
+  fs.writeFileSync(options.report, `${JSON.stringify({
+    label,
+    patch: options.patch,
+    direction,
+    repoDir,
+    generated: new Date().toISOString(),
+    clean: results.length - unresolved.length,
+    unresolved: unresolved.length,
+    results,
+  }, null, 2)}\n`);
+}
+
+process.exit(unresolved.length ? 1 : 0);
