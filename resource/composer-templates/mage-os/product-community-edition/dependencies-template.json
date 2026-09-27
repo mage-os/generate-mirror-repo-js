@@ -17,6 +17,7 @@
     "mage-os/security-package": "https://github.com/mage-os/mageos-security-package.git",
     "mage-os/theme-adminhtml-m137": "https://github.com/mage-os/theme-adminhtml-m137.git",
     "n98/magerun2-dist": "^9.4",
+    "redchamps/module-clean-admin-menu": "https://github.com/redchamps/clean-admin-menu.git",
     "swissup/module-ignition": "https://github.com/swissup/module-ignition.git"
   }
 }
