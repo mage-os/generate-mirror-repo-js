@@ -117,6 +117,75 @@ Two things are required:
   In future it will be possible to specify the composer-templates path with a command line argument.
 
 
+## Porting Adobe security patches
+
+Adobe ships security fixes as patches against an installed Composer tree
+(`vendor/magento/module-cms/...`). Mage-OS is a source tree
+(`app/code/Magento/Cms/...`), so a patch needs its paths rewritten before it applies.
+Two scripts do that. The package mapping is read from each package's own
+`composer.json` at the ref you give, so it cannot drift from what the build produces.
+
+Patches arrive in two shapes. A scheduled bulletin publishes isolated releases, one
+archive per upstream line at `repo.magento.com/patch/`, each holding separate CE, EE
+and B2B patches. An out-of-band bulletin instead publishes a hotfix named for its
+internal ticket, linked only from Adobe's release notes, split by upstream version
+rather than by edition. Read the bulletin's Solution table to tell which you have.
+
+### Applying across release lines
+
+```
+node bin/apply-security-patch.js \
+  --repoDir=/path/to/mageos-magento2 \
+  --gitRepoDir=/path/holding/the/other/checkouts \
+  --patch=the-adobe.patch \
+  --label=apsb26-146 \
+  --branches=main,release/3.x \
+  --report=port.json
+```
+
+This translates and applies in one pass, leaving one branch per target named
+`<label>-<branch>`, and returns the checkout to the ref it started on. It exits
+non-zero when any target needs a person: `ERROR`, `UNMAPPED`, `REJECTED`, `CONFLICT`
+or `PARTIAL`.
+
+`--gitRepoDir` is required in practice. Without it, packages that live in their own
+repositories (inventory, page builder, security) fail to map.
+
+`--report` writes the result table as JSON. Use it. A conflicted port is otherwise
+recorded only by a parenthesis in the commit subject and a table in your scrollback.
+
+### When a hunk conflicts
+
+A conflicted result is still committed to its branch with the markers in place,
+because that is the material a reviewer needs and because anything left in the working
+tree blocks the next checkout. Rejected hunks stay as untracked `.rej` files next to
+the file they belong to.
+
+**Do not rely on linting to catch an unresolved port.** Conflict markers frequently
+land inside docblocks, where `*/` closes the comment early and the file still passes
+`php -l`. Grep for `<<<<<<<` instead.
+
+Conflicts are usually a style divergence rather than a security question. The common
+case is Adobe writing a fully qualified class name where this tree has an import, so
+two docblocks collide around a line Adobe added. Keep both sides: Adobe's new code,
+and this tree's local spelling.
+
+### Translating only
+
+```
+node bin/translate-patch.js --repoDir=/path/to/mageos-magento2 \
+  --ref=main --direction=to-source --patch=adobe.patch --out=translated.patch
+```
+
+`--direction=to-vendor` reverses the mapping. Root-relative paths such as
+`pub/errors/processor.php` pass through untouched.
+
+### One rule
+
+Adobe's patch files are proprietary. Never commit one. The resulting change to
+Mage-OS's own source is ours, and only that is committed.
+
+
 ## Development
 
 Run the test suite:
