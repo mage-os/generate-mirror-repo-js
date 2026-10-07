@@ -505,26 +505,41 @@ async function getLatestTag(url) {
   return tags[tags.length - 1];
 }
 
-async function getLatestConfiguration(dir) {
+async function getLatestConfiguration(dir, pins = {}) {
   if (!fs.existsSync(`${dir}/dependencies-template.json`)) {
     return {
       require: {}
     };
   }
   const template = JSON.parse(fs.readFileSync(`${dir}/dependencies-template.json`, 'utf8'));
-  return Object.entries(template.dependencies).reduce(async (deps, [dependency, url]) => {
-      const tag = url.slice(0, 4) === 'http' ? await getLatestTag(url) : url;
+  const unpinned = [];
+
+  const requireObj = await Object.entries(template.dependencies).reduce(async (deps, [dependency, url]) => {
+      if (pins[dependency]) {
+        return Object.assign(await deps, {[dependency]: pins[dependency]});
+      }
+      const isUrl = url.slice(0, 4) === 'http';
+      if (isUrl) unpinned.push(dependency);
+      const tag = isUrl ? await getLatestTag(url) : url;
       return Object.assign(await deps, {[dependency]: tag});
-    }, Promise.resolve({}))
-    .then(requireObj => ({ require: requireObj }));
+    }, Promise.resolve({}));
+
+  // Only worth saying when some dependencies were pinned: that means this is a
+  // release off an older line, where an unpinned dependency silently picks up
+  // whatever its newest tag is.
+  if (Object.keys(pins).length && unpinned.length) {
+    report(`Dependencies resolved to their latest tag because no pin was given: ${unpinned.join(', ')}`);
+  }
+
+  return {require: requireObj};
 }
 
-async function getAdditionalConfiguration(packageName, ref) {
+async function getAdditionalConfiguration(packageName, ref, pins = {}) {
   const dir = `${__dirname}/../resource/history/${packageName}`;
   const file = `${dir}/${ref}.json`;
   return fs.existsSync(file)
     ? JSON.parse(fs.readFileSync(file, 'utf8'))
-    : await getLatestConfiguration(`${__dirname}/../resource/composer-templates/${packageName}`);
+    : await getLatestConfiguration(`${__dirname}/../resource/composer-templates/${packageName}`, pins);
 }
 
 /**
