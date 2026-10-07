@@ -65,13 +65,25 @@ CONVENTION_FILE="src/build-config/mage-os-release-refs/${MAGEOS_RELEASE}.js"
 if [ "${FULL}" -eq 1 ]; then
   REFS_FILE="${CONVENTION_FILE}"
 else
-  REFS_FILE="$(mktemp -t "mageos-release-refs-${MAGEOS_RELEASE}.XXXXXX").js"
+  REFS_DIR="$(mktemp -d -t mageos-release-refs)"
+  REFS_FILE="${REFS_DIR}/${MAGEOS_RELEASE}.js"
+fi
+
+# --full writes into the repository, so never overwrite a refs file that is
+# actually committed: that is the file a real release uses.
+if [ "${FULL}" -eq 1 ] && git ls-files --error-unmatch "${CONVENTION_FILE}" >/dev/null 2>&1; then
+  echo "ERROR: ${CONVENTION_FILE} is committed to the repository." >&2
+  echo "--full would overwrite and then delete it. Build it with the workflow," >&2
+  echo "or run without --full to use an out-of-tree refs file." >&2
+  exit 1
 fi
 
 cleanup() {
   if [ "${FULL}" -eq 1 ] && [ -z "${KEEP_REFS_FILE:-}" ] && [ -f "${CONVENTION_FILE}" ]; then
     rm -f "${CONVENTION_FILE}"
   fi
+  [ -n "${REFS_DIR:-}" ] && rm -rf "${REFS_DIR}"
+  return 0
 }
 trap cleanup EXIT
 
@@ -97,6 +109,24 @@ write_refs_file() {
 }
 
 # ─── Build ─────────────────────────────────────────────────────────────────────
+
+# The generator commits to a work branch and creates the release tag in each
+# clone, so a second run would die on "nothing to commit" or refuse the tag
+# that already exists. Both belong to the previous run of this script.
+clean_previous_run() {
+  log "Clearing the previous run's work branch and tag from the clones"
+
+  local work_branch="prep-release/mage-os-${MAGEOS_RELEASE}"
+  for repo in "${GIT_REPO_DIR}"/*/; do
+    [ -d "${repo}.git" ] || continue
+    git -C "${repo}" rev-parse --verify --quiet "refs/heads/${work_branch}" >/dev/null 2>&1 && {
+      git -C "${repo}" checkout --force --quiet --detach 2>/dev/null || true
+      git -C "${repo}" branch -D "${work_branch}" >/dev/null 2>&1 || true
+    }
+    git -C "${repo}" tag -d "${MAGEOS_RELEASE}" >/dev/null 2>&1 || true
+    git -C "${repo}" checkout --force --quiet -- . 2>/dev/null || true
+  done
+}
 
 build() {
   log "Clearing previous build"
@@ -257,6 +287,7 @@ install_test() {
 # ─── Main ──────────────────────────────────────────────────────────────────────
 
 check_prerequisites "$ROOT"
+clean_previous_run
 write_refs_file
 build
 assert_release_built

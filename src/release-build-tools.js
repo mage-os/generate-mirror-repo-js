@@ -3,6 +3,7 @@ const {tmpdir} = require("os");
 const repo = require("./repository");
 const {accessSync, constants} = require("fs");
 const fs = require("fs/promises");
+const fsSync = require("fs");
 const path = require("path");
 const {
   readComposerJson,
@@ -32,6 +33,17 @@ function fsExists(dirOrFile) {
  * previous major, has to honour it too, or it picks up repositories and
  * metapackages that only exist from a later major on.
  */
+/**
+ * Loads a release refs file. The path is resolved first: require() treats a
+ * path with no ./ or / prefix as a package name, so a relative path like the
+ * one the release workflow passes would throw MODULE_NOT_FOUND even though
+ * the file exists.
+ */
+function loadReleaseRefs(file) {
+  if (!file || !fsSync.existsSync(file)) return {};
+  return require(path.resolve(file));
+}
+
 function isPartOfRelease(entry, releaseVersion) {
   return !entry.fromTag || !releaseVersion || isVersionGreaterOrEqual(releaseVersion, entry.fromTag);
 }
@@ -240,6 +252,7 @@ async function prepPackageForRelease(instruction, pkg, release, workingCopyPath)
 
 module.exports = {
   isPartOfRelease,
+  loadReleaseRefs,
   validateVersionString,
   updateComposerConfigFromMagentoToMageOs,
   async getPackageVersionMap(releaseVersion, {skipSampleData = false} = {}) {

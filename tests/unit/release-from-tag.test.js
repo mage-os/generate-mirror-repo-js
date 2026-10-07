@@ -16,7 +16,10 @@ jest.mock('../../src/package-modules', () => ({
   createMetaPackageFromRepoDir: jest.fn().mockResolvedValue({})
 }));
 
-const {isPartOfRelease, processBuildInstructions} = require('../../src/release-build-tools');
+const fs = require('fs');
+const os = require('os');
+const path = require('path');
+const {isPartOfRelease, loadReleaseRefs, processBuildInstructions} = require('../../src/release-build-tools');
 const {createMetaPackage} = require('../../src/package-modules');
 const {buildConfig} = require('../../src/build-config/mageos-release-build-config');
 
@@ -36,6 +39,37 @@ describe('isPartOfRelease', () => {
 
   test('includes everything when no release version is given', () => {
     expect(isPartOfRelease({fromTag: '3.0.0'}, '')).toBe(true);
+  });
+});
+
+describe('loadReleaseRefs', () => {
+  let dir;
+
+  beforeAll(() => {
+    dir = fs.mkdtempSync(path.join(os.tmpdir(), 'release-refs-'));
+    fs.writeFileSync(path.join(dir, 'refs.js'), "module.exports = {'*': '3.4.0'};");
+  });
+
+  afterAll(() => fs.rmSync(dir, {recursive: true, force: true}));
+
+  test('reads an absolute path', () => {
+    expect(loadReleaseRefs(path.join(dir, 'refs.js'))).toEqual({'*': '3.4.0'});
+  });
+
+  // require() treats a bare path as a package name, so the path the release
+  // workflow passes has to be resolved first or it throws MODULE_NOT_FOUND.
+  test('reads a path relative to the working directory', () => {
+    const cwd = process.cwd();
+    process.chdir(dir);
+    try {
+      expect(loadReleaseRefs('refs.js')).toEqual({'*': '3.4.0'});
+    } finally {
+      process.chdir(cwd);
+    }
+  });
+
+  test('is empty when the file does not exist', () => {
+    expect(loadReleaseRefs(path.join(dir, 'missing.js'))).toEqual({});
   });
 });
 

@@ -26,4 +26,4 @@ a later major on.
 
 This exists so a release can be built from a line other than the default
 branch — for example a patch release on the previous major while `main` has
-already moved on. See `RELEASE-GRACE-WINDOW-PROPOSAL.md`.
+already moved on.

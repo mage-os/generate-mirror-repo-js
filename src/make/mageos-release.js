@@ -5,6 +5,7 @@ const path = require('path');
 const {
   getPackageVersionMap,
   isPartOfRelease,
+  loadReleaseRefs,
   prepRelease,
   processBuildInstructions,
   validateVersionString,
@@ -65,9 +66,7 @@ if (upstreamRelease && ! mageosRelease) {
   throw new Error(`An upstream release may only be specified when building a new release`)
 }
 
-const releaseRefs = fs.existsSync(releaseRefsFile)
-  ? require(releaseRefsFile)
-  : {};
+const releaseRefs = loadReleaseRefs(releaseRefsFile);
 
 let distroRelease = new buildState({
   version: mageosRelease,
