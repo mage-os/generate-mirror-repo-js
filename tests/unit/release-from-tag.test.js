@@ -53,7 +53,7 @@ describe('loadReleaseRefs', () => {
   afterAll(() => fs.rmSync(dir, {recursive: true, force: true}));
 
   test('reads an absolute path', () => {
-    expect(loadReleaseRefs(path.join(dir, 'refs.js'))).toEqual({'*': '3.4.0'});
+    expect(loadReleaseRefs(path.join(dir, 'refs.js'))).toEqual({refs: {'*': '3.4.0'}, pins: {}});
   });
 
   // require() treats a bare path as a package name, so the path the release
@@ -62,14 +62,34 @@ describe('loadReleaseRefs', () => {
     const cwd = process.cwd();
     process.chdir(dir);
     try {
-      expect(loadReleaseRefs('refs.js')).toEqual({'*': '3.4.0'});
+      expect(loadReleaseRefs('refs.js')).toEqual({refs: {'*': '3.4.0'}, pins: {}});
     } finally {
       process.chdir(cwd);
     }
   });
 
   test('is empty when the file does not exist', () => {
-    expect(loadReleaseRefs(path.join(dir, 'missing.js'))).toEqual({});
+    expect(loadReleaseRefs(path.join(dir, 'missing.js'))).toEqual({refs: {}, pins: {}});
+  });
+
+  test('reads refs and pins when the file names them', () => {
+    const file = path.join(dir, 'with-pins.js');
+    fs.writeFileSync(file, `module.exports = {
+      refs: {'*': '3.4.0'},
+      pins: {'elgentos/magento2-varnish-extended': '2.0.6'},
+    };`);
+
+    expect(loadReleaseRefs(file)).toEqual({
+      refs: {'*': '3.4.0'},
+      pins: {'elgentos/magento2-varnish-extended': '2.0.6'},
+    });
+  });
+
+  test('treats a file naming only pins as having no refs', () => {
+    const file = path.join(dir, 'pins-only.js');
+    fs.writeFileSync(file, "module.exports = {pins: {'n98/magerun2-dist': '9.4.0'}};");
+
+    expect(loadReleaseRefs(file)).toEqual({refs: {}, pins: {'n98/magerun2-dist': '9.4.0'}});
   });
 });
 

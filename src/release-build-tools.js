@@ -34,14 +34,33 @@ function fsExists(dirOrFile) {
  * metapackages that only exist from a later major on.
  */
 /**
- * Loads a release refs file. The path is resolved first: require() treats a
- * path with no ./ or / prefix as a package name, so a relative path like the
- * one the release workflow passes would throw MODULE_NOT_FOUND even though
- * the file exists.
+ * Loads a release refs file and returns {refs, pins}.
+ *
+ * The path is resolved first: require() treats a path with no ./ or / prefix
+ * as a package name, so a relative path like the one the release workflow
+ * passes would throw MODULE_NOT_FOUND even though the file exists.
+ *
+ * Two shapes are accepted. A bare map is refs, which is every file written so
+ * far:
+ *
+ *   module.exports = {'*': '3.4.0', 'magento2': 'release/3.x'};
+ *
+ * A file that names either key may also pin dependencies that are not built
+ * here. Without a pin those resolve to their latest tag, which on an older
+ * line can mean a version that requires the current major:
+ *
+ *   module.exports = {
+ *     refs: {'*': '3.4.0', 'magento2': 'release/3.x'},
+ *     pins: {'elgentos/magento2-varnish-extended': '2.0.6'},
+ *   };
  */
 function loadReleaseRefs(file) {
-  if (!file || !fsSync.existsSync(file)) return {};
-  return require(path.resolve(file));
+  if (!file || !fsSync.existsSync(file)) return {refs: {}, pins: {}};
+
+  const loaded = require(path.resolve(file));
+  return loaded && (loaded.refs || loaded.pins)
+    ? {refs: loaded.refs || {}, pins: loaded.pins || {}}
+    : {refs: loaded || {}, pins: {}};
 }
 
 function isPartOfRelease(entry, releaseVersion) {

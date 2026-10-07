@@ -38,7 +38,8 @@ Options:
   --repoUrl=         Composer repository URL to use in base package (default: https://repo.mage-os.org/)
   --mageosVendor=    Composer release vendor-name (default: mage-os)
   --mageosRelease=   Target Mage-OS release version
-  --releaseRefsFile= JS file exporting a map with the git repo refs to use for the release
+  --releaseRefsFile= JS file exporting the git repo refs to use for the release,
+                     and optionally pins for dependencies not built here
   --upstreamRelease= Upstream Magento Open Source release to use for package compatibility
   --skipHistory      Skip rebuilding of historic releases
   --skipAliases      Skip building package magento/* aliases to mage-os/* packages
@@ -66,13 +67,14 @@ if (upstreamRelease && ! mageosRelease) {
   throw new Error(`An upstream release may only be specified when building a new release`)
 }
 
-const releaseRefs = loadReleaseRefs(releaseRefsFile);
+const {refs: releaseRefs, pins: dependencyPins} = loadReleaseRefs(releaseRefsFile);
 
 let distroRelease = new buildState({
   version: mageosRelease,
   composerRepoUrl: mageosRepoUrl,
   fallbackVersion: mageosRelease,
-  dependencyVersions: {'*': mageosRelease}
+  dependencyVersions: {'*': mageosRelease},
+  dependencyPins
 });
 
 (async () => {
