@@ -1,26 +1,42 @@
 #!/usr/bin/env bash
-# Local test script for a maintenance release built from a release refs file.
+# Local test script for a release built from a release refs file.
 #
 # Builds a release of an older line the way a security release on a maintenance
 # branch would be built, then checks three things the normal release scripts
 # cannot: that the refs file is honoured, that packages starting after the
 # target version are left out, and that the result installs.
 #
-# Run from the project root: bash bin/test-lts-local.sh [VERSION] [UPSTREAM] [KEY=REF ...]
+# Run from the project root: bash bin/test-release-refs-local.sh [--full] [VERSION] [UPSTREAM] [KEY=REF ...]
 #
 # Usage:
-#   bash bin/test-lts-local.sh                                  # 2.3.1 from the 2.3.0 tags
-#   bash bin/test-lts-local.sh 2.3.1 2.4.8-p5                   # pick the upstream base
-#   bash bin/test-lts-local.sh 2.3.1 2.4.8-p5 magento2=release/2.x
+#   bash bin/test-release-refs-local.sh                                  # 2.3.1 from the 2.3.0 tags
+#   bash bin/test-release-refs-local.sh 2.3.1 2.4.8-p5                   # pick the upstream base
+#   bash bin/test-release-refs-local.sh 2.3.1 2.4.8-p5 magento2=release/2.x
+#   bash bin/test-release-refs-local.sh --full 2.3.1 2.4.8-p5            # rehearse the real release
 #
 # The last form is the real shape of a maintenance release: every repository
 # builds from its previous tag except the ones that received a patch, which
 # build from their maintenance branch.
 #
+# --full rehearses what the release workflow actually runs: it rebuilds the
+# history and the magento/* aliases instead of skipping them, and it puts the
+# refs file at the conventional path the generator finds by version, rather
+# than passing --releaseRefsFile. Much slower, and the only mode that covers
+# the interaction between a maintenance release and the history rebuild.
+#
 # Environment:
-#   BASE_REF   ref for the '*' key (default: the target version's .0 release)
+#   BASE_REF         ref for the '*' key (default: the target version's .0 release)
+#   KEEP_REFS_FILE   in --full mode, keep the generated refs file instead of
+#                    removing it on exit
 
 set -euo pipefail
+
+FULL=0
+ARGS=()
+for arg in "$@"; do
+  if [ "$arg" = "--full" ]; then FULL=1; else ARGS+=("$arg"); fi
+done
+set -- ${ARGS+"${ARGS[@]}"}
 
 MAGEOS_RELEASE="${1:-2.3.1}"
 UPSTREAM_RELEASE="${2:-2.4.8-p5}"
@@ -35,12 +51,29 @@ source "${SCRIPT_DIR}/_lib.sh"
 
 cd "$ROOT"
 
-BUILD_DIR="build-mageos-lts"
+BUILD_DIR="build-mageos-release-refs"
 REPO_URL="https://release.mage-os.org"
 INSTALL_PACKAGE="mage-os/project-community-edition"
 GIT_REPO_DIR="generate-repo/repositories"
 BASE_REF="${BASE_REF:-${MAGEOS_RELEASE%.*}.0}"
-REFS_FILE="$(mktemp -t "mageos-lts-refs-${MAGEOS_RELEASE}.XXXXXX").js"
+
+# The generator looks for <vendor>-release-refs/<version>.js when no
+# --releaseRefsFile is given, which is how a real release finds it. --full
+# exercises that lookup; the default mode passes an out-of-tree file instead,
+# so the repository is left untouched.
+CONVENTION_FILE="src/build-config/mage-os-release-refs/${MAGEOS_RELEASE}.js"
+if [ "${FULL}" -eq 1 ]; then
+  REFS_FILE="${CONVENTION_FILE}"
+else
+  REFS_FILE="$(mktemp -t "mageos-release-refs-${MAGEOS_RELEASE}.XXXXXX").js"
+fi
+
+cleanup() {
+  if [ "${FULL}" -eq 1 ] && [ -z "${KEEP_REFS_FILE:-}" ] && [ -f "${CONVENTION_FILE}" ]; then
+    rm -f "${CONVENTION_FILE}"
+  fi
+}
+trap cleanup EXIT
 
 # ─── Refs file ─────────────────────────────────────────────────────────────────
 
@@ -69,16 +102,22 @@ build() {
   log "Clearing previous build"
   rm -rf "${BUILD_DIR}"
 
-  log "Generating release ${MAGEOS_RELEASE} from refs (upstream ${UPSTREAM_RELEASE})"
+  local extra=()
+  if [ "${FULL}" -eq 1 ]; then
+    log "Generating release ${MAGEOS_RELEASE} with history and aliases (upstream ${UPSTREAM_RELEASE})"
+    log "Refs come from ${CONVENTION_FILE} by convention, with no --releaseRefsFile"
+  else
+    log "Generating release ${MAGEOS_RELEASE} from refs (upstream ${UPSTREAM_RELEASE})"
+    extra=(--releaseRefsFile="${REFS_FILE}" --skipHistory --skipAliases)
+  fi
+
   node src/make/mageos-release.js \
     --outputDir="${BUILD_DIR}/packages" \
     --gitRepoDir="${GIT_REPO_DIR}" \
     --repoUrl="${REPO_URL}" \
     --mageosRelease="${MAGEOS_RELEASE}" \
     --upstreamRelease="${UPSTREAM_RELEASE}" \
-    --releaseRefsFile="${REFS_FILE}" \
-    --skipHistory \
-    --skipAliases
+    ${extra+"${extra[@]}"}
 }
 
 # ─── Checks ────────────────────────────────────────────────────────────────────
@@ -170,7 +209,7 @@ assert_release_built() {
 
 install_test() {
   log "Configuring satis"
-  local SATIS_JSON="/tmp/satis-mageos-lts.json"
+  local SATIS_JSON="/tmp/satis-mageos-release-refs.json"
   node bin/set-satis-homepage-url.js \
     --satisConfig=satis.json \
     --repoUrl="${REPO_URL}" > "${SATIS_JSON}"
@@ -202,12 +241,12 @@ install_test() {
     && mv /tmp/pkg-fixed.json "${BUILD_DIR}/packages.json"
 
   log "Testing composer install of ${INSTALL_PACKAGE}:${MAGEOS_RELEASE}"
-  local TEST_DIR="test-install-mageos-lts"
+  local TEST_DIR="test-install-mageos-release-refs"
   rm -rf "${TEST_DIR}"
   mkdir "${TEST_DIR}"
   cd "${TEST_DIR}"
 
-  composer init --no-interaction --name="test/mageos-lts" --stability=stable
+  composer init --no-interaction --name="test/mageos-release-refs" --stability=stable
   composer config repositories.release \
     "{\"type\": \"composer\", \"url\": \"file://${ABSPATH}\"}"
   composer require "${INSTALL_PACKAGE}:${MAGEOS_RELEASE}" --no-interaction
@@ -225,4 +264,8 @@ assert_refs_honoured
 assert_later_packages_absent
 install_test
 
-log "SUCCESS - ${MAGEOS_RELEASE} built from ${BASE_REF} and installed"
+if [ "${FULL}" -eq 1 ]; then
+  log "SUCCESS - ${MAGEOS_RELEASE} built from ${BASE_REF} with full history and installed"
+else
+  log "SUCCESS - ${MAGEOS_RELEASE} built from ${BASE_REF} and installed"
+fi
