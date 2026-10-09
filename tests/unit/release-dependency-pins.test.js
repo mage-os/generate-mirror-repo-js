@@ -71,6 +71,19 @@ describe('getAdditionalConfiguration on an older line', () => {
     expect(deps[PINNED]).toBe('2.0.6');
   });
 
+  test('keeps what the line shipped even when the template no longer lists it', async () => {
+    // laminas/laminas-mvc shipped in 2.3.0 and is not in the template
+    const {require: deps} = await getAdditionalConfiguration(PACKAGE, NEW_RELEASE_REF, {}, BASELINE);
+
+    expect(deps['laminas/laminas-mvc']).toBe('^3.6');
+  });
+
+  test('a pin of false removes a dependency the line shipped', async () => {
+    const {require: deps} = await getAdditionalConfiguration(PACKAGE, NEW_RELEASE_REF, {[SHIPPED]: false}, BASELINE);
+
+    expect(deps).not.toHaveProperty(SHIPPED);
+  });
+
   test('refuses a baseline with no release history', async () => {
     await expect(getAdditionalConfiguration(PACKAGE, NEW_RELEASE_REF, {}, 'release/2.x'))
       .rejects.toThrow(/No mage-os\/product-community-edition history for release\/2.x/);

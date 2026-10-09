@@ -48,7 +48,18 @@ module.exports = {
 };
 ```
 
-Pins are not inherited: anything left out still resolves to its latest tag. The
-build logs which dependencies that applied to, so check that line before
-publishing a release on an older line. The versions that line shipped with are
-in `resource/history/mage-os/product-community-edition/<previous version>.json`.
+When `'*'` names the line's last release, the dependencies are that release's,
+read from `resource/history/mage-os/product-community-edition/<'*'>.json`, so
+a patch release ships the same set at the same versions. Pins are the changes:
+a version overrides, a new name adds, and `false` removes:
+
+```js
+pins: {
+  'aligent/magento2-pci-4-compatibility': '1.4.2', // bump
+  'elgentos/magento2-varnish-extended': '2.0.6',   // add
+  'swissup/module-ignition': false,                // remove
+},
+```
+
+The build logs template dependencies left out because the line never shipped
+them. A `'*'` with no history file stops the build.

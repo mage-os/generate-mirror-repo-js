@@ -540,19 +540,25 @@ async function getLatestConfiguration(dir, pins = {}, baseline = null) {
 /**
  * The template lists the current line's dependencies. A release on an older
  * line has to keep the set that line shipped, at the versions it shipped, or a
- * patch release gains modules its previous release never had. Pins override a
- * version, and pinning a dependency the baseline lacks is how one is added.
+ * patch release gains modules its previous release never had. The history
+ * file is that set as published, so it is used whole rather than filtered
+ * through the template, which would drop anything since removed from it.
+ *
+ * A pin overrides a version or adds a dependency; a pin of false removes one.
  */
 function dependenciesFromBaseline(templateDependencies, baseline, pins) {
   const {version, require: shipped} = baseline;
-  const kept = Object.keys(templateDependencies).filter(dependency => shipped[dependency] || pins[dependency]);
-  const dropped = Object.keys(templateDependencies).filter(dependency => !kept.includes(dependency));
+  const notShipped = Object.keys(templateDependencies).filter(dependency => !(dependency in shipped) && !(dependency in pins));
 
-  if (dropped.length) {
-    report(`Left out because ${version} did not ship them: ${dropped.join(', ')}`);
+  if (notShipped.length) {
+    report(`Not added because ${version} did not ship them: ${notShipped.join(', ')}`);
   }
 
-  return Object.fromEntries(kept.map(dependency => [dependency, pins[dependency] || shipped[dependency]]));
+  const dependencies = Object.assign({}, shipped, pins);
+  for (const [dependency, pin] of Object.entries(pins)) {
+    if (pin === false) delete dependencies[dependency];
+  }
+  return dependencies;
 }
 
 async function getAdditionalConfiguration(packageName, ref, pins = {}, baselineRef = null) {
