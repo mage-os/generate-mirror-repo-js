@@ -40,3 +40,39 @@ describe('getAdditionalConfiguration', () => {
     expect(deps['mage-os/module-rma']).toBe('3.0.0');
   });
 });
+
+describe('getAdditionalConfiguration on an older line', () => {
+  // 2.3.0 shipped aligent/magento2-pci-4-compatibility 1.4.1 and did not ship
+  // the varnish module, which the current template lists.
+  const BASELINE = '2.3.0';
+  const SHIPPED = 'aligent/magento2-pci-4-compatibility';
+
+  test('keeps the version the line last shipped', async () => {
+    const {require: deps} = await getAdditionalConfiguration(PACKAGE, NEW_RELEASE_REF, {}, BASELINE);
+
+    expect(deps[SHIPPED]).toBe('1.4.1');
+  });
+
+  test('leaves out dependencies the line never shipped', async () => {
+    const {require: deps} = await getAdditionalConfiguration(PACKAGE, NEW_RELEASE_REF, {}, BASELINE);
+
+    expect(deps).not.toHaveProperty(PINNED);
+  });
+
+  test('a pin overrides the shipped version', async () => {
+    const {require: deps} = await getAdditionalConfiguration(PACKAGE, NEW_RELEASE_REF, {[SHIPPED]: '1.4.2'}, BASELINE);
+
+    expect(deps[SHIPPED]).toBe('1.4.2');
+  });
+
+  test('a pin adds a dependency the line never shipped', async () => {
+    const {require: deps} = await getAdditionalConfiguration(PACKAGE, NEW_RELEASE_REF, {[PINNED]: '2.0.6'}, BASELINE);
+
+    expect(deps[PINNED]).toBe('2.0.6');
+  });
+
+  test('refuses a baseline with no release history', async () => {
+    await expect(getAdditionalConfiguration(PACKAGE, NEW_RELEASE_REF, {}, 'release/2.x'))
+      .rejects.toThrow(/No mage-os\/product-community-edition history for release\/2.x/);
+  });
+});

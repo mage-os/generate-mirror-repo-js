@@ -700,7 +700,8 @@ describe('magento-community-edition', () => {
       expect(getAdditionalConfiguration).toHaveBeenCalledWith(
         'mage-os/project-community-edition',
         'v2.4.6',
-        undefined // dependency pins, which this release state does not set
+        undefined, // dependency pins, which this release state does not set
+        undefined // baseline ref, likewise
       );
     });
 
@@ -722,7 +723,8 @@ describe('magento-community-edition', () => {
       expect(getAdditionalConfiguration).toHaveBeenCalledWith(
         'mage-os/product-community-edition',
         'v2.4.6',
-        undefined // dependency pins, which this release state does not set
+        undefined, // dependency pins, which this release state does not set
+        undefined // baseline ref, likewise
       );
     });
   });

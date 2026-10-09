@@ -74,7 +74,8 @@ let distroRelease = new buildState({
   composerRepoUrl: mageosRepoUrl,
   fallbackVersion: mageosRelease,
   dependencyVersions: {'*': mageosRelease},
-  dependencyPins
+  dependencyPins,
+  baselineRef: releaseRefs['*']
 });
 
 (async () => {

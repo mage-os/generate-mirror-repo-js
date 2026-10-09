@@ -505,13 +505,16 @@ async function getLatestTag(url) {
   return tags[tags.length - 1];
 }
 
-async function getLatestConfiguration(dir, pins = {}) {
+async function getLatestConfiguration(dir, pins = {}, baseline = null) {
   if (!fs.existsSync(`${dir}/dependencies-template.json`)) {
     return {
       require: {}
     };
   }
   const template = JSON.parse(fs.readFileSync(`${dir}/dependencies-template.json`, 'utf8'));
+  if (baseline) {
+    return {require: dependenciesFromBaseline(template.dependencies, baseline, pins)};
+  }
   const unpinned = [];
 
   const requireObj = await Object.entries(template.dependencies).reduce(async (deps, [dependency, url]) => {
@@ -534,12 +537,43 @@ async function getLatestConfiguration(dir, pins = {}) {
   return {require: requireObj};
 }
 
-async function getAdditionalConfiguration(packageName, ref, pins = {}) {
+/**
+ * The template lists the current line's dependencies. A release on an older
+ * line has to keep the set that line shipped, at the versions it shipped, or a
+ * patch release gains modules its previous release never had. Pins override a
+ * version, and pinning a dependency the baseline lacks is how one is added.
+ */
+function dependenciesFromBaseline(templateDependencies, baseline, pins) {
+  const {version, require: shipped} = baseline;
+  const kept = Object.keys(templateDependencies).filter(dependency => shipped[dependency] || pins[dependency]);
+  const dropped = Object.keys(templateDependencies).filter(dependency => !kept.includes(dependency));
+
+  if (dropped.length) {
+    report(`Left out because ${version} did not ship them: ${dropped.join(', ')}`);
+  }
+
+  return Object.fromEntries(kept.map(dependency => [dependency, pins[dependency] || shipped[dependency]]));
+}
+
+async function getAdditionalConfiguration(packageName, ref, pins = {}, baselineRef = null) {
   const dir = `${__dirname}/../resource/history/${packageName}`;
   const file = `${dir}/${ref}.json`;
-  return fs.existsSync(file)
-    ? JSON.parse(fs.readFileSync(file, 'utf8'))
-    : await getLatestConfiguration(`${__dirname}/../resource/composer-templates/${packageName}`, pins);
+  if (fs.existsSync(file)) {
+    return JSON.parse(fs.readFileSync(file, 'utf8'));
+  }
+
+  let baseline = null;
+  if (baselineRef) {
+    const baselineFile = `${dir}/${baselineRef}.json`;
+    // Falling back to the template here would build the older line with the
+    // current line's dependencies, which is the failure this guards against.
+    if (!fs.existsSync(baselineFile)) {
+      throw new Error(`No ${packageName} history for ${baselineRef}. Set '*' in the release refs file to the last release tag on the line being built.`);
+    }
+    baseline = {version: baselineRef, require: JSON.parse(fs.readFileSync(baselineFile, 'utf8')).require || {}};
+  }
+
+  return getLatestConfiguration(`${__dirname}/../resource/composer-templates/${packageName}`, pins, baseline);
 }
 
 /**

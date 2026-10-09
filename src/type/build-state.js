@@ -52,7 +52,14 @@ class buildState {
   dependencyPins = {};
 
   /**
-   * @param {{ref: String, origRef: String, version: String, composerRepoUrl: String, fallbackVersion: String, dependencyVersions: Object.<string, string>, replaceVersions: Object.<string, string>, dependencyPins: Object.<string, string>}}} options 
+   * @type {String|null} last release on the line being built. Dependencies
+   *  not built here are taken from its release history instead of the
+   *  current template.
+   */
+  baselineRef = null;
+
+  /**
+   * @param {{ref: String, origRef: String, version: String, composerRepoUrl: String, fallbackVersion: String, dependencyVersions: Object.<string, string>, replaceVersions: Object.<string, string>, dependencyPins: Object.<string, string>, baselineRef: String}}} options 
    */
   constructor(options) {
     this.ref = options.ref || this.ref;
@@ -63,6 +70,7 @@ class buildState {
     this.dependencyVersions = options.dependencyVersions || this.dependencyVersions;
     this.replaceVersions = options.replaceVersions || this.replaceVersions;
     this.dependencyPins = options.dependencyPins || this.dependencyPins;
+    this.baselineRef = options.baselineRef || this.baselineRef;
   }
 };
 
