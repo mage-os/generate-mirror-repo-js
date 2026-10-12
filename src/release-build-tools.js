@@ -74,6 +74,15 @@ function isPartOfRelease(entry, releaseVersion) {
 async function composerCreateMagentoProject(version) {
   console.log(`Determining upstream package versions for release ${version}...`);
   const workDir = `${tmpdir()}/workdir-${version}`;
+  // An earlier run's install is reused, but only when it still has a
+  // composer.json. A temp dir cleaner can empty the tree and leave the
+  // directories behind, and reusing that husk fails later in "composer
+  // suggests" with a message about a missing composer.json rather than here.
+  if (fsExists(workDir) && !fsExists(`${workDir}/composer.json`)) {
+    console.log(`Discarding the incomplete installation at ${workDir}`)
+    fsSync.rmSync(workDir, {recursive: true, force: true});
+  }
+
   return new Promise((resolve, reject) => {
     if (fsExists(workDir)) {
       console.log(`Found existing installation at ${workDir}`)
