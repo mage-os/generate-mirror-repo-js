@@ -512,6 +512,7 @@ async function getLatestConfiguration(dir, pins = {}, baseline = null) {
     };
   }
   const template = JSON.parse(fs.readFileSync(`${dir}/dependencies-template.json`, 'utf8'));
+  await validatePins(template.dependencies, pins);
   if (baseline) {
     return {require: dependenciesFromBaseline(template.dependencies, baseline, pins)};
   }
@@ -535,6 +536,29 @@ async function getLatestConfiguration(dir, pins = {}, baseline = null) {
   }
 
   return {require: requireObj};
+}
+
+/**
+ * A pinned version that does not exist is only noticed when someone installs
+ * the release. The tags are already read for unpinned dependencies, so read
+ * them for pinned ones too and fail the build instead.
+ *
+ * Only dependencies the template resolves from a repository can be checked. A
+ * pin naming something else, such as a constraint or a package added by the
+ * pin itself, is left alone.
+ */
+async function validatePins(templateDependencies, pins) {
+  for (const [dependency, version] of Object.entries(pins)) {
+    if (version === false) continue;
+
+    const url = templateDependencies[dependency];
+    if (!url || url.slice(0, 4) !== 'http') continue;
+
+    const tags = await repo.listTags(url);
+    if (!tags.includes(version)) {
+      throw new Error(`Pinned ${dependency} ${version} is not a tag of ${url}`);
+    }
+  }
 }
 
 /**

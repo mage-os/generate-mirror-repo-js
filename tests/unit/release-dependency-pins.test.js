@@ -4,8 +4,10 @@
  * current major. A release refs file can pin them instead.
  */
 
+// A pin is checked against the dependency's tags, so the versions the tests
+// pin have to be among them.
 jest.mock('../../src/repository', () => ({
-  listTags: jest.fn().mockResolvedValue(['1.0.0', '2.0.0', '3.0.0'])
+  listTags: jest.fn().mockResolvedValue(['1.0.0', '1.4.1', '1.4.2', '2.0.0', '2.0.6', '3.0.0'])
 }));
 
 const {getAdditionalConfiguration} = require('../../src/package-modules');
@@ -87,5 +89,19 @@ describe('getAdditionalConfiguration on an older line', () => {
   test('refuses a baseline with no release history', async () => {
     await expect(getAdditionalConfiguration(PACKAGE, NEW_RELEASE_REF, {}, 'release/2.x'))
       .rejects.toThrow(/No mage-os\/product-community-edition history for release\/2.x/);
+  });
+});
+
+describe('pin validation', () => {
+  test('rejects a pinned version that is not a tag of the dependency', async () => {
+    await expect(
+      getAdditionalConfiguration(PACKAGE, NEW_RELEASE_REF, {[PINNED]: '9.9.9'})
+    ).rejects.toThrow(/Pinned elgentos\/magento2-varnish-extended 9\.9\.9 is not a tag/);
+  });
+
+  test('accepts a pin that names a real tag', async () => {
+    const {require: deps} = await getAdditionalConfiguration(PACKAGE, NEW_RELEASE_REF, {[PINNED]: '2.0.0'});
+
+    expect(deps[PINNED]).toBe('2.0.0');
   });
 });

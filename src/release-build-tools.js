@@ -27,13 +27,6 @@ function fsExists(dirOrFile) {
 }
 
 /**
- * Whether a build config entry belongs in a release. fromTag is the first
- * release an entry was part of. The history rebuild already honours it, but a
- * new release built from an older line, such as a security release on the
- * previous major, has to honour it too, or it picks up repositories and
- * metapackages that only exist from a later major on.
- */
-/**
  * Loads a release refs file and returns {refs, pins}.
  *
  * The path is resolved first: require() treats a path with no ./ or / prefix
@@ -53,6 +46,10 @@ function fsExists(dirOrFile) {
  *     refs: {'*': '3.4.0', 'magento2': 'release/3.x'},
  *     pins: {'elgentos/magento2-varnish-extended': '2.0.6'},
  *   };
+ *
+ * The shape is told apart by the presence of a refs or pins key, so a build
+ * config key named either of those would be read as the new shape. No such key
+ * exists, and one would be a poor name for a repository.
  */
 function loadReleaseRefs(file) {
   if (!file || !fsSync.existsSync(file)) return {refs: {}, pins: {}};
@@ -63,6 +60,13 @@ function loadReleaseRefs(file) {
     : {refs: loaded || {}, pins: {}};
 }
 
+/**
+ * Whether a build config entry belongs in a release. fromTag is the first
+ * release an entry was part of. The history rebuild already honours it, but a
+ * new release built from an older line, such as a security release on the
+ * previous major, has to honour it too, or it picks up repositories and
+ * metapackages that only exist from a later major on.
+ */
 function isPartOfRelease(entry, releaseVersion) {
   return !entry.fromTag || !releaseVersion || isVersionGreaterOrEqual(releaseVersion, entry.fromTag);
 }
