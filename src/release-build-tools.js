@@ -161,6 +161,10 @@ function setMageOsVendor(packageName, vendor) {
   return packageName.replace(/^magento\//, `${vendor}/`)
 }
 
+function setMagentoVendor(packageName, vendor) {
+  return packageName.replace(new RegExp(`^${vendor}/`), 'magento/')
+}
+
 function updateMapFromMagentoToMageOs(obj, vendor) {
   const packageNames = Object.keys(obj)
   return packageNames.reduce((acc, pkg) => Object.assign(acc, {[setMageOsVendor(pkg, vendor)]: obj[pkg]}), {})
@@ -248,9 +252,35 @@ function updateComposerConfigFromMagentoToMageOs(instruction, release, composerC
   updateComposerDepsVersionForMageOs(instruction, release, composerConfig);
   updateComposerPluginConfigForMageOs(instruction, release, composerConfig);
 
-  if (release.replaceVersions[originalPackageName]) {
-    composerConfig.replace = {[originalPackageName]: release.replaceVersions[originalPackageName]}
+  // The source is not always the upstream tree. A release tag carries the
+  // composer.json this build already rewrote for that release, so the package
+  // is named mage-os/* here, and a replaceVersions lookup under that name
+  // misses. Ask under the upstream name the map is keyed by.
+  const upstreamPackageName = setMagentoVendor(originalPackageName, instruction.vendor);
+
+  if (release.replaceVersions[upstreamPackageName]) {
+    composerConfig.replace = {[upstreamPackageName]: release.replaceVersions[upstreamPackageName]}
   }
+
+  restoreMagentoVendorInReplace(instruction, composerConfig);
+}
+
+/**
+ * A package replaces the upstream package it was built from, never itself.
+ * Building from a release tag renames an already renamed replace section, so
+ * an entry can end up naming the package's own vendor. Nothing legitimate
+ * looks like that, and left alone it stops a magento/* alias being generated
+ * for the package, which only shows up when someone installs the release.
+ */
+function restoreMagentoVendorInReplace(instruction, composerConfig) {
+  if (!composerConfig.replace) return;
+
+  composerConfig.replace = Object.entries(composerConfig.replace).reduce((acc, [name, version]) => {
+    const key = name === composerConfig.name
+      ? setMagentoVendor(name, instruction.vendor)
+      : name;
+    return Object.assign(acc, {[key]: version});
+  }, {});
 }
 
 /**
