@@ -29,6 +29,11 @@ on:
         required: false
         default: ''
         type: string
+      release_refs_file:
+        description: 'Optional refs file for a grace-window release, e.g. src/build-config/mage-os-release-refs/3.4.1.js'
+        required: false
+        default: ''
+        type: string
       publish_tag:
         description: 'Push new release tag to repos'
         required: false
@@ -54,6 +59,7 @@ jobs:
       mageos_release: ${{ inputs.mageos_release }}
       upstream_release: ${{ inputs.upstream_release }}
       publish_tag: ${{ inputs.publish_tag }}
+      release_refs_file: ${{ inputs.release_refs_file }}
 
     secrets:
       SERVER_SSH_KEY: ${{ secrets.SERVER_SSH_KEY }}

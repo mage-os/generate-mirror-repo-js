@@ -44,7 +44,22 @@ class buildState {
   replaceVersions = {};
 
   /**
-   * @param {{ref: String, origRef: String, version: String, composerRepoUrl: String, fallbackVersion: String, dependencyVersions: Object.<string, string>, replaceVersions: Object.<string, string>}}} options 
+   * @type {Object.<string, string>} composer package:version map pinning
+   *  dependencies that are not built here. Without a pin such a dependency
+   *  resolves to its latest tag, which is wrong for a release on an older
+   *  line: the newest add-on may require the current major.
+   */
+  dependencyPins = {};
+
+  /**
+   * @type {String|null} last release on the line being built. Dependencies
+   *  not built here are taken from its release history instead of the
+   *  current template.
+   */
+  baselineRef = null;
+
+  /**
+   * @param {{ref: String, origRef: String, version: String, composerRepoUrl: String, fallbackVersion: String, dependencyVersions: Object.<string, string>, replaceVersions: Object.<string, string>, dependencyPins: Object.<string, string>, baselineRef: String}}} options 
    */
   constructor(options) {
     this.ref = options.ref || this.ref;
@@ -54,6 +69,8 @@ class buildState {
     this.composerRepoUrl = options.composerRepoUrl || this.composerRepoUrl;
     this.dependencyVersions = options.dependencyVersions || this.dependencyVersions;
     this.replaceVersions = options.replaceVersions || this.replaceVersions;
+    this.dependencyPins = options.dependencyPins || this.dependencyPins;
+    this.baselineRef = options.baselineRef || this.baselineRef;
   }
 };
 
