@@ -2,10 +2,10 @@
  * Run with
  *
  * node bin/apply-security-patch.js --repoDir=/path/to/mageos-magento2 \
- *   --patch=249-2026-08-001-CE.patch --branches=main,release/3.x --label=apsb26-92
+ *   --patch=249-2026-10-001-CE.patch --branches=main --label=apsb26-153
  *
  * Translates an Adobe isolated security patch to source tree paths and applies
- * it to each supported line, leaving one local branch per line for review.
+ * it to each target branch, leaving one local branch per target for review.
  *
  * The patch itself is never written into the repository. Adobe's patch files are
  * proprietary; the resulting change to Mage-OS's own source is not. Only the
@@ -35,7 +35,8 @@ Options:
   --gitRepoDir= Dir holding several checkouts, to map packages that live in
                their own repositories (inventory, page builder, security)
   --patch=     Adobe patch file, or - for STDIN (required)
-  --branches=  Comma separated target branches (required), e.g. main,release/3.x
+  --branches=  Comma separated target branches (required), e.g. main. List only
+               branches built on the patch's upstream version; run once per line
   --label=     Short name used for the created branches (default: security-patch)
   --direction= to-source (default) or none, to skip translation
   --partial    Apply what applies and leave .rej files for the rest, instead of

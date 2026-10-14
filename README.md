@@ -133,15 +133,28 @@ rather than by edition. Read the bulletin's Solution table to tell which you hav
 
 ### Applying across release lines
 
+Run once per release line. Each line is built on its own upstream version, and Adobe
+ships a separate patch for each, so a line takes the patch matching its upstream:
+
 ```
 node bin/apply-security-patch.js \
   --repoDir=/path/to/mageos-magento2 \
   --gitRepoDir=/path/holding/the/other/checkouts \
-  --patch=the-adobe.patch \
-  --label=apsb26-146 \
-  --branches=main,release/3.x \
+  --patch=249-2026-10-001-CE.patch \
+  --label=apsb26-153 \
+  --branches=main \
   --report=port.json
 ```
+
+`--branches` takes a comma separated list, but only list branches built on the same
+upstream version as the patch.
+
+Do not assume branch names. A line's branch is the one containing the source commit
+of its latest release: the release tag sits on a generated "Release X" commit, and that
+commit's parent is the source. Prefer `release/<major>.x` when it contains it; `main`
+holds only the newest released major. On 2026-10-14 that was `main` for 3.x (3.6.0,
+upstream 2.4.9), while `release/3.x` had not moved since May.
+security-watch tracking issues resolve this per line.
 
 This translates and applies in one pass, leaving one branch per target named
 `<label>-<branch>`, and returns the checkout to the ref it started on. It exits
