@@ -21,6 +21,7 @@
     "mage-os/theme-adminhtml-m137": "https://github.com/mage-os/theme-adminhtml-m137.git",
     "mago-assistant/magento2-mago": "https://github.com/mago-assistant/mago.git",
     "n98/magerun2-dist": "^9.4",
+    "redchamps/module-clean-admin-menu": "https://github.com/redchamps/clean-admin-menu.git",
     "swissup/module-ignition": "https://github.com/swissup/module-ignition.git"
   }
 }
