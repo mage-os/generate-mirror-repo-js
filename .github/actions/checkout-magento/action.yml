@@ -87,11 +87,13 @@ runs:
     # older releases are legitimately affected by advisories, so the block is disabled
     # here. The key was renamed to policy.advisories.block in 2.10; audit.block-insecure
     # is the pre-2.10 spelling, and neither exists on 1.x/2.2.x, hence the fallbacks.
+    # Under GitHub Actions, Composer reports an unknown key as an ::error:: annotation
+    # on stdout, so both streams are silenced to keep a missing key from looking fatal.
     - name: Allow installing advisory-affected versions
       run: |
-        if composer config --no-interaction policy.advisories.block false 2>/dev/null; then
+        if composer config --no-interaction policy.advisories.block false >/dev/null 2>&1; then
           echo "Advisory blocking disabled via policy.advisories.block"
-        elif composer config --no-interaction audit.block-insecure false 2>/dev/null; then
+        elif composer config --no-interaction audit.block-insecure false >/dev/null 2>&1; then
           echo "Advisory blocking disabled via audit.block-insecure"
         else
           echo "Composer ${{ inputs.composer-version }} does not block advisory-affected versions; nothing to do"
