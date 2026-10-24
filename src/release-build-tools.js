@@ -3,6 +3,7 @@ const {tmpdir} = require("os");
 const repo = require("./repository");
 const {accessSync, constants} = require("fs");
 const fs = require("fs/promises");
+const fsSync = require("fs");
 const path = require("path");
 const {
   readComposerJson,
@@ -12,6 +13,7 @@ const {
   createMetaPackageFromRepoDir
 } = require('./package-modules');
 const {isOnPackagist} = require('./packagist');
+const {isVersionGreaterOrEqual} = require('./utils');
 const repositoryBuildDefinition = require('./type/repository-build-definition');
 const packageDefinition = require('./type/package-definition');
 
@@ -24,9 +26,63 @@ function fsExists(dirOrFile) {
   }
 }
 
+/**
+ * Loads a release refs file and returns {refs, pins}.
+ *
+ * The path is resolved first: require() treats a path with no ./ or / prefix
+ * as a package name, so a relative path like the one the release workflow
+ * passes would throw MODULE_NOT_FOUND even though the file exists.
+ *
+ * Two shapes are accepted. A bare map is refs, which is every file written so
+ * far:
+ *
+ *   module.exports = {'*': '3.4.0', 'magento2': 'release/3.x'};
+ *
+ * A file that names either key may also pin dependencies that are not built
+ * here. Without a pin those resolve to their latest tag, which on an older
+ * line can mean a version that requires the current major:
+ *
+ *   module.exports = {
+ *     refs: {'*': '3.4.0', 'magento2': 'release/3.x'},
+ *     pins: {'elgentos/magento2-varnish-extended': '2.0.6'},
+ *   };
+ *
+ * The shape is told apart by the presence of a refs or pins key, so a build
+ * config key named either of those would be read as the new shape. No such key
+ * exists, and one would be a poor name for a repository.
+ */
+function loadReleaseRefs(file) {
+  if (!file || !fsSync.existsSync(file)) return {refs: {}, pins: {}};
+
+  const loaded = require(path.resolve(file));
+  return loaded && (loaded.refs || loaded.pins)
+    ? {refs: loaded.refs || {}, pins: loaded.pins || {}}
+    : {refs: loaded || {}, pins: {}};
+}
+
+/**
+ * Whether a build config entry belongs in a release. fromTag is the first
+ * release an entry was part of. The history rebuild already honours it, but a
+ * new release built from an older line, such as a security release on the
+ * previous major, has to honour it too, or it picks up repositories and
+ * metapackages that only exist from a later major on.
+ */
+function isPartOfRelease(entry, releaseVersion) {
+  return !entry.fromTag || !releaseVersion || isVersionGreaterOrEqual(releaseVersion, entry.fromTag);
+}
+
 async function composerCreateMagentoProject(version) {
   console.log(`Determining upstream package versions for release ${version}...`);
   const workDir = `${tmpdir()}/workdir-${version}`;
+  // An earlier run's install is reused, but only when it still has a
+  // composer.json. A temp dir cleaner can empty the tree and leave the
+  // directories behind, and reusing that husk fails later in "composer
+  // suggests" with a message about a missing composer.json rather than here.
+  if (fsExists(workDir) && !fsExists(`${workDir}/composer.json`)) {
+    console.log(`Discarding the incomplete installation at ${workDir}`)
+    fsSync.rmSync(workDir, {recursive: true, force: true});
+  }
+
   return new Promise((resolve, reject) => {
     if (fsExists(workDir)) {
       console.log(`Found existing installation at ${workDir}`)
@@ -112,6 +168,10 @@ function validateVersionString(version, name) {
 
 function setMageOsVendor(packageName, vendor) {
   return packageName.replace(/^magento\//, `${vendor}/`)
+}
+
+function setMagentoVendor(packageName, vendor) {
+  return packageName.replace(new RegExp(`^${vendor}/`), 'magento/')
 }
 
 function updateMapFromMagentoToMageOs(obj, vendor) {
@@ -201,9 +261,35 @@ function updateComposerConfigFromMagentoToMageOs(instruction, release, composerC
   updateComposerDepsVersionForMageOs(instruction, release, composerConfig);
   updateComposerPluginConfigForMageOs(instruction, release, composerConfig);
 
-  if (release.replaceVersions[originalPackageName]) {
-    composerConfig.replace = {[originalPackageName]: release.replaceVersions[originalPackageName]}
+  // The source is not always the upstream tree. A release tag carries the
+  // composer.json this build already rewrote for that release, so the package
+  // is named mage-os/* here, and a replaceVersions lookup under that name
+  // misses. Ask under the upstream name the map is keyed by.
+  const upstreamPackageName = setMagentoVendor(originalPackageName, instruction.vendor);
+
+  if (release.replaceVersions[upstreamPackageName]) {
+    composerConfig.replace = {[upstreamPackageName]: release.replaceVersions[upstreamPackageName]}
   }
+
+  restoreMagentoVendorInReplace(instruction, composerConfig);
+}
+
+/**
+ * A package replaces the upstream package it was built from, never itself.
+ * Building from a release tag renames an already renamed replace section, so
+ * an entry can end up naming the package's own vendor. Nothing legitimate
+ * looks like that, and left alone it stops a magento/* alias being generated
+ * for the package, which only shows up when someone installs the release.
+ */
+function restoreMagentoVendorInReplace(instruction, composerConfig) {
+  if (!composerConfig.replace) return;
+
+  composerConfig.replace = Object.entries(composerConfig.replace).reduce((acc, [name, version]) => {
+    const key = name === composerConfig.name
+      ? setMagentoVendor(name, instruction.vendor)
+      : name;
+    return Object.assign(acc, {[key]: version});
+  }, {});
 }
 
 /**
@@ -227,6 +313,8 @@ async function prepPackageForRelease(instruction, pkg, release, workingCopyPath)
 }
 
 module.exports = {
+  isPartOfRelease,
+  loadReleaseRefs,
   validateVersionString,
   updateComposerConfigFromMagentoToMageOs,
   async getPackageVersionMap(releaseVersion, {skipSampleData = false} = {}) {
@@ -341,6 +429,10 @@ module.exports = {
     }
 
     for (const metapackage of (instruction.extraMetapackages || [])) {
+      if (!isPartOfRelease(metapackage, release.version)) {
+        console.log(`Skipping metapackage ${metapackage.name}: not part of releases before ${metapackage.fromTag}`);
+        continue;
+      }
       console.log(`Building metapackage ${metapackage.name}`);
       const built = await createMetaPackage(
         instruction,
