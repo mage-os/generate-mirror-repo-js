@@ -64,6 +64,10 @@
         ".editorconfig"
       ],
       [
+        ".gitignore.sample",
+        ".gitignore.sample"
+      ],
+      [
         ".htaccess",
         ".htaccess"
       ],
