@@ -13,7 +13,10 @@ jest.mock('../../src/repository', () => ({
 const {getAdditionalConfiguration} = require('../../src/package-modules');
 
 const PACKAGE = 'mage-os/product-community-edition';
-const PINNED = 'elgentos/magento2-varnish-extended';
+// A dependency the template resolves from a repository, so the mocked tags
+// decide its version. A template entry that names a version instead, as
+// elgentos/magento2-varnish-extended now does, is used as it stands.
+const PINNED = 'element119/module-custom-admin-logo';
 
 // A ref with no history file, as a new release always has: the generator is on
 // its temporary work branch at this point.
@@ -45,7 +48,7 @@ describe('getAdditionalConfiguration', () => {
 
 describe('getAdditionalConfiguration on an older line', () => {
   // 2.3.0 shipped aligent/magento2-pci-4-compatibility 1.4.1 and did not ship
-  // the varnish module, which the current template lists.
+  // element119/module-custom-admin-logo, which the current template lists.
   const BASELINE = '2.3.0';
   const SHIPPED = 'aligent/magento2-pci-4-compatibility';
 
@@ -96,7 +99,7 @@ describe('pin validation', () => {
   test('rejects a pinned version that is not a tag of the dependency', async () => {
     await expect(
       getAdditionalConfiguration(PACKAGE, NEW_RELEASE_REF, {[PINNED]: '9.9.9'})
-    ).rejects.toThrow(/Pinned elgentos\/magento2-varnish-extended 9\.9\.9 is not a tag/);
+    ).rejects.toThrow(/Pinned element119\/module-custom-admin-logo 9\.9\.9 is not a tag/);
   });
 
   test('accepts a pin that names a real tag', async () => {
@@ -149,7 +152,7 @@ describe('pin scoping', () => {
     await getAdditionalConfiguration(PROJECT, NEW_RELEASE_REF, {[PINNED]: '2.0.6'}, BASELINE);
 
     expect(log.mock.calls.flat().join('\n'))
-      .toMatch(/Pins not applied to mage-os\/project-community-edition .*elgentos\/magento2-varnish-extended/);
+      .toMatch(/Pins not applied to mage-os\/project-community-edition .*element119\/module-custom-admin-logo/);
     log.mockRestore();
   });
 
