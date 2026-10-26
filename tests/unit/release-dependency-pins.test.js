@@ -105,3 +105,59 @@ describe('pin validation', () => {
     expect(deps[PINNED]).toBe('2.0.0');
   });
 });
+
+/**
+ * The product and the project metapackage are built from the same pins, so a
+ * pin has to stay with the metapackage it was meant for. The project
+ * metapackage becomes the store's root composer.json.
+ */
+describe('pin scoping', () => {
+  const PROJECT = 'mage-os/project-community-edition';
+  const BASELINE = '3.4.0';
+  // In the project template, and shipped by every project release.
+  const PROJECT_DEPENDENCY = 'mage-os/composer-root-update-plugin';
+
+  test('leaves a product pin out of the project metapackage', async () => {
+    const {require: deps} = await getAdditionalConfiguration(PROJECT, NEW_RELEASE_REF, {[PINNED]: '2.0.6'}, BASELINE);
+
+    expect(deps).not.toHaveProperty(PINNED);
+    expect(deps[PROJECT_DEPENDENCY]).toBe('3.4.0');
+  });
+
+  test('applies a pin the metapackage template lists', async () => {
+    const {require: deps} = await getAdditionalConfiguration(PROJECT, NEW_RELEASE_REF, {
+      [PROJECT_DEPENDENCY]: '2.0.0',
+      [PINNED]: '2.0.6'
+    }, BASELINE);
+
+    expect(deps[PROJECT_DEPENDENCY]).toBe('2.0.0');
+    expect(deps).not.toHaveProperty(PINNED);
+  });
+
+  test('applies a pin to a dependency the baseline shipped but the template no longer lists', async () => {
+    // laminas/laminas-mvc shipped in product 2.3.0 and is not in the template
+    const {require: deps} = await getAdditionalConfiguration(PACKAGE, NEW_RELEASE_REF, {
+      'laminas/laminas-mvc': '^3.7'
+    }, '2.3.0');
+
+    expect(deps['laminas/laminas-mvc']).toBe('^3.7');
+  });
+
+  test('reports a pin it does not apply', async () => {
+    const log = jest.spyOn(console, 'log').mockImplementation(() => {});
+
+    await getAdditionalConfiguration(PROJECT, NEW_RELEASE_REF, {[PINNED]: '2.0.6'}, BASELINE);
+
+    expect(log.mock.calls.flat().join('\n'))
+      .toMatch(/Pins not applied to mage-os\/project-community-edition .*elgentos\/magento2-varnish-extended/);
+    log.mockRestore();
+  });
+
+  test('keeps a pin out of a metapackage with no template of its own', async () => {
+    const {require: deps} = await getAdditionalConfiguration('mage-os/product-minimal-edition', NEW_RELEASE_REF, {
+      [PINNED]: '2.0.6'
+    }, BASELINE);
+
+    expect(deps).toEqual({});
+  });
+});

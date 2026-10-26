@@ -505,6 +505,40 @@ async function getLatestTag(url) {
   return tags[tags.length - 1];
 }
 
+/**
+ * Every metapackage of a release is handed the same pins, but a pin names a
+ * dependency of one of them. Applying all of them everywhere puts a product
+ * add-on in the project metapackage, which is the store's root composer.json:
+ * no earlier release did that, and the version pinned there later conflicts
+ * with the one the product metapackage requires.
+ *
+ * A pin applies where the metapackage already knows the dependency, meaning
+ * its template lists it or the baseline shipped it. Adding something neither
+ * knows is done by adding it to that metapackage's dependencies-template.json,
+ * which is how this repository tracks packages it does not build.
+ */
+function scopePins(templateDependencies, baseline, pins, metapackage) {
+  const shipped = (baseline && baseline.require) || {};
+  const applies = {};
+  const skipped = [];
+
+  for (const [dependency, version] of Object.entries(pins)) {
+    if (dependency in templateDependencies || dependency in shipped) {
+      applies[dependency] = version;
+    } else {
+      skipped.push(dependency);
+    }
+  }
+
+  // A pin that applies to no metapackage at all, a misspelled name say, is
+  // only visible here, so it is worth a line even though it is not an error.
+  if (skipped.length) {
+    report(`Pins not applied to ${metapackage} because it neither lists nor shipped them: ${skipped.join(', ')}`);
+  }
+
+  return applies;
+}
+
 async function getLatestConfiguration(dir, pins = {}, baseline = null) {
   if (!fs.existsSync(`${dir}/dependencies-template.json`)) {
     return {
@@ -513,14 +547,15 @@ async function getLatestConfiguration(dir, pins = {}, baseline = null) {
   }
   const template = JSON.parse(fs.readFileSync(`${dir}/dependencies-template.json`, 'utf8'));
   await validatePins(template.dependencies, pins);
+  const appliedPins = scopePins(template.dependencies, baseline, pins, lastTwoDirs(dir));
   if (baseline) {
-    return {require: dependenciesFromBaseline(template.dependencies, baseline, pins)};
+    return {require: dependenciesFromBaseline(template.dependencies, baseline, appliedPins)};
   }
   const unpinned = [];
 
   const requireObj = await Object.entries(template.dependencies).reduce(async (deps, [dependency, url]) => {
-      if (pins[dependency]) {
-        return Object.assign(await deps, {[dependency]: pins[dependency]});
+      if (appliedPins[dependency]) {
+        return Object.assign(await deps, {[dependency]: appliedPins[dependency]});
       }
       const isUrl = url.slice(0, 4) === 'http';
       if (isUrl) unpinned.push(dependency);
@@ -569,6 +604,7 @@ async function validatePins(templateDependencies, pins) {
  * through the template, which would drop anything since removed from it.
  *
  * A pin overrides a version or adds a dependency; a pin of false removes one.
+ * Pins arrive here already scoped to this metapackage, see scopePins.
  */
 function dependenciesFromBaseline(templateDependencies, baseline, pins) {
   const {version, require: shipped} = baseline;

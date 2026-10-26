@@ -51,7 +51,7 @@ module.exports = {
 When `'*'` names the line's last release, the dependencies are that release's,
 read from `resource/history/mage-os/product-community-edition/<'*'>.json`, so
 a patch release ships the same set at the same versions. Pins are the changes:
-a version overrides, a new name adds, and `false` removes:
+a version overrides, a name the template lists adds, and `false` removes:
 
 ```js
 pins: {
@@ -63,3 +63,10 @@ pins: {
 
 The build logs template dependencies left out because the line never shipped
 them. A `'*'` with no history file stops the build.
+
+Every metapackage of the release is handed the same pins, so each applies a pin
+only where it already knows the dependency: its own template lists it, or the
+baseline shipped it. That is what keeps a product add-on out of
+`project-community-edition`, which is the store's root `composer.json`. To add a
+package neither knows, add it to that metapackage's
+`dependencies-template.json`; the build logs the pins it did not apply.
