@@ -21,7 +21,7 @@
     "mage-os/security-package": "https://github.com/mage-os/mageos-security-package.git",
     "mage-os/theme-adminhtml-m137": "https://github.com/mage-os/theme-adminhtml-m137.git",
     "mago-assistant/magento2-mago": "https://github.com/mago-assistant/mago.git",
-    "n98/magerun2-dist": "^9.4",
+    "n98/magerun2-dist": "^10.0",
     "swissup/module-ignition": "https://github.com/swissup/module-ignition.git"
   }
 }
