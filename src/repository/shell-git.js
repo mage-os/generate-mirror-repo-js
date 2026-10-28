@@ -164,9 +164,18 @@ async function initRepo(url, ref) {
       try {
         await exec(`git checkout --force --quiet ${ref}`, {cwd: dir});
       } catch (exception) {
-        // In case the shallow clone doesn't include the ref, try fetching it
+        // In case the shallow clone doesn't include the ref, try fetching it.
+        // A branch arrives this way, but a tag only lands in FETCH_HEAD: no
+        // refs/tags entry is written, so the checkout below fails exactly as
+        // the one above did. "fetch <url> tag <name>" writes the tag ref, so
+        // fall back to that before giving up.
         await exec(`git fetch --quiet --depth=1 ${url} ${ref}`, {cwd: dir});
-        await exec(`git checkout --force --quiet ${ref}`, {cwd: dir});
+        try {
+          await exec(`git checkout --force --quiet ${ref}`, {cwd: dir});
+        } catch (notABranch) {
+          await exec(`git fetch --quiet --depth=1 ${url} tag ${ref}`, {cwd: dir});
+          await exec(`git checkout --force --quiet ${ref}`, {cwd: dir});
+        }
       }
     }
   }

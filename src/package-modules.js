@@ -505,26 +505,141 @@ async function getLatestTag(url) {
   return tags[tags.length - 1];
 }
 
-async function getLatestConfiguration(dir) {
+/**
+ * Every metapackage of a release is handed the same pins, but a pin names a
+ * dependency of one of them. Applying all of them everywhere puts a product
+ * add-on in the project metapackage, which is the store's root composer.json:
+ * no earlier release did that, and the version pinned there later conflicts
+ * with the one the product metapackage requires.
+ *
+ * A pin applies where the metapackage already knows the dependency, meaning
+ * its template lists it or the baseline shipped it. Adding something neither
+ * knows is done by adding it to that metapackage's dependencies-template.json,
+ * which is how this repository tracks packages it does not build.
+ */
+function scopePins(templateDependencies, baseline, pins, metapackage) {
+  const shipped = (baseline && baseline.require) || {};
+  const applies = {};
+  const skipped = [];
+
+  for (const [dependency, version] of Object.entries(pins)) {
+    if (dependency in templateDependencies || dependency in shipped) {
+      applies[dependency] = version;
+    } else {
+      skipped.push(dependency);
+    }
+  }
+
+  // A pin that applies to no metapackage at all, a misspelled name say, is
+  // only visible here, so it is worth a line even though it is not an error.
+  if (skipped.length) {
+    report(`Pins not applied to ${metapackage} because it neither lists nor shipped them: ${skipped.join(', ')}`);
+  }
+
+  return applies;
+}
+
+async function getLatestConfiguration(dir, pins = {}, baseline = null) {
   if (!fs.existsSync(`${dir}/dependencies-template.json`)) {
     return {
       require: {}
     };
   }
   const template = JSON.parse(fs.readFileSync(`${dir}/dependencies-template.json`, 'utf8'));
-  return Object.entries(template.dependencies).reduce(async (deps, [dependency, url]) => {
-      const tag = url.slice(0, 4) === 'http' ? await getLatestTag(url) : url;
+  await validatePins(template.dependencies, pins);
+  const appliedPins = scopePins(template.dependencies, baseline, pins, lastTwoDirs(dir));
+  if (baseline) {
+    return {require: dependenciesFromBaseline(template.dependencies, baseline, appliedPins)};
+  }
+  const unpinned = [];
+
+  const requireObj = await Object.entries(template.dependencies).reduce(async (deps, [dependency, url]) => {
+      if (appliedPins[dependency]) {
+        return Object.assign(await deps, {[dependency]: appliedPins[dependency]});
+      }
+      const isUrl = url.slice(0, 4) === 'http';
+      if (isUrl) unpinned.push(dependency);
+      const tag = isUrl ? await getLatestTag(url) : url;
       return Object.assign(await deps, {[dependency]: tag});
-    }, Promise.resolve({}))
-    .then(requireObj => ({ require: requireObj }));
+    }, Promise.resolve({}));
+
+  // Only worth saying when some dependencies were pinned: that means this is a
+  // release off an older line, where an unpinned dependency silently picks up
+  // whatever its newest tag is.
+  if (Object.keys(pins).length && unpinned.length) {
+    report(`Dependencies resolved to their latest tag because no pin was given: ${unpinned.join(', ')}`);
+  }
+
+  return {require: requireObj};
 }
 
-async function getAdditionalConfiguration(packageName, ref) {
+/**
+ * A pinned version that does not exist is only noticed when someone installs
+ * the release. The tags are already read for unpinned dependencies, so read
+ * them for pinned ones too and fail the build instead.
+ *
+ * Only dependencies the template resolves from a repository can be checked. A
+ * pin naming something else, such as a constraint or a package added by the
+ * pin itself, is left alone.
+ */
+async function validatePins(templateDependencies, pins) {
+  for (const [dependency, version] of Object.entries(pins)) {
+    if (version === false) continue;
+
+    const url = templateDependencies[dependency];
+    if (!url || url.slice(0, 4) !== 'http') continue;
+
+    const tags = await repo.listTags(url);
+    if (!tags.includes(version)) {
+      throw new Error(`Pinned ${dependency} ${version} is not a tag of ${url}`);
+    }
+  }
+}
+
+/**
+ * The template lists the current line's dependencies. A release on an older
+ * line has to keep the set that line shipped, at the versions it shipped, or a
+ * patch release gains modules its previous release never had. The history
+ * file is that set as published, so it is used whole rather than filtered
+ * through the template, which would drop anything since removed from it.
+ *
+ * A pin overrides a version or adds a dependency; a pin of false removes one.
+ * Pins arrive here already scoped to this metapackage, see scopePins.
+ */
+function dependenciesFromBaseline(templateDependencies, baseline, pins) {
+  const {version, require: shipped} = baseline;
+  const notShipped = Object.keys(templateDependencies).filter(dependency => !(dependency in shipped) && !(dependency in pins));
+
+  if (notShipped.length) {
+    report(`Not added because ${version} did not ship them: ${notShipped.join(', ')}`);
+  }
+
+  const dependencies = Object.assign({}, shipped, pins);
+  for (const [dependency, pin] of Object.entries(pins)) {
+    if (pin === false) delete dependencies[dependency];
+  }
+  return dependencies;
+}
+
+async function getAdditionalConfiguration(packageName, ref, pins = {}, baselineRef = null) {
   const dir = `${__dirname}/../resource/history/${packageName}`;
   const file = `${dir}/${ref}.json`;
-  return fs.existsSync(file)
-    ? JSON.parse(fs.readFileSync(file, 'utf8'))
-    : await getLatestConfiguration(`${__dirname}/../resource/composer-templates/${packageName}`);
+  if (fs.existsSync(file)) {
+    return JSON.parse(fs.readFileSync(file, 'utf8'));
+  }
+
+  let baseline = null;
+  if (baselineRef) {
+    const baselineFile = `${dir}/${baselineRef}.json`;
+    // Falling back to the template here would build the older line with the
+    // current line's dependencies, which is the failure this guards against.
+    if (!fs.existsSync(baselineFile)) {
+      throw new Error(`No ${packageName} history for ${baselineRef}. Set '*' in the release refs file to the last release tag on the line being built.`);
+    }
+    baseline = {version: baselineRef, require: JSON.parse(fs.readFileSync(baselineFile, 'utf8')).require || {}};
+  }
+
+  return getLatestConfiguration(`${__dirname}/../resource/composer-templates/${packageName}`, pins, baseline);
 }
 
 /**

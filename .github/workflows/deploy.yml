@@ -33,6 +33,11 @@ on:
         required: false
         default: ''
         type: string
+      release_refs_file:
+        description: 'Optional JS file mapping repos to git refs, used to build a line other than the default branch'
+        required: false
+        default: ''
+        type: string
       publish_tag:
         description: 'Push new release tag to repos (TODO)'
         required: false
@@ -59,6 +64,7 @@ env:
   mageos_release: ${{ inputs.mageos_release }}
   mageos_release_arg: ${{ inputs.mageos_release != '' && format('--mageosRelease="{0}"', inputs.mageos_release) || '' }}
   upstream_release_arg: ${{ inputs.upstream_release != '' && format('--upstreamRelease="{0}"', inputs.upstream_release) || '' }}
+  release_refs_file_arg: ${{ inputs.release_refs_file != '' && format('--releaseRefsFile="{0}"', inputs.release_refs_file) || '' }}
   publish_tag: ${{ inputs.publish_tag }}
 
 jobs:
@@ -91,7 +97,7 @@ jobs:
       - run: npm ci
       - run: |
           node ${{ env.entrypoint }} --outputDir=build/packages --gitRepoDir=generate-repo/repositories --repoUrl="${{ env.repo }}" \
-            ${{ env.mageos_release_arg }} ${{ env.upstream_release_arg }}
+            ${{ env.mageos_release_arg }} ${{ env.upstream_release_arg }} ${{ env.release_refs_file_arg }}
         name: "Generate the packages for the composer repo"
       - run: node bin/set-satis-homepage-url.js --satisConfig=satis.json --repoUrl="${{ env.repo }}" > /tmp/satis.json
         name: "Configure satis repository URL so composer knows where to download packages from"
