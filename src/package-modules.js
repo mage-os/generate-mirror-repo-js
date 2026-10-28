@@ -505,6 +505,36 @@ async function getLatestTag(url) {
   return tags[tags.length - 1];
 }
 
+/**
+ * The version a metapackage requires a dependency it does not build at.
+ *
+ * getLatestTag leaves out every tag beginning with v, so a repository that
+ * tags only that way has no latest tag at all. The dependency then resolves to
+ * undefined, and JSON.stringify drops it from the metapackage without a word
+ * in the log. Fall back to the prefixed tags for those repositories, with the
+ * prefix removed so the version reads like the ones beside it; composer
+ * accepts either form.
+ *
+ * Only the prefix is dropped, never a tag that also exists without one, so the
+ * wrong v1.0 tag getLatestTag exists to avoid is still avoided.
+ */
+async function getLatestDependencyVersion(url) {
+  const latestTag = await getLatestTag(url);
+  if (latestTag) return latestTag;
+
+  const versions = (await repo.listTags(url))
+    .filter(tag => /^v\d/.test(tag))
+    .map(tag => tag.slice(1))
+    .sort(compareVersions);
+  const latest = versions[versions.length - 1];
+
+  if (latest) {
+    report(`Resolved ${url} to ${latest}, its newest tag once the v prefix it always uses is removed`);
+  }
+
+  return latest;
+}
+
 async function getLatestConfiguration(dir) {
   if (!fs.existsSync(`${dir}/dependencies-template.json`)) {
     return {
@@ -513,10 +543,22 @@ async function getLatestConfiguration(dir) {
   }
   const template = JSON.parse(fs.readFileSync(`${dir}/dependencies-template.json`, 'utf8'));
   return Object.entries(template.dependencies).reduce(async (deps, [dependency, url]) => {
-      const tag = url.slice(0, 4) === 'http' ? await getLatestTag(url) : url;
+      const tag = url.slice(0, 4) === 'http' ? await getLatestDependencyVersion(url) : url;
       return Object.assign(await deps, {[dependency]: tag});
     }, Promise.resolve({}))
-    .then(requireObj => ({ require: requireObj }));
+    .then(requireObj => {
+      // A dependency with no version is left out of the metapackage silently,
+      // because JSON.stringify omits an undefined value, so a release can ship
+      // without a package it means to include. Naming all of them at once
+      // beats failing on the first: a repository that has not been tagged yet
+      // usually has company.
+      const unresolved = Object.keys(requireObj).filter(dependency => requireObj[dependency] === undefined);
+      if (unresolved.length) {
+        throw new Error(`No tag found to require these dependencies at: ${unresolved.join(', ')}`);
+      }
+
+      return { require: requireObj };
+    });
 }
 
 async function getAdditionalConfiguration(packageName, ref) {
@@ -723,6 +765,7 @@ module.exports = {
   createComposerJsonOnlyPackage,
 
   getLatestTag,
+  getLatestDependencyVersion,
   archiveFilePath,
   writePackage,
   readComposerJson,
