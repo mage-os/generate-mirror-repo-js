@@ -506,6 +506,36 @@ async function getLatestTag(url) {
 }
 
 /**
+ * The version a metapackage requires a dependency it does not build at.
+ *
+ * getLatestTag leaves out every tag beginning with v, so a repository that
+ * tags only that way has no latest tag at all. The dependency then resolves to
+ * undefined, and JSON.stringify drops it from the metapackage without a word
+ * in the log. Fall back to the prefixed tags for those repositories, with the
+ * prefix removed so the version reads like the ones beside it; composer
+ * accepts either form.
+ *
+ * Only the prefix is dropped, never a tag that also exists without one, so the
+ * wrong v1.0 tag getLatestTag exists to avoid is still avoided.
+ */
+async function getLatestDependencyVersion(url) {
+  const latestTag = await getLatestTag(url);
+  if (latestTag) return latestTag;
+
+  const versions = (await repo.listTags(url))
+    .filter(tag => /^v\d/.test(tag))
+    .map(tag => tag.slice(1))
+    .sort(compareVersions);
+  const latest = versions[versions.length - 1];
+
+  if (latest) {
+    report(`Resolved ${url} to ${latest}, its newest tag once the v prefix it always uses is removed`);
+  }
+
+  return latest;
+}
+
+/**
  * Every metapackage of a release is handed the same pins, but a pin names a
  * dependency of one of them. Applying all of them everywhere puts a product
  * add-on in the project metapackage, which is the store's root composer.json:
@@ -548,6 +578,9 @@ async function getLatestConfiguration(dir, pins = {}, baseline = null) {
   const template = JSON.parse(fs.readFileSync(`${dir}/dependencies-template.json`, 'utf8'));
   await validatePins(template.dependencies, pins);
   const appliedPins = scopePins(template.dependencies, baseline, pins, lastTwoDirs(dir));
+
+  // A release on an older line keeps the versions that line shipped, so no tag
+  // is read and nothing can be left unresolved.
   if (baseline) {
     return {require: dependenciesFromBaseline(template.dependencies, baseline, appliedPins)};
   }
@@ -559,7 +592,7 @@ async function getLatestConfiguration(dir, pins = {}, baseline = null) {
       }
       const isUrl = url.slice(0, 4) === 'http';
       if (isUrl) unpinned.push(dependency);
-      const tag = isUrl ? await getLatestTag(url) : url;
+      const tag = isUrl ? await getLatestDependencyVersion(url) : url;
       return Object.assign(await deps, {[dependency]: tag});
     }, Promise.resolve({}));
 
@@ -568,6 +601,16 @@ async function getLatestConfiguration(dir, pins = {}, baseline = null) {
   // whatever its newest tag is.
   if (Object.keys(pins).length && unpinned.length) {
     report(`Dependencies resolved to their latest tag because no pin was given: ${unpinned.join(', ')}`);
+  }
+
+  // A dependency with no version is left out of the metapackage silently,
+  // because JSON.stringify omits an undefined value, so a release can ship
+  // without a package it means to include. Naming all of them at once beats
+  // failing on the first: a repository that has not been tagged yet usually
+  // has company.
+  const unresolved = Object.keys(requireObj).filter(dependency => requireObj[dependency] === undefined);
+  if (unresolved.length) {
+    throw new Error(`No tag found to require these dependencies at: ${unresolved.join(', ')}`);
   }
 
   return {require: requireObj};
@@ -838,6 +881,7 @@ module.exports = {
   createComposerJsonOnlyPackage,
 
   getLatestTag,
+  getLatestDependencyVersion,
   archiveFilePath,
   writePackage,
   readComposerJson,

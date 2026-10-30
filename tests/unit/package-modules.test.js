@@ -8,6 +8,7 @@
  * - setArchiveBaseDir
  * - readComposerJson
  * - getLatestTag
+ * - getLatestDependencyVersion
  * - createPackageForRef
  * - createPackagesForRef
  * - createMetaPackageFromRepoDir
@@ -643,6 +644,48 @@ describe('getLatestTag', () => {
 
     // Mock compareVersions returns simple string comparison, so actual behavior depends on that
     expect(result).toBeDefined();
+  });
+});
+
+// ============================================================================
+// getLatestDependencyVersion tests
+// ============================================================================
+
+describe('getLatestDependencyVersion', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it('should prefer a tag without the v prefix when the repository has both', async () => {
+    repo.listTags.mockResolvedValue(['v2.0.0', '1.5.0']);
+
+    const result = await sut.getLatestDependencyVersion('https://github.com/vendor/repo.git');
+
+    expect(result).toBe('1.5.0');
+  });
+
+  it('should drop the v prefix when every tag carries one', async () => {
+    repo.listTags.mockResolvedValue(['v1.2.3', 'v1.2.5']);
+
+    const result = await sut.getLatestDependencyVersion('https://github.com/vendor/repo.git');
+
+    expect(result).toBe('1.2.5');
+  });
+
+  it('should leave a tag that merely begins with v alone', async () => {
+    repo.listTags.mockResolvedValue(['vendor-sync']);
+
+    const result = await sut.getLatestDependencyVersion('https://github.com/vendor/repo.git');
+
+    expect(result).toBeUndefined();
+  });
+
+  it('should return undefined when the repository has no tags', async () => {
+    repo.listTags.mockResolvedValue([]);
+
+    const result = await sut.getLatestDependencyVersion('https://github.com/vendor/repo.git');
+
+    expect(result).toBeUndefined();
   });
 });
 
