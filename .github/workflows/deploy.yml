@@ -54,6 +54,12 @@ on:
       REMOTE_HOST:
         description: "Override the SSH host used for deployment. Set this to the origin IP or an unproxied/DNS-only hostname when repo.mage-os.org is behind the Cloudflare proxy (SSH/port 22 is not proxied). Falls back to repo.mage-os.org when unset."
         required: false
+      CLOUDFLARE_ZONE_ID:
+        description: "Cloudflare zone ID of the repo host, used to purge its cache after deploying."
+        required: false
+      CLOUDFLARE_API_TOKEN:
+        description: "Cloudflare API token with Zone > Cache Purge permission on that zone."
+        required: false
 
 env:
   remote_host: "repo.mage-os.org"
@@ -130,3 +136,25 @@ jobs:
         with:
           name: release-build-working-copies-${{ env.mageos_release }}
           path: release-build-working-copies-${{ env.mageos_release }}.tar
+
+      - name: Purge Cloudflare cache for the repo metadata
+        env:
+          CLOUDFLARE_ZONE_ID: ${{ secrets.CLOUDFLARE_ZONE_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: |
+          if [ -z "$CLOUDFLARE_ZONE_ID" ] || [ -z "$CLOUDFLARE_API_TOKEN" ]; then
+            echo "::warning::Cloudflare secrets not set, skipping cache purge"
+            exit 0
+          fi
+          host=$(echo "$repo" | sed -E 's#^https?://([^/]+).*#\1#')
+          purge() {
+            curl -fsS --retry 3 --retry-all-errors --max-time 30 \
+              -X POST "https://api.cloudflare.com/client/v4/zones/$CLOUDFLARE_ZONE_ID/purge_cache" \
+              -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
+              -H "Content-Type: application/json" \
+              --data "$1"
+          }
+          # Zips and include/all$<hash>.json have content-unique URLs; only same-named metadata goes stale.
+          # The root page can't be targeted by prefix without matching the whole host, and purge types can't be mixed per request.
+          purge "{\"prefixes\":[\"$host/p2/\",\"$host/packages.json\"]}"
+          purge "{\"files\":[\"https://$host/\",\"https://$host/index.html\"]}"
