@@ -54,6 +54,12 @@ on:
       REMOTE_HOST:
         description: "Override the SSH host used for deployment. Set this to the origin IP or an unproxied/DNS-only hostname when repo.mage-os.org is behind the Cloudflare proxy (SSH/port 22 is not proxied). Falls back to repo.mage-os.org when unset."
         required: false
+      CLOUDFLARE_ZONE_ID:
+        description: "Cloudflare zone ID of the repo host, used to purge its cache after deploying."
+        required: false
+      CLOUDFLARE_API_TOKEN:
+        description: "Cloudflare API token with Zone > Cache Purge permission on that zone."
+        required: false
 
 env:
   remote_host: "repo.mage-os.org"
@@ -121,6 +127,21 @@ jobs:
           TARGET: ${{ env.remote_dir }}
           ARGS: "--verbose --compress --recursive --links --times --omit-dir-times ${{ env.delete_arg }}"
           SOURCE: "build/*"
+
+      - name: Purge Cloudflare cache for the repo host
+        env:
+          CLOUDFLARE_ZONE_ID: ${{ secrets.CLOUDFLARE_ZONE_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: |
+          if [ -z "$CLOUDFLARE_ZONE_ID" ] || [ -z "$CLOUDFLARE_API_TOKEN" ]; then
+            echo "::warning::Cloudflare secrets not set, skipping cache purge"
+            exit 0
+          fi
+          host=$(echo "${{ env.repo }}" | sed -E 's#^https?://([^/]+).*#\1#')
+          curl -fsS -X POST "https://api.cloudflare.com/client/v4/zones/$CLOUDFLARE_ZONE_ID/purge_cache" \
+            -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
+            -H "Content-Type: application/json" \
+            --data "{\"hosts\":[\"$host\"]}"
 
       - run: cd generate-repo && tar -cf ../release-build-working-copies-${{ env.mageos_release }}.tar repositories && cd ..
         name: Tar git working copies
