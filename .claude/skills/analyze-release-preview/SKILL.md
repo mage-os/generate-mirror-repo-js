@@ -42,6 +42,20 @@ php .claude/skills/analyze-release-preview/scripts/fetch-release-data.php \
 Options:
 - `--source=preview-repo.mage-os.org` (default) — fetch the new version from the preview repo
 - `--source=repo.mage-os.org` — fetch from production (for post-release analysis)
+- `--no-resolve` — skip the full dependency resolution (see below)
+
+By default the script also resolves **both** versions in full with composer and diffs the
+locked sets, under `resolved` in the output. Do not skip this. A metapackage diff only sees
+direct requires, so a single newly bundled package hides everything it depends on: Mage-OS
+4.0.0 bundled one assistant package and gained 24 third-party packages behind it, none of
+which appeared in the metapackage diff. Resolution needs composer on PATH and takes a few
+minutes.
+
+**If `resolved.error` is set, stop and report that first.** It means composer cannot resolve
+the release at all, so it cannot be installed. The usual cause is a dependency pinned from a
+git tag that was never published to Packagist — the build resolves pins from git tags, and
+nothing else in the pipeline checks they are installable. Quote `resolved.composer_output`
+in the report and treat it as a release blocker.
 
 The script outputs a JSON report to stdout containing:
 - The full `require` section for all three metapackages (product-community-edition, magento2-base, project-community-edition) for both versions
@@ -122,6 +136,22 @@ Use this table format:
 
 If a metapackage has no non-trivial changes, say so explicitly.
 
+#### Dependency surface
+
+From `resolved`, report how the full install changes, not just the metapackages:
+
+```
+Resolved packages: {prev_total} -> {new_total}
+```
+
+List `added` with versions, and call out `added_transitive_only` separately — those are the
+packages nobody chose directly, which arrived behind a newly bundled one. They are the most
+commonly missed part of a release and often the most interesting: a new AI, auth or HTTP
+stack entering the default install is a supply-chain change worth naming even though no
+metapackage mentions it.
+
+Also report `removed`, and `changed` where a shared transitive dependency moved version.
+
 #### Per-repo changelog
 
 For each repository with meaningful changes, list PRs/commits with:
@@ -137,7 +167,7 @@ Skip repos with only CI/infra commits (mention them in a "CI-only changes" secti
 For each meaningful change, assign a risk level:
 - **NEGLIGIBLE** — cosmetic, cleanup, conflict removal
 - **LOW** — constraint loosening, patch-level dependency bumps, small bug fixes
-- **MEDIUM** — minor version dependency bumps, feature changes, reverts of previous changes
+- **MEDIUM** — minor version dependency bumps, feature changes, reverts of previous changes, new packages entering the default install
 - **HIGH** — major version bumps, breaking constraint changes, security-related changes
 
 Include a one-line rationale for each rating.

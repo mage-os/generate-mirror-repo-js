@@ -20,6 +20,11 @@ declare(strict_types=1);
  * The --source flag controls where the NEW version is fetched from.
  * The previous version is always fetched from repo.mage-os.org (production).
  * Default source: preview-repo.mage-os.org
+ *
+ * Both versions are also resolved in full with composer, so the report covers
+ * packages that arrive transitively behind a newly bundled one. A metapackage
+ * diff alone cannot see those: bundling a single package can pull in a dozen.
+ * Pass --no-resolve to skip it (needs composer on PATH and a few minutes).
  */
 
 const PACKAGES = [
@@ -35,11 +40,14 @@ function parseArgs(array $argv): array
 {
     $positional = [];
     $source = 'preview-repo.mage-os.org';
+    $resolve = true;
 
     foreach (array_slice($argv, 1) as $arg) {
         if (str_starts_with($arg, '--source=')) {
             $source = str_replace('--source=', '', $arg);
             $source = str_replace('https://', '', $source);
+        } elseif ($arg === '--no-resolve') {
+            $resolve = false;
         } elseif (!str_starts_with($arg, '-')) {
             $positional[] = $arg;
         }
@@ -55,6 +63,7 @@ function parseArgs(array $argv): array
         'prevVersion' => $positional[0],
         'newVersion' => $positional[1],
         'sourceUrl' => str_starts_with($source, 'https://') ? $source : 'https://' . $source,
+        'resolve' => $resolve,
     ];
 }
 
@@ -139,6 +148,115 @@ function classifyChange(string $old, string $new, string $prevVersion, string $n
     return 'constraint-change';
 }
 
+/**
+ * Resolve a metapackage's require set in full, the way an install would.
+ *
+ * The metapackage diff only sees direct requires, so a newly bundled package
+ * hides whatever it depends on. Mage-OS 4.0.0 bundled one assistant package
+ * and quietly gained 24 third-party packages behind it, none of which showed
+ * up in the diff. Resolving both versions is the only way to report that.
+ *
+ * Returns ['packages' => [name => version]] or ['error' => '...'].
+ */
+function resolveTree(string $repoUrl, array $require): array
+{
+    $dir = sys_get_temp_dir() . '/mageos-resolve-' . bin2hex(random_bytes(6));
+    if (!mkdir($dir, 0777, true)) {
+        return ['error' => "Could not create {$dir}"];
+    }
+
+    $root = [
+        'name' => 'mageos/release-analysis',
+        'require' => $require,
+        'repositories' => [
+            ['type' => 'composer', 'url' => $repoUrl],
+            ['type' => 'composer', 'url' => 'https://repo.packagist.org'],
+        ],
+        'minimum-stability' => 'stable',
+        'prefer-stable' => true,
+    ];
+    file_put_contents($dir . '/composer.json', json_encode($root, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
+
+    // --ignore-platform-reqs so the analysis does not depend on the PHP and
+    // extensions of whoever runs it; this asks about package availability.
+    $cmd = 'cd ' . escapeshellarg($dir)
+        . ' && COMPOSER_NO_AUDIT=1 COMPOSER_NO_INTERACTION=1 composer update'
+        . ' --dry-run --ignore-platform-reqs --no-plugins 2>&1';
+
+    exec($cmd, $output, $status);
+    $text = implode("\n", $output);
+
+    array_map('unlink', glob($dir . '/*') ?: []);
+    @rmdir($dir);
+
+    if ($status !== 0) {
+        // A non-zero status here usually means the release cannot be installed
+        // at all, which is worth failing loudly over rather than reporting an
+        // empty tree. A version pinned from a git tag that was never published
+        // to Packagist lands exactly here.
+        return ['error' => 'composer could not resolve the release', 'composer_output' => $text];
+    }
+
+    $packages = [];
+    foreach ($output as $line) {
+        if (preg_match('/- Locking (\S+) \(([^)]+)\)/', $line, $m)) {
+            $packages[$m[1]] = $m[2];
+        }
+    }
+
+    if ($packages === []) {
+        return ['error' => 'resolved, but no locked packages were parsed', 'composer_output' => $text];
+    }
+
+    return ['packages' => $packages];
+}
+
+/**
+ * Diff two resolved trees, separating packages that are newly bundled on
+ * purpose from the ones that merely came along behind them.
+ */
+function diffResolved(array $prev, array $new, array $directRequire): array
+{
+    $added = [];
+    $transitiveOnly = [];
+    foreach ($new as $name => $version) {
+        if (!isset($prev[$name])) {
+            $added[$name] = $version;
+            if (!isset($directRequire[$name])) {
+                $transitiveOnly[$name] = $version;
+            }
+        }
+    }
+
+    $removed = [];
+    foreach ($prev as $name => $version) {
+        if (!isset($new[$name])) {
+            $removed[$name] = $version;
+        }
+    }
+
+    $changed = [];
+    foreach ($new as $name => $version) {
+        if (isset($prev[$name]) && $prev[$name] !== $version) {
+            $changed[$name] = ['old' => $prev[$name], 'new' => $version];
+        }
+    }
+
+    ksort($added);
+    ksort($transitiveOnly);
+    ksort($removed);
+    ksort($changed);
+
+    return [
+        'prev_total' => count($prev),
+        'new_total' => count($new),
+        'added' => $added,
+        'added_transitive_only' => $transitiveOnly,
+        'removed' => $removed,
+        'changed' => $changed,
+    ];
+}
+
 function main(): void
 {
     $args = parseArgs($GLOBALS['argv']);
@@ -216,6 +334,35 @@ function main(): void
         $result['packages'][$shortName] = $packageResult;
     }
 
+    // The resolved-tree diff. Only product-community-edition is resolved: it is
+    // the metapackage that carries the bundled add-ons, and the other two sit
+    // inside its tree anyway.
+    if ($args['resolve']) {
+        $pce = $result['packages']['product-community-edition'] ?? [];
+        if (isset($pce['new_require'], $pce['prev_require'])) {
+            fwrite(STDERR, "Resolving {$newVersion} in full (this takes a few minutes)...\n");
+            $newTree = resolveTree($sourceUrl, $pce['new_require']);
+
+            fwrite(STDERR, "Resolving {$prevVersion} in full...\n");
+            $prevTree = resolveTree(PRODUCTION_REPO, $pce['prev_require']);
+
+            if (isset($newTree['error']) || isset($prevTree['error'])) {
+                $result['resolved'] = [
+                    'error' => $newTree['error'] ?? $prevTree['error'],
+                    'failed_version' => isset($newTree['error']) ? $newVersion : $prevVersion,
+                    'composer_output' => $newTree['composer_output'] ?? $prevTree['composer_output'] ?? null,
+                ];
+                fwrite(STDERR, "WARNING: full resolution failed; see 'resolved.error' in the report\n");
+            } else {
+                $result['resolved'] = diffResolved(
+                    $prevTree['packages'],
+                    $newTree['packages'],
+                    $pce['new_require']
+                );
+            }
+        }
+    }
+
     // Summary
     $totalMeaningful = 0;
     $totalAdded = 0;
@@ -234,6 +381,15 @@ function main(): void
         'added_dependencies' => $totalAdded,
         'removed_dependencies' => $totalRemoved,
     ];
+
+    if (isset($result['resolved']['added'])) {
+        $result['summary']['resolved_packages_added'] = count($result['resolved']['added']);
+        $result['summary']['resolved_packages_added_transitive_only'] =
+            count($result['resolved']['added_transitive_only']);
+        $result['summary']['resolved_total'] = $result['resolved']['new_total'];
+    } elseif (isset($result['resolved']['error'])) {
+        $result['summary']['resolution_failed'] = $result['resolved']['failed_version'];
+    }
 
     echo json_encode($result, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) . "\n";
 }
