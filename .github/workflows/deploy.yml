@@ -128,21 +128,6 @@ jobs:
           ARGS: "--verbose --compress --recursive --links --times --omit-dir-times ${{ env.delete_arg }}"
           SOURCE: "build/*"
 
-      - name: Purge Cloudflare cache for the repo host
-        env:
-          CLOUDFLARE_ZONE_ID: ${{ secrets.CLOUDFLARE_ZONE_ID }}
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-        run: |
-          if [ -z "$CLOUDFLARE_ZONE_ID" ] || [ -z "$CLOUDFLARE_API_TOKEN" ]; then
-            echo "::warning::Cloudflare secrets not set, skipping cache purge"
-            exit 0
-          fi
-          host=$(echo "${{ env.repo }}" | sed -E 's#^https?://([^/]+).*#\1#')
-          curl -fsS -X POST "https://api.cloudflare.com/client/v4/zones/$CLOUDFLARE_ZONE_ID/purge_cache" \
-            -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
-            -H "Content-Type: application/json" \
-            --data "{\"hosts\":[\"$host\"]}"
-
       - run: cd generate-repo && tar -cf ../release-build-working-copies-${{ env.mageos_release }}.tar repositories && cd ..
         name: Tar git working copies
         if: ${{ success() && env.mageos_release != '' && env.publish_tag == 'true' }}
@@ -151,3 +136,25 @@ jobs:
         with:
           name: release-build-working-copies-${{ env.mageos_release }}
           path: release-build-working-copies-${{ env.mageos_release }}.tar
+
+      - name: Purge Cloudflare cache for the repo metadata
+        env:
+          CLOUDFLARE_ZONE_ID: ${{ secrets.CLOUDFLARE_ZONE_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: |
+          if [ -z "$CLOUDFLARE_ZONE_ID" ] || [ -z "$CLOUDFLARE_API_TOKEN" ]; then
+            echo "::warning::Cloudflare secrets not set, skipping cache purge"
+            exit 0
+          fi
+          host=$(echo "$repo" | sed -E 's#^https?://([^/]+).*#\1#')
+          purge() {
+            curl -fsS --retry 3 --retry-all-errors --max-time 30 \
+              -X POST "https://api.cloudflare.com/client/v4/zones/$CLOUDFLARE_ZONE_ID/purge_cache" \
+              -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
+              -H "Content-Type: application/json" \
+              --data "$1"
+          }
+          # Zips and include/all$<hash>.json have content-unique URLs; only same-named metadata goes stale.
+          # The root page can't be targeted by prefix without matching the whole host, and purge types can't be mixed per request.
+          purge "{\"prefixes\":[\"$host/p2/\",\"$host/packages.json\"]}"
+          purge "{\"files\":[\"https://$host/\",\"https://$host/index.html\"]}"
