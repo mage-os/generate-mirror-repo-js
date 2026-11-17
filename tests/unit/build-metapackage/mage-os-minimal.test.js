@@ -82,13 +82,13 @@ const LAMINAS_PACKAGES = [
   'laminas/laminas-http',
   'laminas/laminas-i18n',
   'laminas/laminas-modulemanager',
-  'laminas/laminas-mvc',
   'laminas/laminas-permissions-acl',
   'laminas/laminas-servicemanager',
   'laminas/laminas-soap',
   'laminas/laminas-stdlib',
   'laminas/laminas-uri',
-  'laminas/laminas-validator'
+  'laminas/laminas-validator',
+  'laminas/laminas-view'
 ];
 
 /**
